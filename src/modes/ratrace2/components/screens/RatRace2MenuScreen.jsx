@@ -1,6 +1,6 @@
 import { styles, COLORS, CSS_EXTRA } from "../../../../styles/theme.js";
 
-export default function RatRace2MenuScreen({ hasSave, onResume, onNew, onExitHome }) {
+export default function RatRace2MenuScreen({ hasSave, onResume, onNew, onOptions, onExitHome }) {
   return (
     <div style={{ ...styles.app, alignItems: "center", justifyContent: "center", display: "flex", flexDirection: "column", padding: 24, textAlign: "center" }}>
       <style>{CSS_EXTRA}</style>
@@ -16,6 +16,7 @@ export default function RatRace2MenuScreen({ hasSave, onResume, onNew, onExitHom
           <button className={hasSave ? "btn-small" : "btn-primary"} style={hasSave ? styles.smallBtn : styles.primaryBtn} onClick={onNew}>
             <span style={styles.menuBtnIcon}>🗂️</span>Nouvelle situation
           </button>
+          <button className="btn-small" style={styles.smallBtn} onClick={onOptions}><span style={styles.menuBtnIcon}>⚙️</span>Options</button>
           <button className="btn-small" style={{ ...styles.smallBtn, background: "transparent", border: "none", opacity: 0.7 }} onClick={onExitHome}>← Autres modes de jeu</button>
         </div>
       </div>

@@ -8,7 +8,7 @@ import { generateScenario } from "../data/scenarioGenerator.js";
 import { simulateDays } from "../engine/dayLoop.js";
 
 const SAVE_KEY = "ratrace2-save";
-const CURRENCY = "EUR"; // le choix de devise par mode arrive avec les Options par mode
+const SETTINGS_KEY = "ratrace2-settings";
 
 export default function useRatRace2State() {
   const [loaded, setLoaded] = useState(false);
@@ -27,15 +27,16 @@ export default function useRatRace2State() {
   const [casinoHandsPlayed, setCasinoHandsPlayed] = useState(0);
   const [casinoNetResult, setCasinoNetResult] = useState(0);
 
+  const [currency, setCurrency] = useState("EUR");
   const [babyEnabled, setBabyEnabled] = useState(true);
   const [layoffEnabled, setLayoffEnabled] = useState(true);
+  const [skipMonthMode, setSkipMonthMode] = useState("auto"); // auto | calm
   const [layoffMonthsLeft, setLayoffMonthsLeft] = useState(0);
   const [lastSmallDoodadDay, setLastSmallDoodadDay] = useState(null);
   const [lastBigDoodadDay, setLastBigDoodadDay] = useState(null);
   const [lastBabyDay, setLastBabyDay] = useState(null);
   const [lastLayoffDay, setLastLayoffDay] = useState(null);
   const [luckyUntilDay, setLuckyUntilDay] = useState(0);
-  const [skipMonthMode, setSkipMonthMode] = useState("auto"); // auto | calm
 
   const [tokens, setTokens] = useState(() => generateTokens(16));
   const [portfolio, setPortfolio] = useState({});
@@ -49,7 +50,7 @@ export default function useRatRace2State() {
   const lastSmallDoodadCardRef = useRef(null);
   const lastBigDoodadCardRef = useRef(null);
   const lastMarketCardRef = useRef(null);
-  const f = (n) => fmt(n, CURRENCY);
+  const f = (n) => fmt(n, currency);
 
   useEffect(() => {
     (async () => {
@@ -67,15 +68,12 @@ export default function useRatRace2State() {
           if (s.kids != null) setKids(s.kids);
           if (Array.isArray(s.assets)) setAssets(s.assets);
           if (Array.isArray(s.listings)) setListings(s.listings);
-          if (s.babyEnabled !== undefined) setBabyEnabled(s.babyEnabled);
-          if (s.layoffEnabled !== undefined) setLayoffEnabled(s.layoffEnabled);
           if (s.layoffMonthsLeft != null) setLayoffMonthsLeft(s.layoffMonthsLeft);
           if (s.lastSmallDoodadDay !== undefined) setLastSmallDoodadDay(s.lastSmallDoodadDay);
           if (s.lastBigDoodadDay !== undefined) setLastBigDoodadDay(s.lastBigDoodadDay);
           if (s.lastBabyDay !== undefined) setLastBabyDay(s.lastBabyDay);
           if (s.lastLayoffDay !== undefined) setLastLayoffDay(s.lastLayoffDay);
           if (s.luckyUntilDay != null) setLuckyUntilDay(s.luckyUntilDay);
-          if (s.skipMonthMode) setSkipMonthMode(s.skipMonthMode);
           if (Array.isArray(s.tokens) && s.tokens.length) setTokens(s.tokens);
           if (s.portfolio) setPortfolio(s.portfolio);
           if (Array.isArray(s.journal)) setJournal(s.journal);
@@ -86,6 +84,16 @@ export default function useRatRace2State() {
           if (s.marketTurn !== undefined) setMarketTurn(s.marketTurn);
         }
       } catch (e) { /* pas de sauvegarde existante */ }
+      try {
+        const res2 = await storage.get(SETTINGS_KEY);
+        if (res2 && res2.value) {
+          const st = JSON.parse(res2.value);
+          if (st.currency) setCurrency(st.currency);
+          if (st.babyEnabled !== undefined) setBabyEnabled(st.babyEnabled);
+          if (st.layoffEnabled !== undefined) setLayoffEnabled(st.layoffEnabled);
+          if (st.skipMonthMode) setSkipMonthMode(st.skipMonthMode);
+        }
+      } catch (e) { /* pas de réglages existants */ }
       setLoaded(true);
     })();
   }, []);
@@ -93,13 +101,19 @@ export default function useRatRace2State() {
   useEffect(() => {
     if (!loaded || day === 0) return;
     const s = {
-      day, cash, profession, phase, debts, kids, assets, listings, babyEnabled, layoffEnabled, layoffMonthsLeft,
-      lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, skipMonthMode,
+      day, cash, profession, phase, debts, kids, assets, listings, layoffMonthsLeft,
+      lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
       casinoHandsPlayed, casinoNetResult,
       tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn,
     };
     storage.set(SAVE_KEY, JSON.stringify(s)).catch(() => {});
-  }, [loaded, day, cash, profession, phase, debts, kids, assets, listings, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, skipMonthMode, casinoHandsPlayed, casinoNetResult, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn]);
+  }, [loaded, day, cash, profession, phase, debts, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, casinoHandsPlayed, casinoNetResult, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    const st = { currency, babyEnabled, layoffEnabled, skipMonthMode };
+    storage.set(SETTINGS_KEY, JSON.stringify(st)).catch(() => {});
+  }, [loaded, currency, babyEnabled, layoffEnabled, skipMonthMode]);
 
   const hasSave = loaded && day > 0 && phase !== "won";
   const passiveIncome = calcPassiveIncome(assets);
@@ -137,7 +151,7 @@ export default function useRatRace2State() {
     setPendingDecision(null);
     setLastEvent(null);
     setCasinoHandsPlayed(0); setCasinoNetResult(0);
-    setBabyEnabled(true); setLayoffEnabled(true); setLayoffMonthsLeft(0);
+    setLayoffMonthsLeft(0);
     setLastSmallDoodadDay(null); setLastBigDoodadDay(null); setLastBabyDay(null); setLastLayoffDay(null);
     setLuckyUntilDay(0);
     lastSmallDoodadCardRef.current = null; lastBigDoodadCardRef.current = null; lastMarketCardRef.current = null;
@@ -325,13 +339,13 @@ export default function useRatRace2State() {
   const refs = () => ({ small: lastSmallDoodadCardRef, big: lastBigDoodadCardRef, market: lastMarketCardRef });
 
   function nextDay() {
-    applySimResult(simulateDays(snapshot(), 1, { quiet: false, currency: CURRENCY, refs: refs() }));
+    applySimResult(simulateDays(snapshot(), 1, { quiet: false, currency, refs: refs() }));
   }
 
   // Avance jusqu'au premier jour du mois suivant (jamais moins d'un jour).
   function skipMonth() {
     const daysToSkip = 30 - ((day - 1) % 30);
-    applySimResult(simulateDays(snapshot(), daysToSkip, { quiet: skipMonthMode === "calm", currency: CURRENCY, refs: refs() }));
+    applySimResult(simulateDays(snapshot(), daysToSkip, { quiet: skipMonthMode === "calm", currency, refs: refs() }));
   }
 
   return {
@@ -349,6 +363,6 @@ export default function useRatRace2State() {
     casinoHandsPlayed, casinoNetResult,
     onCasinoCashDelta: (amount) => setCash((c) => Math.max(0, c + amount)),
     onCasinoHandPlayed: (netProfit) => { setCasinoHandsPlayed((n) => n + 1); setCasinoNetResult((n) => n + netProfit); },
-    currency: CURRENCY,
+    currency, setCurrency,
   };
 }

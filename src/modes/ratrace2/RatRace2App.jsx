@@ -5,6 +5,7 @@ import CasinoScreen from "../../components/casino/CasinoScreen.jsx";
 import AssetsScreen from "../../components/ledger/AssetsScreen.jsx";
 import DecisionModal from "../../components/modals/DecisionModal.jsx";
 import RatRace2MenuScreen from "./components/screens/RatRace2MenuScreen.jsx";
+import RatRace2OptionsScreen from "./components/screens/RatRace2OptionsScreen.jsx";
 import ScenarioScreen from "./components/screens/ScenarioScreen.jsx";
 import OpportunitySiteScreen from "./components/screens/OpportunitySiteScreen.jsx";
 import RatRace2WonScreen from "./components/screens/RatRace2WonScreen.jsx";
@@ -16,17 +17,32 @@ export default function RatRace2App({ onExitHome }) {
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
     profession, day, cash, debts, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
     skipMonthMode, setSkipMonthMode,
-    layoffMonthsLeft, lastEvent,
+    babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft, lastEvent,
     tokens, portfolio, journal, marketTurn, traderJournalActive, onToggleTraderJournal, buyStock, sellStock,
     listings, pendingDecision, openListing, skipListing, buyListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     casinoHandsPlayed, casinoNetResult, onCasinoCashDelta, onCasinoHandPlayed,
-    currency,
+    currency, setCurrency,
   } = useRatRace2State();
 
   if (!loaded) return <LoadingScreen />;
   if (view === "menu") {
-    return <RatRace2MenuScreen hasSave={hasSave} onResume={() => setView("game")} onNew={goToNewScenario} onExitHome={onExitHome} />;
+    return <RatRace2MenuScreen hasSave={hasSave} onResume={() => setView("game")} onNew={goToNewScenario} onOptions={() => setView("options")} onExitHome={onExitHome} />;
+  }
+  if (view === "options") {
+    return (
+      <RatRace2OptionsScreen
+        currency={currency}
+        onSelectCurrency={setCurrency}
+        babyEnabled={babyEnabled}
+        onToggleBaby={() => setBabyEnabled((v) => !v)}
+        layoffEnabled={layoffEnabled}
+        onToggleLayoff={() => setLayoffEnabled((v) => !v)}
+        skipMonthMode={skipMonthMode}
+        onChangeSkipMonthMode={setSkipMonthMode}
+        onBack={() => setView("menu")}
+      />
+    );
   }
   if (view === "scenario") {
     return <ScenarioScreen scenario={scenarioDraft} currency={currency} onStart={startGame} onReroll={rerollScenario} onBack={() => setView("menu")} />;
