@@ -26,7 +26,7 @@ export default function SetupScreen({ onStart, currency, onSelectCurrency, onBac
   }
 
   return (
-    <div style={{ ...styles.app, overflowX: "hidden", overflowY: "auto", padding: "26px 18px 40px", width: "100%", minWidth: 0, boxSizing: "border-box" }}>
+    <div className="screen-in" style={{ ...styles.app, overflowX: "hidden", overflowY: "auto", padding: "26px 18px 40px", width: "100%", minWidth: 0, boxSizing: "border-box" }}>
       <style>{CSS_EXTRA}</style>
       <button className="btn-small" style={{ ...styles.smallBtn, marginBottom: 16 }} onClick={onBack}>← Menu</button>
       <div style={{ textAlign: "center", marginBottom: 20, width: "100%", boxSizing: "border-box" }}>

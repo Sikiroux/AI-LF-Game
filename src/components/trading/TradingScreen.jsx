@@ -22,7 +22,7 @@ export default function TradingScreen({ tokens, portfolio, journal, cash, curren
   const journalCost = Math.max(10, Math.round(tokens.length * 2));
 
   return (
-    <div style={{ ...styles.app, overflowY: "auto", padding: "16px 14px 40px" }}>
+    <div className="screen-in" style={{ ...styles.app, overflowY: "auto", padding: "16px 14px 40px" }}>
       <style>{CSS_EXTRA}</style>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <button className="btn-small" style={styles.smallBtn} onClick={onBack}>← Retour</button>

@@ -39,7 +39,7 @@ export default function CustomJobScreen({ customJobs, onCreate, onDelete, onBack
   }
 
   return (
-    <div style={{ ...styles.app, overflowY: "auto", padding: "26px 18px 40px", alignItems: "center", display: "flex", flexDirection: "column" }}>
+    <div className="screen-in" style={{ ...styles.app, overflowY: "auto", padding: "26px 18px 40px", alignItems: "center", display: "flex", flexDirection: "column" }}>
       <style>{CSS_EXTRA}</style>
       <div style={{ width: "100%", maxWidth: 380 }}>
         <button className="btn-small" style={{ ...styles.smallBtn, marginBottom: 16 }} onClick={onBack}>← Menu</button>

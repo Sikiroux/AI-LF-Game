@@ -108,7 +108,7 @@ export default function CasinoScreen({ cash, currency, onCashDelta, onBack, hand
   const dVal = handValue(dealerCards);
 
   return (
-    <div style={{ ...styles.app, overflowY: "auto", padding: "16px 14px 40px", alignItems: "center", display: "flex", flexDirection: "column" }}>
+    <div className="screen-in" style={{ ...styles.app, overflowY: "auto", padding: "16px 14px 40px", alignItems: "center", display: "flex", flexDirection: "column" }}>
       <style>{CSS_EXTRA}</style>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", maxWidth: 420, marginBottom: 10 }}>
         <button className="btn-small" style={styles.smallBtn} onClick={onBack}>← Retour</button>

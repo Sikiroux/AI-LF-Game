@@ -6,7 +6,7 @@ import { styles, COLORS, CSS_EXTRA } from "../../styles/theme.js";
 export default function OptionsScreen({ currency, onSelectCurrency, downPaymentPct, onChangeDownPayment, financingMode, onChangeFinancingMode, yieldMode, onChangeYieldMode, customYieldMultiplier, onChangeCustomYield, proceduralCards, onToggleProceduralCards, marketIncomeCardsEnabled, onToggleMarketIncomeCards, marketIncomeDurationMode, onChangeMarketIncomeDurationMode, marketIncomeDurationTurns, onChangeMarketIncomeDurationTurns, debtRatioEnabled, onToggleDebtRatio, economicEffectDuration, onChangeEconomicDuration, economicEffectPermanent, onTogglePermanent, bourseEnabled, onToggleBourse, casinoEnabled, onToggleCasino, onBack, onClearSave, hasSave, onManageJobs }) {
   const [confirmClear, setConfirmClear] = useState(false);
   return (
-    <div style={{ ...styles.app, overflowY: "auto", padding: "26px 18px 40px", alignItems: "center", display: "flex", flexDirection: "column" }}>
+    <div className="screen-in" style={{ ...styles.app, overflowY: "auto", padding: "26px 18px 40px", alignItems: "center", display: "flex", flexDirection: "column" }}>
       <style>{CSS_EXTRA}</style>
       <div style={{ width: "100%", maxWidth: 340 }}>
         <button className="btn-small" style={{ ...styles.smallBtn, marginBottom: 20 }} onClick={onBack}>← Menu</button>

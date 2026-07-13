@@ -8,6 +8,7 @@ import CustomJobScreen from "./components/screens/CustomJobScreen.jsx";
 import SetupScreen from "./components/screens/SetupScreen.jsx";
 import WonScreen from "./components/screens/WonScreen.jsx";
 import BankruptScreen from "./components/screens/BankruptScreen.jsx";
+import RulesScreen from "./components/screens/RulesScreen.jsx";
 
 import TradingScreen from "./components/trading/TradingScreen.jsx";
 import CasinoScreen from "./components/casino/CasinoScreen.jsx";
@@ -100,6 +101,7 @@ export default function App() {
     resolveFastCharity,
     rollDice,
     payOffLoan,
+    payOffAllLoans,
     startAmortization,
     cancelAmortization,
     buyAsset,
@@ -109,7 +111,8 @@ export default function App() {
   } = useGameState();
 
   if (!loaded) return <LoadingScreen />;
-  if (view === "menu") return <MenuScreen hasSave={hasSave} profession={profession} phase={phase} cash={cash} currency={currency} onResume={() => setView("game")} onNew={resetGame} onOptions={() => setView("options")} />;
+  if (view === "menu") return <MenuScreen hasSave={hasSave} profession={profession} phase={phase} cash={cash} currency={currency} onResume={() => setView("game")} onNew={resetGame} onOptions={() => setView("options")} onRules={() => setView("rules")} />;
+  if (view === "rules") return <RulesScreen onBack={() => setView(hasSave ? "game" : "menu")} />;
   if (view === "options") return <OptionsScreen currency={currency} onSelectCurrency={setCurrency} downPaymentPct={downPaymentPct} onChangeDownPayment={setDownPaymentPct} financingMode={financingMode} onChangeFinancingMode={setFinancingMode} yieldMode={yieldMode} onChangeYieldMode={setYieldMode} customYieldMultiplier={customYieldMultiplier} onChangeCustomYield={setCustomYieldMultiplier} proceduralCards={proceduralCards} onToggleProceduralCards={() => setProceduralCards((v) => !v)} marketIncomeCardsEnabled={marketIncomeCardsEnabled} onToggleMarketIncomeCards={() => setMarketIncomeCardsEnabled((v) => !v)} marketIncomeDurationMode={marketIncomeDurationMode} onChangeMarketIncomeDurationMode={setMarketIncomeDurationMode} marketIncomeDurationTurns={marketIncomeDurationTurns} onChangeMarketIncomeDurationTurns={setMarketIncomeDurationTurns} debtRatioEnabled={debtRatioEnabled} onToggleDebtRatio={() => setDebtRatioEnabled((v) => !v)} economicEffectDuration={economicEffectDuration} onChangeEconomicDuration={setEconomicEffectDuration} economicEffectPermanent={economicEffectPermanent} onTogglePermanent={() => setEconomicEffectPermanent((v) => !v)} bourseEnabled={bourseEnabled} onToggleBourse={() => setBourseEnabled((v) => !v)} casinoEnabled={casinoEnabled} onToggleCasino={() => setCasinoEnabled((v) => !v)} onBack={() => setView("menu")} onClearSave={() => { resetGame(); setView("menu"); }} hasSave={hasSave} onManageJobs={() => setView("customjobs")} />;
   if (view === "customjobs") return <CustomJobScreen customJobs={customJobs} currency={currency} onCreate={(job) => setCustomJobs((j) => [...j, job])} onDelete={(id) => setCustomJobs((j) => j.filter((x) => x.id !== id))} onBack={() => setView("menu")} />;
   if (view === "setup") return <SetupScreen onStart={startGame} currency={currency} onSelectCurrency={setCurrency} onBack={() => setView("menu")} customJobs={customJobs} onCreateJob={() => setView("customjobs")} onDeleteJob={(id) => setCustomJobs((j) => j.filter((x) => x.id !== id))} />;
@@ -129,14 +132,14 @@ export default function App() {
     />
   );
   if (view === "casino") return <CasinoScreen cash={cash} currency={currency} onCashDelta={(amount) => setCash((c) => Math.max(0, c + amount))} handsPlayed={casinoHandsPlayed} netResult={casinoNetResult} onHandPlayed={(netProfit) => { setCasinoHandsPlayed((n) => n + 1); setCasinoNetResult((n) => n + netProfit); }} onBack={() => setView("game")} />;
-  if (view === "assets") return <AssetsScreen assets={assets} cash={cash} currency={currency} onPayOff={payOffLoan} onStartAmortization={startAmortization} onCancelAmortization={cancelAmortization} onBack={() => setView("game")} />;
-  if (phase === "won") return <WonScreen fastTrack={fastTrack} winReason={winReason} turnCount={turnCount} onReset={resetGame} currency={currency} />;
-  if (phase === "bankrupt") return <BankruptScreen turnCount={turnCount} onReset={resetGame} />;
+  if (view === "assets") return <AssetsScreen assets={assets} cash={cash} currency={currency} onPayOff={payOffLoan} onPayOffAll={payOffAllLoans} onStartAmortization={startAmortization} onCancelAmortization={cancelAmortization} onBack={() => setView("game")} />;
+  if (phase === "won") return <WonScreen fastTrack={fastTrack} winReason={winReason} turnCount={turnCount} onReset={resetGame} currency={currency} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} bankLoanBalance={bankLoanBalance} />;
+  if (phase === "bankrupt") return <BankruptScreen turnCount={turnCount} onReset={resetGame} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} bankLoanBalance={bankLoanBalance} currency={currency} />;
 
   return (
     <div style={styles.app}>
       <style>{CSS_EXTRA}</style>
-      <Header profession={profession} phase={phase} onMenu={() => setView("menu")} onTrading={() => setView("trading")} onCasino={() => setView("casino")} bourseEnabled={bourseEnabled} casinoEnabled={casinoEnabled} isDesktop={isDesktop} currency={currency} onCycleCurrency={cycleCurrency} />
+      <Header profession={profession} phase={phase} onMenu={() => setView("menu")} onTrading={() => setView("trading")} onCasino={() => setView("casino")} onRules={() => setView("rules")} bourseEnabled={bourseEnabled} casinoEnabled={casinoEnabled} isDesktop={isDesktop} currency={currency} onCycleCurrency={cycleCurrency} />
 
       <div style={{ ...styles.main, flexDirection: isDesktop ? "row" : "column" }}>
         <div style={{ ...styles.boardCol, minWidth: 0 }}>

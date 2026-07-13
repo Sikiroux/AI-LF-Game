@@ -1,7 +1,7 @@
 import CurrencyPicker from "./screens/CurrencyPicker.jsx";
 import { styles, COLORS } from "../styles/theme.js";
 
-export default function Header({ profession, phase, onMenu, onTrading, onCasino, bourseEnabled, casinoEnabled, isDesktop, currency, onCycleCurrency }) {
+export default function Header({ profession, phase, onMenu, onTrading, onCasino, onRules, bourseEnabled, casinoEnabled, isDesktop, currency, onCycleCurrency }) {
   return (
     <div style={{ ...styles.header, flexDirection: isDesktop ? "row" : "column", alignItems: isDesktop ? "center" : "stretch", gap: isDesktop ? 0 : 8 }}>
       <div>
@@ -14,6 +14,7 @@ export default function Header({ profession, phase, onMenu, onTrading, onCasino,
         <CurrencyPicker currency={currency} onCycle={onCycleCurrency} compact />
         {bourseEnabled && <button className="btn-small" style={{ ...styles.smallBtn, whiteSpace: "nowrap" }} onClick={onTrading}>📈 Bourse</button>}
         {casinoEnabled && <button className="btn-small" style={{ ...styles.smallBtn, whiteSpace: "nowrap" }} onClick={onCasino}>🎰 Casino</button>}
+        <button className="btn-small" style={{ ...styles.smallBtn, whiteSpace: "nowrap" }} onClick={onRules}>📖 Règles</button>
         <button className="btn-small" style={{ ...styles.smallBtn, whiteSpace: "nowrap" }} onClick={onMenu}>Menu</button>
       </div>
     </div>

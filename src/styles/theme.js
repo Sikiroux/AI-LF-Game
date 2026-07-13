@@ -57,6 +57,9 @@ export const styles = {
   currencyBadgeLarge: { width: 46, height: 46, borderRadius: "50%", border: `2px dashed ${COLORS.ink}`, background: COLORS.card, color: COLORS.ink, fontSize: 14, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer" },
   menuSaveCard: { background: COLORS.card, border: `1.5px dashed ${COLORS.inkSoft}`, borderRadius: 8, padding: "10px 14px", marginBottom: 4 },
   bigStamp: { fontFamily: "Georgia, serif", fontSize: 28, fontWeight: 700, color: COLORS.teal, border: `3px double ${COLORS.teal}`, borderRadius: 8, padding: "10px 22px", transform: "rotate(-4deg)", letterSpacing: 3 },
+  menuCover: { position: "relative", background: COLORS.card, border: `1.5px solid ${COLORS.ink}`, borderRadius: 14, padding: "34px 26px 26px", boxShadow: "5px 5px 0 rgba(35,42,49,0.18)", overflow: "hidden" },
+  menuWatermark: { position: "absolute", top: 10, right: -18, fontSize: 90, color: COLORS.ink, pointerEvents: "none", userSelect: "none" },
+  menuBtnIcon: { marginRight: 8 },
 };
 
 export const CSS_EXTRA = `
@@ -110,7 +113,31 @@ export const CSS_EXTRA = `
   }
   .modal-overlay-in { animation: overlayIn 0.18s ease-out; }
 
+  @keyframes screenIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .screen-in { animation: screenIn 0.32s cubic-bezier(.22,1,.36,1); }
+
+  @keyframes menuItemIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .menu-stagger > * { animation: menuItemIn 0.32s cubic-bezier(.22,1,.36,1) both; }
+  .menu-stagger > *:nth-child(1) { animation-delay: 0.03s; }
+  .menu-stagger > *:nth-child(2) { animation-delay: 0.08s; }
+  .menu-stagger > *:nth-child(3) { animation-delay: 0.13s; }
+  .menu-stagger > *:nth-child(4) { animation-delay: 0.18s; }
+  .menu-stagger > *:nth-child(5) { animation-delay: 0.23s; }
+  .menu-stagger > *:nth-child(6) { animation-delay: 0.28s; }
+
+  @keyframes stampWatermarkIn {
+    0% { opacity: 0; transform: rotate(-14deg) scale(0.85); }
+    100% { opacity: 0.16; transform: rotate(-10deg) scale(1); }
+  }
+  .menu-watermark { animation: stampWatermarkIn 0.6s cubic-bezier(.22,1,.36,1) both; }
+
   @media (prefers-reduced-motion: reduce) {
-    .stamp-pop, .cell-hop, .dice-rolling, .banner-in, .modal-in, .modal-overlay-in { animation: none !important; }
+    .stamp-pop, .cell-hop, .dice-rolling, .banner-in, .modal-in, .modal-overlay-in, .screen-in, .menu-stagger > *, .menu-watermark { animation: none !important; }
   }
 `;
