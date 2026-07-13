@@ -2,7 +2,7 @@ import { useState } from "react";
 import { fmt } from "../../utils/format.js";
 import { styles, COLORS, CSS_EXTRA } from "../../styles/theme.js";
 
-export default function MenuScreen({ hasSave, profession, phase, cash, currency, onResume, onNew, onOptions, onRules }) {
+export default function MenuScreen({ hasSave, profession, phase, cash, currency, onResume, onNew, onOptions, onRules, onExitHome }) {
   const [confirmNew, setConfirmNew] = useState(false);
   const phaseLabel = phase === "fasttrack" ? "Voie rapide" : "Course infernale";
   return (
@@ -39,6 +39,9 @@ export default function MenuScreen({ hasSave, profession, phase, cash, currency,
 
           <button className="btn-small" style={styles.smallBtn} onClick={onRules}><span style={styles.menuBtnIcon}>📖</span>Règles du jeu</button>
           <button className="btn-small" style={styles.smallBtn} onClick={onOptions}><span style={styles.menuBtnIcon}>⚙️</span>Options</button>
+          {onExitHome && (
+            <button className="btn-small" style={{ ...styles.smallBtn, background: "transparent", border: "none", opacity: 0.7 }} onClick={onExitHome}>← Autres modes de jeu</button>
+          )}
         </div>
       </div>
     </div>
