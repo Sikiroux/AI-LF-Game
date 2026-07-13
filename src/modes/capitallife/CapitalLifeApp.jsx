@@ -11,6 +11,7 @@ import OpportunitySiteScreen from "./components/screens/OpportunitySiteScreen.js
 import CapitalLifeWonScreen from "./components/screens/CapitalLifeWonScreen.jsx";
 import CapitalLifeHomeScreen from "./components/shell/CapitalLifeHomeScreen.jsx";
 import FinancesScreen from "./components/apps/FinancesScreen.jsx";
+import SkipReportScreen from "./components/screens/SkipReportScreen.jsx";
 
 export default function CapitalLifeApp({ onExitHome }) {
   const {
@@ -18,7 +19,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
     profession, day, cash, debts, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
     skipMonthMode, setSkipMonthMode,
-    babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft, lastEvent,
+    babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft, lastEvent, lastSkipReport,
     tokens, portfolio, journal, marketTurn, traderJournalActive, onToggleTraderJournal, buyStock, sellStock,
     listings, pendingDecision, openListing, skipListing, buyListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
@@ -90,6 +91,9 @@ export default function CapitalLifeApp({ onExitHome }) {
       />
     );
   }
+  if (view === "skipReport") {
+    return <SkipReportScreen report={lastSkipReport} currency={currency} onBack={() => setView("game")} />;
+  }
   if (view === "opportunities") {
     return (
       <>
@@ -133,9 +137,12 @@ export default function CapitalLifeApp({ onExitHome }) {
       passiveIncome={passiveIncome}
       layoffMonthsLeft={layoffMonthsLeft}
       currency={currency}
+      lastEvent={lastEvent}
+      hasSkipReport={!!lastSkipReport}
       onNextDay={nextDay}
       onSkipMonth={skipMonth}
       onOpenApp={(key) => setView(key)}
+      onOpenSkipReport={() => setView("skipReport")}
       onMenu={() => setView("menu")}
     />
   );

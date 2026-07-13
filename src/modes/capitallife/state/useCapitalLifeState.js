@@ -24,6 +24,7 @@ export default function useCapitalLifeState() {
   const [listings, setListings] = useState([]);
   const [pendingDecision, setPendingDecision] = useState(null);
   const [lastEvent, setLastEvent] = useState(null);
+  const [lastSkipReport, setLastSkipReport] = useState(null);
   const [casinoHandsPlayed, setCasinoHandsPlayed] = useState(0);
   const [casinoNetResult, setCasinoNetResult] = useState(0);
 
@@ -301,7 +302,7 @@ export default function useCapitalLifeState() {
 
   // --- Avancée du temps : un jour, ou sauter jusqu'au prochain jour de paie ---
 
-  function applySimResult(result) {
+  function applySimResult(result, report) {
     setDay(result.day);
     setCash(result.cash);
     setDebts(result.debts);
@@ -326,6 +327,7 @@ export default function useCapitalLifeState() {
     } else if (result.events.length > 1) {
       banner("Résumé de la période", `${result.events.length} événements : ${result.events.map((e) => e.title).join(", ")}`, "info");
     }
+    setLastSkipReport(report || null);
   }
 
   function snapshot() {
@@ -345,7 +347,15 @@ export default function useCapitalLifeState() {
   // Avance jusqu'au premier jour du mois suivant (jamais moins d'un jour).
   function skipMonth() {
     const daysToSkip = 30 - ((day - 1) % 30);
-    applySimResult(simulateDays(snapshot(), daysToSkip, { quiet: skipMonthMode === "calm", currency, refs: refs() }));
+    const fromDay = day;
+    const cashBefore = cash;
+    const result = simulateDays(snapshot(), daysToSkip, { quiet: skipMonthMode === "calm", currency, refs: refs() });
+    applySimResult(result, {
+      mode: skipMonthMode,
+      fromDay, toDay: result.day, daysSkipped: daysToSkip,
+      cashBefore, cashAfter: result.cash,
+      events: result.events, journalEntries: result.journalEntries,
+    });
   }
 
   return {
@@ -354,7 +364,7 @@ export default function useCapitalLifeState() {
     profession, day, cash, debts, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
     skipMonthMode, setSkipMonthMode,
     babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft,
-    lastEvent,
+    lastEvent, lastSkipReport,
     tokens, portfolio, journal, marketTurn, traderJournalActive,
     onToggleTraderJournal: () => setTraderJournalActive((v) => !v),
     buyStock, sellStock,

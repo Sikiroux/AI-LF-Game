@@ -13,7 +13,8 @@ const APPS = [
 
 export default function CapitalLifeHomeScreen({
   day, cash, profession, debts, kids, assets, passiveIncome, layoffMonthsLeft, currency,
-  onNextDay, onSkipMonth, onOpenApp, onMenu,
+  lastEvent, hasSkipReport,
+  onNextDay, onSkipMonth, onOpenApp, onOpenSkipReport, onMenu,
 }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
@@ -75,6 +76,20 @@ export default function CapitalLifeHomeScreen({
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px" }}>
+        {lastEvent && (
+          <div style={{ ...styles.card, padding: "12px 14px", marginBottom: 18, borderLeft: `3px solid ${lastEvent.tone === "good" ? C.good : lastEvent.tone === "bad" ? C.bad : lastEvent.tone === "warn" ? C.warn : C.accent}` }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink }}>{lastEvent.title}</div>
+            <div style={{ fontSize: 11.5, color: C.inkSoft, marginTop: 2, lineHeight: 1.4 }}>{lastEvent.detail}</div>
+            {hasSkipReport && (
+              <button
+                style={{ marginTop: 8, background: "transparent", border: "none", color: C.accent, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 }}
+                onClick={onOpenSkipReport}
+              >
+                Voir le rapport détaillé →
+              </button>
+            )}
+          </div>
+        )}
         <div style={styles.sectionTitle}>Vos applications</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "18px 10px" }}>
           {APPS.map((app) => (
