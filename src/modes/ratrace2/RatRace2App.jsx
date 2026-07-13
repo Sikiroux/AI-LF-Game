@@ -9,7 +9,8 @@ export default function RatRace2App({ onExitHome }) {
   const {
     loaded, view, setView,
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
-    profession, day, cash, debt, hasSave, resetGame, nextDay,
+    profession, day, cash, debts, kids, hasSave, resetGame, nextDay,
+    layoffMonthsLeft, lastEvent,
     tokens, portfolio, journal, marketTurn, traderJournalActive, onToggleTraderJournal, buyStock, sellStock,
     currency,
   } = useRatRace2State();
@@ -45,7 +46,10 @@ export default function RatRace2App({ onExitHome }) {
       day={day}
       cash={cash}
       profession={profession}
-      debt={debt}
+      debts={debts}
+      kids={kids}
+      layoffMonthsLeft={layoffMonthsLeft}
+      lastEvent={lastEvent}
       currency={currency}
       onNextDay={nextDay}
       onMenu={() => setView("menu")}
