@@ -1,6 +1,6 @@
 import { styles, COLORS, CSS_EXTRA } from "../../styles/theme.js";
 
-export default function HomeScreen({ onSelectClassic, onSelectRatRace2 }) {
+export default function HomeScreen({ onSelectClassic, onSelectCapitalLife }) {
   return (
     <div style={{ ...styles.app, alignItems: "center", justifyContent: "center", display: "flex", flexDirection: "column", padding: 24, textAlign: "center" }}>
       <style>{CSS_EXTRA}</style>
@@ -19,10 +19,10 @@ export default function HomeScreen({ onSelectClassic, onSelectRatRace2 }) {
             </span>
           </button>
 
-          <button className="prof-card" style={{ ...styles.profCard, textAlign: "left", display: "flex", alignItems: "center", gap: 12 }} onClick={onSelectRatRace2}>
+          <button className="prof-card" style={{ ...styles.profCard, textAlign: "left", display: "flex", alignItems: "center", gap: 12 }} onClick={onSelectCapitalLife}>
             <span style={{ fontSize: 26 }}>📅</span>
             <span>
-              <span style={{ display: "block", fontFamily: "Georgia, serif", fontSize: 15, color: COLORS.ink, fontWeight: 700 }}>Rat Race 2</span>
+              <span style={{ display: "block", fontFamily: "Georgia, serif", fontSize: 15, color: COLORS.ink, fontWeight: 700 }}>Capital Life</span>
               <span style={{ display: "block", fontSize: 11, color: COLORS.inkSoft, marginTop: 2 }}>Progression mois par mois, bourse vivante, site d'opportunités.</span>
             </span>
           </button>

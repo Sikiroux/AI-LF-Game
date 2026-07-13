@@ -1,17 +1,17 @@
-import useRatRace2State from "./state/useRatRace2State.js";
+import useCapitalLifeState from "./state/useCapitalLifeState.js";
 import LoadingScreen from "../../components/screens/LoadingScreen.jsx";
 import TradingScreen from "../../components/trading/TradingScreen.jsx";
 import CasinoScreen from "../../components/casino/CasinoScreen.jsx";
 import AssetsScreen from "../../components/ledger/AssetsScreen.jsx";
 import DecisionModal from "../../components/modals/DecisionModal.jsx";
-import RatRace2MenuScreen from "./components/screens/RatRace2MenuScreen.jsx";
-import RatRace2OptionsScreen from "./components/screens/RatRace2OptionsScreen.jsx";
+import CapitalLifeMenuScreen from "./components/screens/CapitalLifeMenuScreen.jsx";
+import CapitalLifeOptionsScreen from "./components/screens/CapitalLifeOptionsScreen.jsx";
 import ScenarioScreen from "./components/screens/ScenarioScreen.jsx";
 import OpportunitySiteScreen from "./components/screens/OpportunitySiteScreen.jsx";
-import RatRace2WonScreen from "./components/screens/RatRace2WonScreen.jsx";
+import CapitalLifeWonScreen from "./components/screens/CapitalLifeWonScreen.jsx";
 import MonthHub from "./components/hub/MonthHub.jsx";
 
-export default function RatRace2App({ onExitHome }) {
+export default function CapitalLifeApp({ onExitHome }) {
   const {
     loaded, view, setView, phase,
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
@@ -23,15 +23,15 @@ export default function RatRace2App({ onExitHome }) {
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     casinoHandsPlayed, casinoNetResult, onCasinoCashDelta, onCasinoHandPlayed,
     currency, setCurrency,
-  } = useRatRace2State();
+  } = useCapitalLifeState();
 
   if (!loaded) return <LoadingScreen />;
   if (view === "menu") {
-    return <RatRace2MenuScreen hasSave={hasSave} onResume={() => setView("game")} onNew={goToNewScenario} onOptions={() => setView("options")} onExitHome={onExitHome} />;
+    return <CapitalLifeMenuScreen hasSave={hasSave} onResume={() => setView("game")} onNew={goToNewScenario} onOptions={() => setView("options")} onExitHome={onExitHome} />;
   }
   if (view === "options") {
     return (
-      <RatRace2OptionsScreen
+      <CapitalLifeOptionsScreen
         currency={currency}
         onSelectCurrency={setCurrency}
         babyEnabled={babyEnabled}
@@ -48,7 +48,7 @@ export default function RatRace2App({ onExitHome }) {
     return <ScenarioScreen scenario={scenarioDraft} currency={currency} onStart={startGame} onReroll={rerollScenario} onBack={() => setView("menu")} />;
   }
   if (phase === "won") {
-    return <RatRace2WonScreen day={day} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} debts={debts} currency={currency} onReset={resetGame} />;
+    return <CapitalLifeWonScreen day={day} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} debts={debts} currency={currency} onReset={resetGame} />;
   }
   if (view === "trading") {
     return (

@@ -7,10 +7,10 @@ import { fmt, uid } from "../../../utils/format.js";
 import { generateScenario } from "../data/scenarioGenerator.js";
 import { simulateDays } from "../engine/dayLoop.js";
 
-const SAVE_KEY = "ratrace2-save";
-const SETTINGS_KEY = "ratrace2-settings";
+const SAVE_KEY = "capitallife-save";
+const SETTINGS_KEY = "capitallife-settings";
 
-export default function useRatRace2State() {
+export default function useCapitalLifeState() {
   const [loaded, setLoaded] = useState(false);
   const [view, setView] = useState("menu"); // menu | scenario | game | trading | opportunities | assets | casino
   const [phase, setPhase] = useState("playing"); // playing | won

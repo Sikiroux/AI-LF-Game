@@ -2,7 +2,7 @@ import { fmt } from "../../../../utils/format.js";
 import { styles, COLORS, CSS_EXTRA } from "../../../../styles/theme.js";
 import EndGameStats from "../../../../components/screens/EndGameStats.jsx";
 
-export default function RatRace2WonScreen({ day, profession, assets, passiveIncome, tokens, portfolio, casinoHandsPlayed, casinoNetResult, debts, currency, onReset }) {
+export default function CapitalLifeWonScreen({ day, profession, assets, passiveIncome, tokens, portfolio, casinoHandsPlayed, casinoNetResult, debts, currency, onReset }) {
   const month = Math.floor((day - 1) / 30) + 1;
   const debtRemaining = debts.reduce((s, d) => s + d.balance, 0);
   return (

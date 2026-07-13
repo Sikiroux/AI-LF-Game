@@ -18,7 +18,7 @@ export default function MonthHub({ day, cash, profession, debts, kids, assets, p
       <style>{CSS_EXTRA}</style>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", maxWidth: 420, marginBottom: 10 }}>
         <button className="btn-small" style={styles.smallBtn} onClick={onMenu}>Menu</button>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: COLORS.ink, fontWeight: 700 }}>📅 Rat Race 2</div>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: COLORS.ink, fontWeight: 700 }}>📅 Capital Life</div>
         <div style={{ width: 70 }} />
       </div>
 

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import HomeScreen from "./components/screens/HomeScreen.jsx";
 import ClassicApp from "./ClassicApp.jsx";
-import RatRace2App from "./modes/ratrace2/RatRace2App.jsx";
+import CapitalLifeApp from "./modes/capitallife/CapitalLifeApp.jsx";
 
 export default function App() {
-  const [mode, setMode] = useState(null); // null | "classic" | "ratrace2"
+  const [mode, setMode] = useState(null); // null | "classic" | "capitallife"
 
   if (mode === "classic") return <ClassicApp onExitHome={() => setMode(null)} />;
-  if (mode === "ratrace2") return <RatRace2App onExitHome={() => setMode(null)} />;
-  return <HomeScreen onSelectClassic={() => setMode("classic")} onSelectRatRace2={() => setMode("ratrace2")} />;
+  if (mode === "capitallife") return <CapitalLifeApp onExitHome={() => setMode(null)} />;
+  return <HomeScreen onSelectClassic={() => setMode("classic")} onSelectCapitalLife={() => setMode("capitallife")} />;
 }

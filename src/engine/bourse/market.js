@@ -6,7 +6,7 @@ import { makeCandle } from "./tokenGenerator.js";
 export const BROKERAGE_FEE_RATE = 0.0075; // commission de courtage 0,75% à l'achat et à la vente
 
 // Fait avancer le marché de N jours d'un coup, indépendamment de ce qui déclenche
-// l'appel (lancer de dé en mode classique, jour simulé en Rat Race 2). Fonction pure :
+// l'appel (lancer de dé en mode classique, jour simulé en Capital Life). Fonction pure :
 // ne touche à aucun état React, se contente de calculer le nouvel état à partir de l'ancien.
 export function tickMarketDays(state, days) {
   const { tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive, economicEffectDuration, economicEffectPermanent, assets, currency } = state;

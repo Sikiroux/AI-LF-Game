@@ -1,13 +1,13 @@
 import { CURRENCIES, CURRENCY_ORDER } from "../../../../data/currencies.js";
 import { styles, COLORS, CSS_EXTRA } from "../../../../styles/theme.js";
 
-export default function RatRace2OptionsScreen({ currency, onSelectCurrency, babyEnabled, onToggleBaby, layoffEnabled, onToggleLayoff, skipMonthMode, onChangeSkipMonthMode, onBack }) {
+export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, babyEnabled, onToggleBaby, layoffEnabled, onToggleLayoff, skipMonthMode, onChangeSkipMonthMode, onBack }) {
   return (
     <div className="screen-in" style={{ ...styles.app, overflowY: "auto", padding: "26px 18px 40px", alignItems: "center", display: "flex", flexDirection: "column" }}>
       <style>{CSS_EXTRA}</style>
       <div style={{ width: "100%", maxWidth: 340 }}>
         <button className="btn-small" style={{ ...styles.smallBtn, marginBottom: 20 }} onClick={onBack}>← Menu</button>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: COLORS.ink, fontWeight: 700, marginBottom: 18, textAlign: "center" }}>Options — Rat Race 2</div>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: COLORS.ink, fontWeight: 700, marginBottom: 18, textAlign: "center" }}>Options — Capital Life</div>
 
         <div style={styles.sectionLabel}>Devise</div>
         <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 6 }}>
