@@ -9,7 +9,8 @@ import CapitalLifeOptionsScreen from "./components/screens/CapitalLifeOptionsScr
 import ScenarioScreen from "./components/screens/ScenarioScreen.jsx";
 import OpportunitySiteScreen from "./components/screens/OpportunitySiteScreen.jsx";
 import CapitalLifeWonScreen from "./components/screens/CapitalLifeWonScreen.jsx";
-import MonthHub from "./components/hub/MonthHub.jsx";
+import CapitalLifeHomeScreen from "./components/shell/CapitalLifeHomeScreen.jsx";
+import FinancesScreen from "./components/apps/FinancesScreen.jsx";
 
 export default function CapitalLifeApp({ onExitHome }) {
   const {
@@ -75,6 +76,20 @@ export default function CapitalLifeApp({ onExitHome }) {
   if (view === "assets") {
     return <AssetsScreen assets={assets} cash={cash} currency={currency} onPayOff={payOffLoan} onPayOffAll={payOffAllLoans} onStartAmortization={startAmortization} onCancelAmortization={cancelAmortization} onBack={() => setView("game")} />;
   }
+  if (view === "finances") {
+    return (
+      <FinancesScreen
+        day={day}
+        profession={profession}
+        kids={kids}
+        debts={debts}
+        passiveIncome={passiveIncome}
+        layoffMonthsLeft={layoffMonthsLeft}
+        currency={currency}
+        onBack={() => setView("game")}
+      />
+    );
+  }
   if (view === "opportunities") {
     return (
       <>
@@ -108,7 +123,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     );
   }
   return (
-    <MonthHub
+    <CapitalLifeHomeScreen
       day={day}
       cash={cash}
       profession={profession}
@@ -116,19 +131,12 @@ export default function CapitalLifeApp({ onExitHome }) {
       kids={kids}
       assets={assets}
       passiveIncome={passiveIncome}
-      listingsCount={listings.length}
       layoffMonthsLeft={layoffMonthsLeft}
-      lastEvent={lastEvent}
       currency={currency}
       onNextDay={nextDay}
       onSkipMonth={skipMonth}
-      skipMonthMode={skipMonthMode}
-      onChangeSkipMonthMode={setSkipMonthMode}
+      onOpenApp={(key) => setView(key)}
       onMenu={() => setView("menu")}
-      onTrading={() => setView("trading")}
-      onOpportunities={() => setView("opportunities")}
-      onAssets={() => setView("assets")}
-      onCasino={() => setView("casino")}
     />
   );
 }
