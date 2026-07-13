@@ -69,6 +69,14 @@ export function getStyles(C) {
       background: C.surface, color: C.ink, border: `1px solid ${C.line}`, borderRadius: 10, padding: "9px 14px",
       fontSize: 12.5, cursor: "pointer",
     },
+    dangerBtn: {
+      background: "transparent", color: C.bad, border: `1px solid ${C.bad}`, borderRadius: 10, padding: "9px 14px",
+      fontSize: 12.5, cursor: "pointer",
+    },
+    formInput: {
+      background: C.surface, color: C.ink, border: `1px solid ${C.line}`, borderRadius: 8, padding: "8px 10px",
+      fontSize: 13, fontFamily: "inherit",
+    },
     chip: {
       fontSize: 11.5, padding: "6px 12px", borderRadius: 999, border: `1px solid ${C.line}`, color: C.inkSoft,
       whiteSpace: "nowrap", cursor: "pointer", background: "transparent",

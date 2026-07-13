@@ -1,50 +1,74 @@
 import { calcExpenses } from "../../../../engine/financing.js";
 import { fmt } from "../../../../utils/format.js";
-import Row from "../../../../components/ledger/Row.jsx";
-import { styles, COLORS, CSS_EXTRA } from "../../../../styles/theme.js";
+import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+
+function Row({ label, value, bold, tone, C }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "6px 0", borderBottom: `1px solid ${C.line}` }}>
+      <span style={{ color: bold ? C.ink : C.inkSoft, fontWeight: bold ? 700 : 400 }}>{label}</span>
+      <span style={{ fontFamily: "ui-monospace, monospace", fontVariantNumeric: "tabular-nums", fontWeight: bold ? 700 : 400, color: tone === "good" ? C.good : tone === "bad" ? C.bad : C.ink }}>{value}</span>
+    </div>
+  );
+}
 
 export default function ScenarioScreen({ scenario, currency, onStart, onReroll, onBack }) {
+  const C = useCapitalLifeColors();
+  const styles = getStyles(C);
   const { profession, startingCash, debt } = scenario;
   const f = (n) => fmt(n, currency);
+  const e = profession.expenses;
   const expenses = calcExpenses(profession, 0, 0);
   const totalExpenses = expenses + debt.monthlyPayment;
   const netCashflow = profession.salary - totalExpenses;
 
   return (
-    <div className="screen-in" style={{ ...styles.app, overflowY: "auto", padding: "26px 18px 40px", alignItems: "center", display: "flex", flexDirection: "column" }}>
-      <style>{CSS_EXTRA}</style>
-      <div style={{ width: "100%", maxWidth: 380 }}>
-        <button className="btn-small" style={{ ...styles.smallBtn, marginBottom: 16 }} onClick={onBack}>← Retour</button>
-        <div style={{ fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: COLORS.teal, fontWeight: 700, textAlign: "center" }}>Votre mise en situation</div>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: COLORS.ink, textAlign: "center", marginTop: 4, fontWeight: 700 }}>
-          {profession.icon} {profession.name}
+    <div style={styles.app}>
+      <div style={styles.topBar}>
+        <button style={styles.backBtn} onClick={onBack}>←</button>
+        <div style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>Votre mise en situation</div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+        <div style={{ textAlign: "center", marginBottom: 16 }}>
+          <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: C.accent, fontWeight: 700 }}>Profession</div>
+          <div style={{ fontSize: 22, color: C.ink, marginTop: 4, fontWeight: 700 }}>{profession.icon} {profession.name}</div>
         </div>
 
-        <div style={{ ...styles.ledger, marginTop: 18 }}>
-          <div style={styles.ledgerTitle}>Situation de départ</div>
-          <Row label="Salaire" value={f(profession.salary)} bold />
-          <Row label="Dépenses fixes" value={f(expenses)} negative />
-          <Row label="Liquidités de départ" value={f(startingCash)} bold />
+        <div style={styles.card}>
+          <div style={{ padding: 16 }}>
+            <div style={styles.sectionTitle}>Compte de résultat mensuel</div>
+            <Row C={C} label="Salaire" value={f(profession.salary)} bold />
+            {e.taxes > 0 && <Row C={C} label="Impôts" value={`-${f(e.taxes)}`} tone="bad" />}
+            {e.mortgage > 0 && <Row C={C} label="Prêt immobilier" value={`-${f(e.mortgage)}`} tone="bad" />}
+            {e.carLoan > 0 && <Row C={C} label="Prêt auto" value={`-${f(e.carLoan)}`} tone="bad" />}
+            {e.creditCard > 0 && <Row C={C} label="Carte de crédit" value={`-${f(e.creditCard)}`} tone="bad" />}
+            {e.schoolLoan > 0 && <Row C={C} label="Prêt étudiant" value={`-${f(e.schoolLoan)}`} tone="bad" />}
+            {e.other > 0 && <Row C={C} label="Autres dépenses" value={`-${f(e.other)}`} tone="bad" />}
+            <Row C={C} label="Dépenses fixes" value={`-${f(expenses)}`} bold tone="bad" />
+          </div>
         </div>
 
-        <div style={{ ...styles.ledger, marginTop: 14 }}>
-          <div style={styles.ledgerTitle}>Dette en cours</div>
-          <div style={{ fontSize: 13, color: COLORS.ink, fontFamily: "Georgia, serif", marginBottom: 6 }}>{debt.reason}</div>
-          <Row label="Solde restant dû" value={f(debt.balance)} negative />
-          <Row label="Mensualité" value={f(debt.monthlyPayment)} negative />
-          <Row label="Mois restants" value={debt.monthsRemaining} />
+        <div style={{ ...styles.card, marginTop: 14 }}>
+          <div style={{ padding: 16 }}>
+            <div style={styles.sectionTitle}>Dette en cours</div>
+            <div style={{ fontSize: 13, color: C.ink, fontWeight: 700, marginBottom: 6 }}>{debt.reason}</div>
+            <Row C={C} label="Solde restant dû" value={f(debt.balance)} tone="bad" />
+            <Row C={C} label="Mensualité" value={`-${f(debt.monthlyPayment)}`} tone="bad" />
+            <Row C={C} label="Mois restants" value={debt.monthsRemaining} />
+          </div>
         </div>
 
-        <div style={{ ...styles.ledger, marginTop: 14, textAlign: "center" }}>
-          <div style={{ fontSize: 11, color: COLORS.inkSoft, marginBottom: 4 }}>Cashflow mensuel net</div>
-          <div style={{ fontFamily: "'Courier New', monospace", fontWeight: 700, fontSize: 20, color: netCashflow >= 0 ? COLORS.teal : COLORS.rust }}>
-            {netCashflow >= 0 ? "+" : ""}{f(netCashflow)}/mois
+        <div style={{ ...styles.card, marginTop: 14 }}>
+          <div style={{ padding: 16 }}>
+            <div style={styles.sectionTitle}>Bilan de départ</div>
+            <Row C={C} label="Liquidités de départ" value={f(startingCash)} bold />
+            <Row C={C} label="Cash-flow mensuel net" value={`${netCashflow >= 0 ? "+" : ""}${f(netCashflow)}/mois`} bold tone={netCashflow >= 0 ? "good" : "bad"} />
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
-          <button className="btn-primary" style={{ ...styles.primaryBtn, flex: 1 }} onClick={onStart}>Commencer</button>
-          <button className="btn-small" style={styles.smallBtn} onClick={onReroll}>🎲 Régénérer</button>
+          <button style={{ ...styles.primaryBtn, flex: 1 }} onClick={onStart}>Commencer</button>
+          <button style={styles.smallBtn} onClick={onReroll}>🎲 Régénérer</button>
         </div>
       </div>
     </div>

@@ -1,8 +1,5 @@
 import useCapitalLifeState from "./state/useCapitalLifeState.js";
 import LoadingScreen from "../../components/screens/LoadingScreen.jsx";
-import TradingScreen from "../../components/trading/TradingScreen.jsx";
-import CasinoScreen from "../../components/casino/CasinoScreen.jsx";
-import AssetsScreen from "../../components/ledger/AssetsScreen.jsx";
 import DecisionModal from "../../components/modals/DecisionModal.jsx";
 import CapitalLifeMenuScreen from "./components/screens/CapitalLifeMenuScreen.jsx";
 import CapitalLifeOptionsScreen from "./components/screens/CapitalLifeOptionsScreen.jsx";
@@ -12,6 +9,9 @@ import CapitalLifeWonScreen from "./components/screens/CapitalLifeWonScreen.jsx"
 import CapitalLifeHomeScreen from "./components/shell/CapitalLifeHomeScreen.jsx";
 import FinancesScreen from "./components/apps/FinancesScreen.jsx";
 import SkipReportScreen from "./components/screens/SkipReportScreen.jsx";
+import TradingScreen from "./components/apps/TradingScreen.jsx";
+import CasinoScreen from "./components/apps/CasinoScreen.jsx";
+import AssetsScreen from "./components/apps/AssetsScreen.jsx";
 
 export default function CapitalLifeApp({ onExitHome }) {
   const {
@@ -139,6 +139,8 @@ export default function CapitalLifeApp({ onExitHome }) {
       currency={currency}
       lastEvent={lastEvent}
       hasSkipReport={!!lastSkipReport}
+      skipMonthMode={skipMonthMode}
+      onChangeSkipMonthMode={setSkipMonthMode}
       onNextDay={nextDay}
       onSkipMonth={skipMonth}
       onOpenApp={(key) => setView(key)}

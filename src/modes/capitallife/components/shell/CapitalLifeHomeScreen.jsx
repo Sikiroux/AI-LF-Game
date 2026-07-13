@@ -13,7 +13,7 @@ const APPS = [
 
 export default function CapitalLifeHomeScreen({
   day, cash, profession, debts, kids, assets, passiveIncome, layoffMonthsLeft, currency,
-  lastEvent, hasSkipReport,
+  lastEvent, hasSkipReport, skipMonthMode, onChangeSkipMonthMode,
   onNextDay, onSkipMonth, onOpenApp, onOpenSkipReport, onMenu,
 }) {
   const C = useCapitalLifeColors();
@@ -103,6 +103,22 @@ export default function CapitalLifeHomeScreen({
         <button style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8, background: "transparent", border: "none", color: C.inkSoft }} onClick={onSkipMonth}>
           ⏭ Sauter jusqu'au mois prochain
         </button>
+        {skipMonthMode && onChangeSkipMonthMode && (
+          <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 8 }}>
+            <button
+              style={{ ...styles.chip, padding: "4px 10px", fontSize: 10.5, ...(skipMonthMode === "auto" ? styles.chipActive : {}) }}
+              onClick={() => onChangeSkipMonthMode("auto")}
+            >
+              Auto-résolution
+            </button>
+            <button
+              style={{ ...styles.chip, padding: "4px 10px", fontSize: 10.5, ...(skipMonthMode === "calm" ? styles.chipActive : {}) }}
+              onClick={() => onChangeSkipMonthMode("calm")}
+            >
+              Mois calme
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
