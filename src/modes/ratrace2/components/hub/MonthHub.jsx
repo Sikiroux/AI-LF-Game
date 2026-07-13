@@ -4,7 +4,7 @@ import Row from "../../../../components/ledger/Row.jsx";
 import EventBanner from "../../../../components/board/EventBanner.jsx";
 import { styles, COLORS, CSS_EXTRA } from "../../../../styles/theme.js";
 
-export default function MonthHub({ day, cash, profession, debts, kids, assets, passiveIncome, listingsCount, layoffMonthsLeft, lastEvent, currency, onNextDay, onMenu, onTrading, onOpportunities, onAssets }) {
+export default function MonthHub({ day, cash, profession, debts, kids, assets, passiveIncome, listingsCount, layoffMonthsLeft, lastEvent, currency, onNextDay, onSkipMonth, skipMonthMode, onChangeSkipMonthMode, onMenu, onTrading, onOpportunities, onAssets }) {
   const month = Math.floor((day - 1) / 30) + 1;
   const dayOfMonth = ((day - 1) % 30) + 1;
   const f = (n) => fmt(n, currency);
@@ -55,6 +55,20 @@ export default function MonthHub({ day, cash, profession, debts, kids, assets, p
       </div>
 
       <button className="btn-primary" style={{ ...styles.primaryBtn, marginTop: 20 }} onClick={onNextDay}>Jour suivant ▶</button>
+
+      <div style={{ marginTop: 18, width: "100%", maxWidth: 420, ...styles.exitBar }}>
+        <div style={{ fontSize: 11, color: COLORS.inkSoft, marginBottom: 6, textAlign: "center" }}>Sauter jusqu'au mois prochain</div>
+        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 8 }}>
+          <button className="chip-btn" style={{ ...styles.currencyChip, ...(skipMonthMode === "auto" ? styles.currencyChipActive : {}) }} onClick={() => onChangeSkipMonthMode("auto")}>Auto-résolution</button>
+          <button className="chip-btn" style={{ ...styles.currencyChip, ...(skipMonthMode === "calm" ? styles.currencyChipActive : {}) }} onClick={() => onChangeSkipMonthMode("calm")}>Mois calme</button>
+        </div>
+        <div style={{ fontSize: 10, color: COLORS.inkSoft, textAlign: "center", marginBottom: 8 }}>
+          {skipMonthMode === "auto"
+            ? "Les événements du mois se déclenchent normalement (imprévus, marché, bébé, licenciement...)."
+            : "Aucun événement de vie ce mois-ci — la Bourse et le site d'annonces continuent d'évoluer en arrière-plan."}
+        </div>
+        <button className="btn-small" style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box" }} onClick={onSkipMonth}>⏭ Sauter le mois</button>
+      </div>
     </div>
   );
 }

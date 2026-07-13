@@ -1,31 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { storage } from "../../../state/storage.js";
-import { computeFinancing, amortizedPayment, calcExpenses, calcPassiveIncome, MAX_DEBT_RATIO } from "../../../engine/financing.js";
+import { computeFinancing, amortizedPayment, calcPassiveIncome, MAX_DEBT_RATIO } from "../../../engine/financing.js";
 import { generateTokens } from "../../../engine/bourse/tokenGenerator.js";
-import { BROKERAGE_FEE_RATE, tickMarketDays } from "../../../engine/bourse/market.js";
-import { fmt, randNoRepeat, uid } from "../../../utils/format.js";
-import { MARKET_CARDS } from "../../../data/marketCards.js";
+import { BROKERAGE_FEE_RATE } from "../../../engine/bourse/market.js";
+import { fmt, uid } from "../../../utils/format.js";
 import { generateScenario } from "../data/scenarioGenerator.js";
-import { advanceListings } from "../engine/opportunitySite.js";
-import {
-  SMALL_DOODAD_CARDS, BIG_DOODAD_CARDS, BIG_DOODAD_TERM_MONTHS,
-  incomeRatio, scaleDoodadAmount, buildDailyEventTable, rollDailyEvent,
-} from "../engine/dailyEvents.js";
+import { simulateDays } from "../engine/dayLoop.js";
 
 const SAVE_KEY = "ratrace2-save";
 const CURRENCY = "EUR"; // le choix de devise par mode arrive avec les Options par mode
-
-function amortizeAssetsList(assetList) {
-  return assetList.map((a) => {
-    if (!a.amortizing || !(a.loanBalance > 0)) return a;
-    const interestPortion = Math.round(a.loanBalance * (a.annualRate / 12));
-    let principalPortion = a.loanMonthly - interestPortion;
-    if (principalPortion < 0) principalPortion = 0;
-    const newBalance = Math.max(0, a.loanBalance - principalPortion);
-    if (newBalance <= 0) return { ...a, loanBalance: 0, loanAmount: 0, loanMonthly: 0, amortizing: false, cashflow: a.grossCashflow };
-    return { ...a, loanBalance: newBalance };
-  });
-}
 
 export default function useRatRace2State() {
   const [loaded, setLoaded] = useState(false);
@@ -49,6 +32,7 @@ export default function useRatRace2State() {
   const [lastBabyDay, setLastBabyDay] = useState(null);
   const [lastLayoffDay, setLastLayoffDay] = useState(null);
   const [luckyUntilDay, setLuckyUntilDay] = useState(0);
+  const [skipMonthMode, setSkipMonthMode] = useState("auto"); // auto | calm
 
   const [tokens, setTokens] = useState(() => generateTokens(16));
   const [portfolio, setPortfolio] = useState({});
@@ -85,6 +69,7 @@ export default function useRatRace2State() {
           if (s.lastBabyDay !== undefined) setLastBabyDay(s.lastBabyDay);
           if (s.lastLayoffDay !== undefined) setLastLayoffDay(s.lastLayoffDay);
           if (s.luckyUntilDay != null) setLuckyUntilDay(s.luckyUntilDay);
+          if (s.skipMonthMode) setSkipMonthMode(s.skipMonthMode);
           if (Array.isArray(s.tokens) && s.tokens.length) setTokens(s.tokens);
           if (s.portfolio) setPortfolio(s.portfolio);
           if (Array.isArray(s.journal)) setJournal(s.journal);
@@ -103,11 +88,11 @@ export default function useRatRace2State() {
     if (!loaded || day === 0) return;
     const s = {
       day, cash, profession, debts, kids, assets, listings, babyEnabled, layoffEnabled, layoffMonthsLeft,
-      lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
+      lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, skipMonthMode,
       tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn,
     };
     storage.set(SAVE_KEY, JSON.stringify(s)).catch(() => {});
-  }, [loaded, day, cash, profession, debts, kids, assets, listings, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn]);
+  }, [loaded, day, cash, profession, debts, kids, assets, listings, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, skipMonthMode, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn]);
 
   const hasSave = loaded && day > 0;
   const passiveIncome = calcPassiveIncome(assets);
@@ -137,6 +122,7 @@ export default function useRatRace2State() {
     setBabyEnabled(true); setLayoffEnabled(true); setLayoffMonthsLeft(0);
     setLastSmallDoodadDay(null); setLastBigDoodadDay(null); setLastBabyDay(null); setLastLayoffDay(null);
     setLuckyUntilDay(0);
+    lastSmallDoodadCardRef.current = null; lastBigDoodadCardRef.current = null; lastMarketCardRef.current = null;
     setDay(1);
     setTokens(generateTokens(16));
     setPortfolio({}); setJournal([]); setPendingArcs([]); setSectorConditions({});
@@ -280,117 +266,60 @@ export default function useRatRace2State() {
     banner("Tout rembourser", `${paidIds.length} prêt${paidIds.length > 1 ? "s" : ""} soldé${paidIds.length > 1 ? "s" : ""}.`, "good");
   }
 
-  // --- Résolution des événements quotidiens (auto-résolus, pas de décision du joueur en v1) ---
+  // --- Avancée du temps : un jour, ou sauter jusqu'au prochain jour de paie ---
 
-  function triggerSmallDoodad(currentDay) {
-    const card = randNoRepeat(SMALL_DOODAD_CARDS, lastSmallDoodadCardRef);
-    const amount = scaleDoodadAmount(card.amount, incomeRatio(profession));
-    setCash((c) => Math.max(0, c - amount));
-    setLastSmallDoodadDay(currentDay);
-    banner("Imprévu", `${card.title} : -${f(amount)}`, "bad");
-  }
-
-  function triggerBigDoodad(currentDay) {
-    const card = randNoRepeat(BIG_DOODAD_CARDS, lastBigDoodadCardRef);
-    const ratio = incomeRatio(profession);
-    const amount = scaleDoodadAmount(card.amount, ratio);
-    const financed = scaleDoodadAmount(card.bankLoanAdd, ratio);
-    const monthlyPayment = Math.max(1, Math.round(financed / BIG_DOODAD_TERM_MONTHS));
-    setCash((c) => Math.max(0, c - amount));
-    setDebts((ds) => [...ds, { reason: card.title, monthlyPayment, monthsRemaining: BIG_DOODAD_TERM_MONTHS, totalMonths: BIG_DOODAD_TERM_MONTHS, balance: monthlyPayment * BIG_DOODAD_TERM_MONTHS }]);
-    setLastBigDoodadDay(currentDay);
-    banner("Grosse dépense", `${card.title} : -${f(amount)} comptant + ${f(monthlyPayment)}/mois pendant ${BIG_DOODAD_TERM_MONTHS} mois`, "bad");
-  }
-
-  function triggerMarket() {
-    const card = randNoRepeat(MARKET_CARDS, lastMarketCardRef);
-    const matching = assets.filter((a) => a.type === card.assetType);
-    if (matching.length === 0) {
-      banner("Marché", `${card.title} — vous ne possédez rien de ce type, aucun effet.`, "info");
-      return;
-    }
-    if (card.effectType === "income") {
-      setAssets((prev) => prev.map((a) => {
-        if (a.type !== card.assetType) return a;
-        const base = a.baseGrossCashflow != null ? a.baseGrossCashflow : (a.grossCashflow != null ? a.grossCashflow : a.cashflow);
-        const newGross = Math.max(0, Math.round(base * card.mult));
-        return { ...a, baseGrossCashflow: base, grossCashflow: newGross, cashflow: newGross - (a.loanMonthly || 0) };
-      }));
-      const pct = Math.round((card.mult - 1) * 100);
-      banner("Marché", `${card.title} — revenu mensuel ${pct >= 0 ? "+" : ""}${pct}% sur vos actifs concernés.`, card.mult >= 1 ? "good" : "bad");
-    } else {
-      banner("Marché", `${card.title} — affecte la valeur de revente de vos actifs concernés.`, card.mult >= 1 ? "good" : "bad");
-    }
-  }
-
-  function triggerCharity(currentDay) {
-    const donation = Math.round(profession.salary * 0.1);
-    setCash((c) => Math.max(0, c - donation));
-    setLuckyUntilDay(currentDay + 30);
-    banner("Don effectué", `-${f(donation)}. Un peu plus de chance sur les 30 prochains jours.`, "good");
-  }
-
-  function triggerBaby(currentDay) {
-    setKids((k) => k + 1);
-    setLastBabyDay(currentDay);
-    banner("Bébé", `Félicitations ! +${f(profession.perChild)} de dépenses par mois.`, "bad");
-  }
-
-  function triggerLayoff(currentDay) {
-    setLayoffMonthsLeft(2);
-    setLastLayoffDay(currentDay);
-    banner("Licencié", "Vous perdez votre emploi. Pas de salaire pendant 2 mois.", "bad");
-  }
-
-  // Fait avancer d'un jour : la Bourse tique, le site d'opportunités se renouvelle,
-  // un événement quotidien peut se déclencher, et le salaire n'est versé qu'au
-  // premier jour de chaque mois.
-  function nextDay() {
-    const nd = day + 1;
-
-    const result = tickMarketDays({ tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive, economicEffectDuration: 10, economicEffectPermanent: false, assets, currency: CURRENCY }, 1);
+  function applySimResult(result) {
+    setDay(result.day);
+    setCash(result.cash);
+    setDebts(result.debts);
+    setKids(result.kids);
+    setAssets(result.assets);
+    setListings(result.listings);
     setTokens(result.tokens);
     setPendingArcs(result.pendingArcs);
     setSectorConditions(result.sectorConditions);
     setEconomicModifier(result.economicModifier);
     setMarketTurn(result.marketTurn);
+    setLayoffMonthsLeft(result.layoffMonthsLeft);
+    setLastSmallDoodadDay(result.lastSmallDoodadDay);
+    setLastBigDoodadDay(result.lastBigDoodadDay);
+    setLastBabyDay(result.lastBabyDay);
+    setLastLayoffDay(result.lastLayoffDay);
+    setLuckyUntilDay(result.luckyUntilDay);
     if (result.journalEntries.length) setJournal((j) => [...result.journalEntries.slice().reverse(), ...j].slice(0, 60));
-
-    setListings((ls) => advanceListings(ls, nd, cash));
-
-    const lucky = nd < luckyUntilDay;
-    const table = buildDailyEventTable({ profession, day: nd, kids, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, lucky });
-    const eventType = rollDailyEvent(table);
-    if (eventType === "doodad_small") triggerSmallDoodad(nd);
-    else if (eventType === "doodad_big") triggerBigDoodad(nd);
-    else if (eventType === "market") triggerMarket();
-    else if (eventType === "charity") triggerCharity(nd);
-    else if (eventType === "baby") triggerBaby(nd);
-    else if (eventType === "layoff") triggerLayoff(nd);
-
-    let payday = 0;
-    if ((nd - 1) % 30 === 0) {
-      const debtMonthly = debts.reduce((s, deb) => s + deb.monthlyPayment, 0);
-      const expenses = calcExpenses(profession, kids, debtMonthly);
-      const salary = layoffMonthsLeft > 0 ? 0 : profession.salary;
-      payday = salary + passiveIncome - expenses;
-      setDebts((ds) => ds.map((deb) => {
-        const monthsRemaining = deb.monthsRemaining - 1;
-        if (monthsRemaining <= 0) return null;
-        return { ...deb, monthsRemaining, balance: deb.monthlyPayment * monthsRemaining };
-      }).filter(Boolean));
-      if (layoffMonthsLeft > 0) setLayoffMonthsLeft((n) => Math.max(0, n - 1));
-      setAssets((list) => amortizeAssetsList(list));
+    if (result.events.length === 1) {
+      const e = result.events[0];
+      banner(e.title, e.detail, e.tone);
+    } else if (result.events.length > 1) {
+      banner("Résumé de la période", `${result.events.length} événements : ${result.events.map((e) => e.title).join(", ")}`, "info");
     }
-    const totalCashDelta = result.cashDelta + payday;
-    if (totalCashDelta !== 0) setCash((c) => Math.max(0, c + totalCashDelta));
-    setDay(nd);
+  }
+
+  function snapshot() {
+    return {
+      day, cash, profession, debts, kids, assets, listings,
+      tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
+      babyEnabled, layoffEnabled, layoffMonthsLeft,
+      lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
+    };
+  }
+  const refs = () => ({ small: lastSmallDoodadCardRef, big: lastBigDoodadCardRef, market: lastMarketCardRef });
+
+  function nextDay() {
+    applySimResult(simulateDays(snapshot(), 1, { quiet: false, currency: CURRENCY, refs: refs() }));
+  }
+
+  // Avance jusqu'au premier jour du mois suivant (jamais moins d'un jour).
+  function skipMonth() {
+    const daysToSkip = 30 - ((day - 1) % 30);
+    applySimResult(simulateDays(snapshot(), daysToSkip, { quiet: skipMonthMode === "calm", currency: CURRENCY, refs: refs() }));
   }
 
   return {
     loaded, view, setView,
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
-    profession, day, cash, debts, kids, assets, passiveIncome, hasSave, resetGame, nextDay,
+    profession, day, cash, debts, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
+    skipMonthMode, setSkipMonthMode,
     babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft,
     lastEvent,
     tokens, portfolio, journal, marketTurn, traderJournalActive,

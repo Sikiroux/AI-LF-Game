@@ -12,7 +12,8 @@ export default function RatRace2App({ onExitHome }) {
   const {
     loaded, view, setView,
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
-    profession, day, cash, debts, kids, assets, passiveIncome, hasSave, resetGame, nextDay,
+    profession, day, cash, debts, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
+    skipMonthMode, setSkipMonthMode,
     layoffMonthsLeft, lastEvent,
     tokens, portfolio, journal, marketTurn, traderJournalActive, onToggleTraderJournal, buyStock, sellStock,
     listings, pendingDecision, openListing, skipListing, buyListing,
@@ -95,6 +96,9 @@ export default function RatRace2App({ onExitHome }) {
       lastEvent={lastEvent}
       currency={currency}
       onNextDay={nextDay}
+      onSkipMonth={skipMonth}
+      skipMonthMode={skipMonthMode}
+      onChangeSkipMonthMode={setSkipMonthMode}
       onMenu={() => setView("menu")}
       onTrading={() => setView("trading")}
       onOpportunities={() => setView("opportunities")}
