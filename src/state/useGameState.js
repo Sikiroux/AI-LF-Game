@@ -754,6 +754,28 @@ export default function useGameState() {
     banner("Prêt soldé", `${a.name} : solde de ${f(a.loanBalance)} remboursé d'un coup. Revenu passif rétabli à ${f(a.grossCashflow)}/mois.`, "good");
   }
 
+  // Rembourse d'un coup autant de prêts que les liquidités le permettent (les plus
+  // petits soldes en premier, pour en solder le plus possible avant de manquer de cash).
+  function payOffAllLoans() {
+    const owed = assets.filter((a) => a.loanBalance > 0).sort((a, b) => a.loanBalance - b.loanBalance);
+    if (owed.length === 0) return;
+    let remaining = cash;
+    const paidIds = [];
+    for (const a of owed) {
+      if (a.loanBalance > remaining) continue;
+      remaining -= a.loanBalance;
+      paidIds.push(a.id);
+    }
+    if (paidIds.length === 0) {
+      banner("Tout rembourser", "Liquidités insuffisantes pour solder ne serait-ce qu'un seul prêt.", "info");
+      return;
+    }
+    const spent = cash - remaining;
+    setCash(remaining);
+    setAssets((list) => list.map((x) => (paidIds.includes(x.id) ? { ...x, loanBalance: 0, loanAmount: 0, loanMonthly: 0, amortizing: false, cashflow: x.grossCashflow } : x)));
+    banner("Tout rembourser", `${paidIds.length} prêt${paidIds.length > 1 ? "s" : ""} soldé${paidIds.length > 1 ? "s" : ""} pour ${f(spent)}${paidIds.length < owed.length ? " (liquidités insuffisantes pour le reste)" : ""}.`, "good");
+  }
+
   // Convertit un prêt "intérêts seuls" en vrai crédit amorti sur N mois (option avancée).
   function startAmortization(assetId, months) {
     setAssets((list) => list.map((x) => {
@@ -917,6 +939,7 @@ export default function useGameState() {
     resolveFastCharity,
     rollDice,
     payOffLoan,
+    payOffAllLoans,
     startAmortization,
     cancelAmortization,
     buyAsset,

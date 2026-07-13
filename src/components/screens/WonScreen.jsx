@@ -1,10 +1,11 @@
 import { fmt } from "../../utils/format.js";
 import { styles, COLORS, CSS_EXTRA } from "../../styles/theme.js";
+import EndGameStats from "./EndGameStats.jsx";
 
-export default function WonScreen({ fastTrack, winReason, turnCount, onReset, currency }) {
+export default function WonScreen({ fastTrack, winReason, turnCount, onReset, currency, profession, assets, passiveIncome, tokens, portfolio, casinoHandsPlayed, casinoNetResult, bankLoanBalance }) {
   const isDream = winReason === "dream";
   return (
-    <div style={{ ...styles.app, alignItems: "center", justifyContent: "center", display: "flex", flexDirection: "column", textAlign: "center", padding: 24 }}>
+    <div className="screen-in" style={{ ...styles.app, overflowY: "auto", alignItems: "center", justifyContent: "flex-start", display: "flex", flexDirection: "column", textAlign: "center", padding: 24 }}>
       <style>{CSS_EXTRA}</style>
       <div style={styles.bigStamp}>LIBERTÉ</div>
       <div style={{ fontSize: 46, marginTop: 14 }}>{isDream ? (fastTrack?.dream?.icon || "🏆") : "💹"}</div>
@@ -19,7 +20,8 @@ export default function WonScreen({ fastTrack, winReason, turnCount, onReset, cu
         </div>
       )}
       <div style={{ color: COLORS.inkSoft, fontSize: 13, marginTop: 6 }}>Terminé en {turnCount} tours.</div>
-      <button className="btn-primary" style={{ ...styles.primaryBtn, marginTop: 24 }} onClick={onReset}>Nouvelle partie</button>
+      <EndGameStats turnCount={turnCount} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} bankLoanBalance={bankLoanBalance} currency={currency} />
+      <button className="btn-primary" style={{ ...styles.primaryBtn, marginTop: 24, marginBottom: 24 }} onClick={onReset}>Nouvelle partie</button>
     </div>
   );
 }

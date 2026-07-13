@@ -28,7 +28,7 @@ export default function ProfessionConfigScreen({ profession, currency, onBack, o
   const previewExpenses = calcExpenses({ expenses: Object.fromEntries(EXPENSE_FIELDS.map((f) => [f.key, enabled[f.key] ? toEUR(amounts[f.key], currency) : 0])), perChild: profession.perChild }, kids, 0);
 
   return (
-    <div style={{ ...styles.app, overflowY: "auto", padding: "26px 18px 40px", alignItems: "center", display: "flex", flexDirection: "column" }}>
+    <div className="screen-in" style={{ ...styles.app, overflowY: "auto", padding: "26px 18px 40px", alignItems: "center", display: "flex", flexDirection: "column" }}>
       <style>{CSS_EXTRA}</style>
       <div style={{ width: "100%", maxWidth: 380 }}>
         <button className="btn-small" style={{ ...styles.smallBtn, marginBottom: 16 }} onClick={onBack}>← Métiers</button>
