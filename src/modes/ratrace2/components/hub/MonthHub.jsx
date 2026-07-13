@@ -4,14 +4,14 @@ import Row from "../../../../components/ledger/Row.jsx";
 import EventBanner from "../../../../components/board/EventBanner.jsx";
 import { styles, COLORS, CSS_EXTRA } from "../../../../styles/theme.js";
 
-export default function MonthHub({ day, cash, profession, debts, kids, layoffMonthsLeft, lastEvent, currency, onNextDay, onMenu, onTrading }) {
+export default function MonthHub({ day, cash, profession, debts, kids, assets, passiveIncome, listingsCount, layoffMonthsLeft, lastEvent, currency, onNextDay, onMenu, onTrading, onOpportunities, onAssets }) {
   const month = Math.floor((day - 1) / 30) + 1;
   const dayOfMonth = ((day - 1) % 30) + 1;
   const f = (n) => fmt(n, currency);
   const debtMonthly = debts.reduce((s, deb) => s + deb.monthlyPayment, 0);
   const expenses = profession ? calcExpenses(profession, kids, debtMonthly) : 0;
   const salary = layoffMonthsLeft > 0 ? 0 : (profession ? profession.salary : 0);
-  const netCashflow = salary - expenses;
+  const netCashflow = salary + passiveIncome - expenses;
 
   return (
     <div className="screen-in" style={{ ...styles.app, overflowY: "auto", padding: "16px 14px 40px", alignItems: "center", display: "flex", flexDirection: "column" }}>
@@ -39,6 +39,7 @@ export default function MonthHub({ day, cash, profession, debts, kids, layoffMon
         <div style={{ ...styles.ledger, width: "100%", maxWidth: 420, marginTop: 10 }}>
           <div style={styles.ledgerTitle}>Compte de résultat mensuel</div>
           <Row label="Salaire" value={f(salary)} negative={layoffMonthsLeft > 0} />
+          {passiveIncome > 0 && <Row label="Revenus passifs" value={f(passiveIncome)} />}
           <Row label="Dépenses fixes" value={f(calcExpenses(profession, kids, 0))} negative />
           {debts.map((deb, i) => (
             <Row key={i} label={`Dette (${deb.reason})`} value={f(deb.monthlyPayment)} negative />
@@ -47,12 +48,10 @@ export default function MonthHub({ day, cash, profession, debts, kids, layoffMon
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+      <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap", justifyContent: "center" }}>
+        <button className="btn-small" style={styles.smallBtn} onClick={onOpportunities}>🏷️ Annonces ({listingsCount})</button>
         <button className="btn-small" style={styles.smallBtn} onClick={onTrading}>📈 Bourse</button>
-      </div>
-
-      <div style={{ fontSize: 12, color: COLORS.inkSoft, fontStyle: "italic", marginTop: 16, maxWidth: 340, textAlign: "center" }}>
-        Le site d'opportunités arrive dans la prochaine étape.
+        <button className="btn-small" style={styles.smallBtn} onClick={onAssets}>📁 Mes actifs ({assets.length})</button>
       </div>
 
       <button className="btn-primary" style={{ ...styles.primaryBtn, marginTop: 20 }} onClick={onNextDay}>Jour suivant ▶</button>

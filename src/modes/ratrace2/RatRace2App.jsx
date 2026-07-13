@@ -1,17 +1,22 @@
 import useRatRace2State from "./state/useRatRace2State.js";
 import LoadingScreen from "../../components/screens/LoadingScreen.jsx";
 import TradingScreen from "../../components/trading/TradingScreen.jsx";
+import AssetsScreen from "../../components/ledger/AssetsScreen.jsx";
+import DecisionModal from "../../components/modals/DecisionModal.jsx";
 import RatRace2MenuScreen from "./components/screens/RatRace2MenuScreen.jsx";
 import ScenarioScreen from "./components/screens/ScenarioScreen.jsx";
+import OpportunitySiteScreen from "./components/screens/OpportunitySiteScreen.jsx";
 import MonthHub from "./components/hub/MonthHub.jsx";
 
 export default function RatRace2App({ onExitHome }) {
   const {
     loaded, view, setView,
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
-    profession, day, cash, debts, kids, hasSave, resetGame, nextDay,
+    profession, day, cash, debts, kids, assets, passiveIncome, hasSave, resetGame, nextDay,
     layoffMonthsLeft, lastEvent,
     tokens, portfolio, journal, marketTurn, traderJournalActive, onToggleTraderJournal, buyStock, sellStock,
+    listings, pendingDecision, openListing, skipListing, buyListing,
+    payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     currency,
   } = useRatRace2State();
 
@@ -41,6 +46,41 @@ export default function RatRace2App({ onExitHome }) {
       />
     );
   }
+  if (view === "assets") {
+    return <AssetsScreen assets={assets} cash={cash} currency={currency} onPayOff={payOffLoan} onPayOffAll={payOffAllLoans} onStartAmortization={startAmortization} onCancelAmortization={cancelAmortization} onBack={() => setView("game")} />;
+  }
+  if (view === "opportunities") {
+    return (
+      <>
+        <OpportunitySiteScreen listings={listings} day={day} cash={cash} currency={currency} onOpen={openListing} onBack={() => setView("game")} />
+        {pendingDecision && (
+          <DecisionModal
+            decision={pendingDecision}
+            cash={cash}
+            fastCash={0}
+            currency={currency}
+            downPaymentPct={10}
+            financingMode="simple"
+            yieldMode="realiste"
+            customYieldMultiplier={1}
+            loanRateMult={1}
+            debtRatioEnabled={true}
+            currentDebtPayments={debts.reduce((s, d) => s + d.monthlyPayment, 0) + assets.reduce((s, a) => s + (a.loanMonthly || 0), 0)}
+            totalIncome={profession ? profession.salary + passiveIncome : 0}
+            onBuy={(card, mode) => buyListing(card, mode, pendingDecision.listingId)}
+            onSkip={skipListing}
+            onMarket={() => {}}
+            onCharity={() => {}}
+            onDoodadCash={() => {}}
+            onDoodadFinance={() => {}}
+            onBuyFast={() => {}}
+            onSkipFast={() => {}}
+            onCharityFast={() => {}}
+          />
+        )}
+      </>
+    );
+  }
   return (
     <MonthHub
       day={day}
@@ -48,12 +88,17 @@ export default function RatRace2App({ onExitHome }) {
       profession={profession}
       debts={debts}
       kids={kids}
+      assets={assets}
+      passiveIncome={passiveIncome}
+      listingsCount={listings.length}
       layoffMonthsLeft={layoffMonthsLeft}
       lastEvent={lastEvent}
       currency={currency}
       onNextDay={nextDay}
       onMenu={() => setView("menu")}
       onTrading={() => setView("trading")}
+      onOpportunities={() => setView("opportunities")}
+      onAssets={() => setView("assets")}
     />
   );
 }

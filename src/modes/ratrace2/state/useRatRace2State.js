@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { storage } from "../../../state/storage.js";
-import { calcExpenses } from "../../../engine/financing.js";
+import { computeFinancing, amortizedPayment, calcExpenses, calcPassiveIncome, MAX_DEBT_RATIO } from "../../../engine/financing.js";
 import { generateTokens } from "../../../engine/bourse/tokenGenerator.js";
 import { BROKERAGE_FEE_RATE, tickMarketDays } from "../../../engine/bourse/market.js";
-import { fmt, randNoRepeat } from "../../../utils/format.js";
+import { fmt, randNoRepeat, uid } from "../../../utils/format.js";
 import { MARKET_CARDS } from "../../../data/marketCards.js";
 import { generateScenario } from "../data/scenarioGenerator.js";
+import { advanceListings } from "../engine/opportunitySite.js";
 import {
   SMALL_DOODAD_CARDS, BIG_DOODAD_CARDS, BIG_DOODAD_TERM_MONTHS,
   incomeRatio, scaleDoodadAmount, buildDailyEventTable, rollDailyEvent,
@@ -14,9 +15,21 @@ import {
 const SAVE_KEY = "ratrace2-save";
 const CURRENCY = "EUR"; // le choix de devise par mode arrive avec les Options par mode
 
+function amortizeAssetsList(assetList) {
+  return assetList.map((a) => {
+    if (!a.amortizing || !(a.loanBalance > 0)) return a;
+    const interestPortion = Math.round(a.loanBalance * (a.annualRate / 12));
+    let principalPortion = a.loanMonthly - interestPortion;
+    if (principalPortion < 0) principalPortion = 0;
+    const newBalance = Math.max(0, a.loanBalance - principalPortion);
+    if (newBalance <= 0) return { ...a, loanBalance: 0, loanAmount: 0, loanMonthly: 0, amortizing: false, cashflow: a.grossCashflow };
+    return { ...a, loanBalance: newBalance };
+  });
+}
+
 export default function useRatRace2State() {
   const [loaded, setLoaded] = useState(false);
-  const [view, setView] = useState("menu"); // menu | scenario | game | trading
+  const [view, setView] = useState("menu"); // menu | scenario | game | trading | opportunities | assets
   const [scenarioDraft, setScenarioDraft] = useState(null);
   const [profession, setProfession] = useState(null);
   const [day, setDay] = useState(0);
@@ -24,6 +37,8 @@ export default function useRatRace2State() {
   const [debts, setDebts] = useState([]);
   const [kids, setKids] = useState(0);
   const [assets, setAssets] = useState([]);
+  const [listings, setListings] = useState([]);
+  const [pendingDecision, setPendingDecision] = useState(null);
   const [lastEvent, setLastEvent] = useState(null);
 
   const [babyEnabled, setBabyEnabled] = useState(true);
@@ -61,6 +76,7 @@ export default function useRatRace2State() {
           if (Array.isArray(s.debts)) setDebts(s.debts);
           if (s.kids != null) setKids(s.kids);
           if (Array.isArray(s.assets)) setAssets(s.assets);
+          if (Array.isArray(s.listings)) setListings(s.listings);
           if (s.babyEnabled !== undefined) setBabyEnabled(s.babyEnabled);
           if (s.layoffEnabled !== undefined) setLayoffEnabled(s.layoffEnabled);
           if (s.layoffMonthsLeft != null) setLayoffMonthsLeft(s.layoffMonthsLeft);
@@ -86,14 +102,15 @@ export default function useRatRace2State() {
   useEffect(() => {
     if (!loaded || day === 0) return;
     const s = {
-      day, cash, profession, debts, kids, assets, babyEnabled, layoffEnabled, layoffMonthsLeft,
+      day, cash, profession, debts, kids, assets, listings, babyEnabled, layoffEnabled, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
       tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn,
     };
     storage.set(SAVE_KEY, JSON.stringify(s)).catch(() => {});
-  }, [loaded, day, cash, profession, debts, kids, assets, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn]);
+  }, [loaded, day, cash, profession, debts, kids, assets, listings, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn]);
 
   const hasSave = loaded && day > 0;
+  const passiveIncome = calcPassiveIncome(assets);
 
   function banner(title, detail, tone) {
     setLastEvent({ title, detail, tone });
@@ -114,6 +131,8 @@ export default function useRatRace2State() {
     setDebts([scenarioDraft.debt]);
     setKids(0);
     setAssets([]);
+    setListings([]);
+    setPendingDecision(null);
     setLastEvent(null);
     setBabyEnabled(true); setLayoffEnabled(true); setLayoffMonthsLeft(0);
     setLastSmallDoodadDay(null); setLastBigDoodadDay(null); setLastBabyDay(null); setLastLayoffDay(null);
@@ -170,6 +189,95 @@ export default function useRatRace2State() {
       else next[symbol] = { shares: remain, avgCost: existing.avgCost };
       return next;
     });
+  }
+
+  // --- Site d'opportunités ---
+
+  function openListing(listing) {
+    setPendingDecision({ kind: "opportunity", card: listing.card, listingId: listing.id });
+  }
+  function skipListing() {
+    setPendingDecision(null);
+  }
+  function buyListing(card, mode, listingId) {
+    const useLoan = mode !== false;
+    const loanRateMult = marketTurn < economicModifier.expiresTurn ? economicModifier.loanRateMult : 1;
+    const grossCashflow = card.cashflow;
+    const fin = useLoan
+      ? computeFinancing(card, "simple", 10, loanRateMult, "realiste", 1)
+      : { downPayment: card.cost, loanAmount: 0, loanMonthly: 0, netCashflow: grossCashflow, grossCashflow, annualRate: 0 };
+    if (cash < fin.downPayment) return;
+
+    let loanMonthly = fin.loanMonthly, amortizing = false, amortMonths = null;
+    if (typeof mode === "number" && fin.loanAmount > 0) {
+      loanMonthly = Math.round(amortizedPayment(fin.loanAmount, fin.annualRate, mode / 12));
+      amortizing = true; amortMonths = mode;
+    }
+    const netCashflow = fin.grossCashflow - loanMonthly;
+
+    if (useLoan) {
+      const currentDebtPayments = debts.reduce((s, d) => s + d.monthlyPayment, 0) + assets.reduce((s, a) => s + (a.loanMonthly || 0), 0);
+      const totalIncome = profession.salary + passiveIncome;
+      if (totalIncome > 0 && (currentDebtPayments + loanMonthly) / totalIncome > MAX_DEBT_RATIO) {
+        banner("Emprunt refusé", `Taux d'endettement trop élevé (max ${Math.round(MAX_DEBT_RATIO * 100)}%).`, "bad");
+        setPendingDecision(null);
+        return;
+      }
+    }
+
+    setCash((c) => c - fin.downPayment);
+    setAssets((a) => [...a, {
+      id: uid(), name: card.title, type: card.type, sector: card.sector, cost: card.cost,
+      downPayment: fin.downPayment, loanAmount: fin.loanAmount, loanBalance: fin.loanAmount,
+      loanMonthly, annualRate: fin.annualRate || 0, amortizing, amortMonths,
+      grossCashflow: fin.grossCashflow, baseGrossCashflow: fin.grossCashflow, incomeEffectExpiresTurn: null,
+      cashflow: netCashflow,
+    }]);
+    setListings((ls) => ls.filter((l) => l.id !== listingId));
+    banner("Achat réalisé", fin.loanAmount > 0 ? `${card.title} : apport ${f(fin.downPayment)}, solde dû ${f(fin.loanAmount)}, net +${f(netCashflow)}/mois` : `${card.title} (comptant) : +${f(netCashflow)}/mois`, "good");
+    setPendingDecision(null);
+  }
+
+  // --- Mes actifs ---
+
+  function payOffLoan(assetId) {
+    const a = assets.find((x) => x.id === assetId);
+    if (!a || !(a.loanBalance > 0) || cash < a.loanBalance) return;
+    setCash((c) => c - a.loanBalance);
+    setAssets((list) => list.map((x) => (x.id === assetId ? { ...x, loanBalance: 0, loanAmount: 0, loanMonthly: 0, amortizing: false, cashflow: x.grossCashflow } : x)));
+    banner("Prêt soldé", `${a.name} : solde remboursé d'un coup.`, "good");
+  }
+  function startAmortization(assetId, months) {
+    setAssets((list) => list.map((x) => {
+      if (x.id !== assetId || !(x.loanBalance > 0)) return x;
+      const payment = Math.round(amortizedPayment(x.loanBalance, x.annualRate, months / 12));
+      return { ...x, loanMonthly: payment, amortizing: true, amortMonths: months };
+    }));
+  }
+  function cancelAmortization(assetId) {
+    setAssets((list) => list.map((x) => {
+      if (x.id !== assetId) return x;
+      const interestOnly = Math.round(x.loanBalance * (x.annualRate / 12));
+      return { ...x, loanMonthly: interestOnly, amortizing: false };
+    }));
+  }
+  function payOffAllLoans() {
+    const owed = assets.filter((a) => a.loanBalance > 0).sort((a, b) => a.loanBalance - b.loanBalance);
+    if (owed.length === 0) return;
+    let remaining = cash;
+    const paidIds = [];
+    for (const a of owed) {
+      if (a.loanBalance > remaining) continue;
+      remaining -= a.loanBalance;
+      paidIds.push(a.id);
+    }
+    if (paidIds.length === 0) {
+      banner("Tout rembourser", "Liquidités insuffisantes.", "info");
+      return;
+    }
+    setCash(remaining);
+    setAssets((list) => list.map((x) => (paidIds.includes(x.id) ? { ...x, loanBalance: 0, loanAmount: 0, loanMonthly: 0, amortizing: false, cashflow: x.grossCashflow } : x)));
+    banner("Tout rembourser", `${paidIds.length} prêt${paidIds.length > 1 ? "s" : ""} soldé${paidIds.length > 1 ? "s" : ""}.`, "good");
   }
 
   // --- Résolution des événements quotidiens (auto-résolus, pas de décision du joueur en v1) ---
@@ -234,9 +342,12 @@ export default function useRatRace2State() {
     banner("Licencié", "Vous perdez votre emploi. Pas de salaire pendant 2 mois.", "bad");
   }
 
-  // Fait avancer d'un jour : la Bourse tique toujours, un événement quotidien peut
-  // se déclencher, et le salaire n'est versé qu'au premier jour de chaque mois.
+  // Fait avancer d'un jour : la Bourse tique, le site d'opportunités se renouvelle,
+  // un événement quotidien peut se déclencher, et le salaire n'est versé qu'au
+  // premier jour de chaque mois.
   function nextDay() {
+    const nd = day + 1;
+
     const result = tickMarketDays({ tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive, economicEffectDuration: 10, economicEffectPermanent: false, assets, currency: CURRENCY }, 1);
     setTokens(result.tokens);
     setPendingArcs(result.pendingArcs);
@@ -245,46 +356,48 @@ export default function useRatRace2State() {
     setMarketTurn(result.marketTurn);
     if (result.journalEntries.length) setJournal((j) => [...result.journalEntries.slice().reverse(), ...j].slice(0, 60));
 
-    setDay((d) => {
-      const nd = d + 1;
-      const lucky = nd < luckyUntilDay;
-      const table = buildDailyEventTable({ profession, day: nd, kids, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, lucky });
-      const eventType = rollDailyEvent(table);
-      if (eventType === "doodad_small") triggerSmallDoodad(nd);
-      else if (eventType === "doodad_big") triggerBigDoodad(nd);
-      else if (eventType === "market") triggerMarket();
-      else if (eventType === "charity") triggerCharity(nd);
-      else if (eventType === "baby") triggerBaby(nd);
-      else if (eventType === "layoff") triggerLayoff(nd);
+    setListings((ls) => advanceListings(ls, nd, cash));
 
-      let payday = 0;
-      if ((nd - 1) % 30 === 0) {
-        const debtMonthly = debts.reduce((s, deb) => s + deb.monthlyPayment, 0);
-        const expenses = calcExpenses(profession, kids, debtMonthly);
-        const salary = layoffMonthsLeft > 0 ? 0 : profession.salary;
-        payday = salary - expenses;
-        setDebts((ds) => ds.map((deb) => {
-          const monthsRemaining = deb.monthsRemaining - 1;
-          if (monthsRemaining <= 0) return null;
-          return { ...deb, monthsRemaining, balance: deb.monthlyPayment * monthsRemaining };
-        }).filter(Boolean));
-        if (layoffMonthsLeft > 0) setLayoffMonthsLeft((n) => Math.max(0, n - 1));
-      }
-      const totalCashDelta = result.cashDelta + payday;
-      if (totalCashDelta !== 0) setCash((c) => Math.max(0, c + totalCashDelta));
-      return nd;
-    });
+    const lucky = nd < luckyUntilDay;
+    const table = buildDailyEventTable({ profession, day: nd, kids, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, lucky });
+    const eventType = rollDailyEvent(table);
+    if (eventType === "doodad_small") triggerSmallDoodad(nd);
+    else if (eventType === "doodad_big") triggerBigDoodad(nd);
+    else if (eventType === "market") triggerMarket();
+    else if (eventType === "charity") triggerCharity(nd);
+    else if (eventType === "baby") triggerBaby(nd);
+    else if (eventType === "layoff") triggerLayoff(nd);
+
+    let payday = 0;
+    if ((nd - 1) % 30 === 0) {
+      const debtMonthly = debts.reduce((s, deb) => s + deb.monthlyPayment, 0);
+      const expenses = calcExpenses(profession, kids, debtMonthly);
+      const salary = layoffMonthsLeft > 0 ? 0 : profession.salary;
+      payday = salary + passiveIncome - expenses;
+      setDebts((ds) => ds.map((deb) => {
+        const monthsRemaining = deb.monthsRemaining - 1;
+        if (monthsRemaining <= 0) return null;
+        return { ...deb, monthsRemaining, balance: deb.monthlyPayment * monthsRemaining };
+      }).filter(Boolean));
+      if (layoffMonthsLeft > 0) setLayoffMonthsLeft((n) => Math.max(0, n - 1));
+      setAssets((list) => amortizeAssetsList(list));
+    }
+    const totalCashDelta = result.cashDelta + payday;
+    if (totalCashDelta !== 0) setCash((c) => Math.max(0, c + totalCashDelta));
+    setDay(nd);
   }
 
   return {
     loaded, view, setView,
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
-    profession, day, cash, debts, kids, hasSave, resetGame, nextDay,
+    profession, day, cash, debts, kids, assets, passiveIncome, hasSave, resetGame, nextDay,
     babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft,
     lastEvent,
     tokens, portfolio, journal, marketTurn, traderJournalActive,
     onToggleTraderJournal: () => setTraderJournalActive((v) => !v),
     buyStock, sellStock,
+    listings, pendingDecision, openListing, skipListing, buyListing,
+    payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     currency: CURRENCY,
   };
 }
