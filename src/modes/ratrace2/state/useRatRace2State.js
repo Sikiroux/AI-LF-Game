@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { storage } from "../../../state/storage.js";
-import { computeFinancing, amortizedPayment, calcPassiveIncome, MAX_DEBT_RATIO } from "../../../engine/financing.js";
+import { computeFinancing, amortizedPayment, calcExpenses, calcPassiveIncome, MAX_DEBT_RATIO } from "../../../engine/financing.js";
 import { generateTokens } from "../../../engine/bourse/tokenGenerator.js";
 import { BROKERAGE_FEE_RATE } from "../../../engine/bourse/market.js";
 import { fmt, uid } from "../../../utils/format.js";
@@ -12,7 +12,8 @@ const CURRENCY = "EUR"; // le choix de devise par mode arrive avec les Options p
 
 export default function useRatRace2State() {
   const [loaded, setLoaded] = useState(false);
-  const [view, setView] = useState("menu"); // menu | scenario | game | trading | opportunities | assets
+  const [view, setView] = useState("menu"); // menu | scenario | game | trading | opportunities | assets | casino
+  const [phase, setPhase] = useState("playing"); // playing | won
   const [scenarioDraft, setScenarioDraft] = useState(null);
   const [profession, setProfession] = useState(null);
   const [day, setDay] = useState(0);
@@ -23,6 +24,8 @@ export default function useRatRace2State() {
   const [listings, setListings] = useState([]);
   const [pendingDecision, setPendingDecision] = useState(null);
   const [lastEvent, setLastEvent] = useState(null);
+  const [casinoHandsPlayed, setCasinoHandsPlayed] = useState(0);
+  const [casinoNetResult, setCasinoNetResult] = useState(0);
 
   const [babyEnabled, setBabyEnabled] = useState(true);
   const [layoffEnabled, setLayoffEnabled] = useState(true);
@@ -57,6 +60,9 @@ export default function useRatRace2State() {
           if (s.day) setDay(s.day);
           if (s.cash != null) setCash(s.cash);
           if (s.profession) setProfession(s.profession);
+          if (s.phase) setPhase(s.phase);
+          if (s.casinoHandsPlayed != null) setCasinoHandsPlayed(s.casinoHandsPlayed);
+          if (s.casinoNetResult != null) setCasinoNetResult(s.casinoNetResult);
           if (Array.isArray(s.debts)) setDebts(s.debts);
           if (s.kids != null) setKids(s.kids);
           if (Array.isArray(s.assets)) setAssets(s.assets);
@@ -87,15 +93,25 @@ export default function useRatRace2State() {
   useEffect(() => {
     if (!loaded || day === 0) return;
     const s = {
-      day, cash, profession, debts, kids, assets, listings, babyEnabled, layoffEnabled, layoffMonthsLeft,
+      day, cash, profession, phase, debts, kids, assets, listings, babyEnabled, layoffEnabled, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, skipMonthMode,
+      casinoHandsPlayed, casinoNetResult,
       tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn,
     };
     storage.set(SAVE_KEY, JSON.stringify(s)).catch(() => {});
-  }, [loaded, day, cash, profession, debts, kids, assets, listings, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, skipMonthMode, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn]);
+  }, [loaded, day, cash, profession, phase, debts, kids, assets, listings, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, skipMonthMode, casinoHandsPlayed, casinoNetResult, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn]);
 
-  const hasSave = loaded && day > 0;
+  const hasSave = loaded && day > 0 && phase !== "won";
   const passiveIncome = calcPassiveIncome(assets);
+
+  useEffect(() => {
+    if (phase !== "playing" || !profession) return;
+    const debtMonthly = debts.reduce((s, d) => s + d.monthlyPayment, 0);
+    const totalExpenses = calcExpenses(profession, kids, debtMonthly);
+    if (totalExpenses > 0 && passiveIncome >= totalExpenses) {
+      setPhase("won");
+    }
+  }, [phase, profession, debts, kids, passiveIncome]);
 
   function banner(title, detail, tone) {
     setLastEvent({ title, detail, tone });
@@ -113,12 +129,14 @@ export default function useRatRace2State() {
   function startGame() {
     setProfession(scenarioDraft.profession);
     setCash(scenarioDraft.startingCash);
+    setPhase("playing");
     setDebts([scenarioDraft.debt]);
     setKids(0);
     setAssets([]);
     setListings([]);
     setPendingDecision(null);
     setLastEvent(null);
+    setCasinoHandsPlayed(0); setCasinoNetResult(0);
     setBabyEnabled(true); setLayoffEnabled(true); setLayoffMonthsLeft(0);
     setLastSmallDoodadDay(null); setLastBigDoodadDay(null); setLastBabyDay(null); setLastLayoffDay(null);
     setLuckyUntilDay(0);
@@ -135,6 +153,7 @@ export default function useRatRace2State() {
     setDay(0);
     setCash(0);
     setProfession(null);
+    setPhase("playing");
     setDebts([]);
     setView("menu");
   }
@@ -316,7 +335,7 @@ export default function useRatRace2State() {
   }
 
   return {
-    loaded, view, setView,
+    loaded, view, setView, phase,
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
     profession, day, cash, debts, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
     skipMonthMode, setSkipMonthMode,
@@ -327,6 +346,9 @@ export default function useRatRace2State() {
     buyStock, sellStock,
     listings, pendingDecision, openListing, skipListing, buyListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
+    casinoHandsPlayed, casinoNetResult,
+    onCasinoCashDelta: (amount) => setCash((c) => Math.max(0, c + amount)),
+    onCasinoHandPlayed: (netProfit) => { setCasinoHandsPlayed((n) => n + 1); setCasinoNetResult((n) => n + netProfit); },
     currency: CURRENCY,
   };
 }

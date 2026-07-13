@@ -4,7 +4,7 @@ import Row from "../../../../components/ledger/Row.jsx";
 import EventBanner from "../../../../components/board/EventBanner.jsx";
 import { styles, COLORS, CSS_EXTRA } from "../../../../styles/theme.js";
 
-export default function MonthHub({ day, cash, profession, debts, kids, assets, passiveIncome, listingsCount, layoffMonthsLeft, lastEvent, currency, onNextDay, onSkipMonth, skipMonthMode, onChangeSkipMonthMode, onMenu, onTrading, onOpportunities, onAssets }) {
+export default function MonthHub({ day, cash, profession, debts, kids, assets, passiveIncome, listingsCount, layoffMonthsLeft, lastEvent, currency, onNextDay, onSkipMonth, skipMonthMode, onChangeSkipMonthMode, onMenu, onTrading, onOpportunities, onAssets, onCasino }) {
   const month = Math.floor((day - 1) / 30) + 1;
   const dayOfMonth = ((day - 1) % 30) + 1;
   const f = (n) => fmt(n, currency);
@@ -52,6 +52,7 @@ export default function MonthHub({ day, cash, profession, debts, kids, assets, p
         <button className="btn-small" style={styles.smallBtn} onClick={onOpportunities}>🏷️ Annonces ({listingsCount})</button>
         <button className="btn-small" style={styles.smallBtn} onClick={onTrading}>📈 Bourse</button>
         <button className="btn-small" style={styles.smallBtn} onClick={onAssets}>📁 Mes actifs ({assets.length})</button>
+        <button className="btn-small" style={styles.smallBtn} onClick={onCasino}>🎰 Casino</button>
       </div>
 
       <button className="btn-primary" style={{ ...styles.primaryBtn, marginTop: 20 }} onClick={onNextDay}>Jour suivant ▶</button>
