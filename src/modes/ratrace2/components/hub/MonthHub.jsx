@@ -3,7 +3,7 @@ import { fmt } from "../../../../utils/format.js";
 import Row from "../../../../components/ledger/Row.jsx";
 import { styles, COLORS, CSS_EXTRA } from "../../../../styles/theme.js";
 
-export default function MonthHub({ day, cash, profession, debt, currency, onNextDay, onMenu }) {
+export default function MonthHub({ day, cash, profession, debt, currency, onNextDay, onMenu, onTrading }) {
   const month = Math.floor((day - 1) / 30) + 1;
   const dayOfMonth = ((day - 1) % 30) + 1;
   const f = (n) => fmt(n, currency);
@@ -36,8 +36,12 @@ export default function MonthHub({ day, cash, profession, debt, currency, onNext
         </div>
       )}
 
+      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+        <button className="btn-small" style={styles.smallBtn} onClick={onTrading}>📈 Bourse</button>
+      </div>
+
       <div style={{ fontSize: 12, color: COLORS.inkSoft, fontStyle: "italic", marginTop: 16, maxWidth: 340, textAlign: "center" }}>
-        Le hub complet (Bourse, Site d'opportunités, Relevé, Casino) arrive dans les prochaines étapes.
+        Le site d'opportunités, le relevé et le casino arrivent dans les prochaines étapes.
       </div>
 
       <button className="btn-primary" style={{ ...styles.primaryBtn, marginTop: 20 }} onClick={onNextDay}>Jour suivant ▶</button>
