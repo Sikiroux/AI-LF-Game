@@ -1,40 +1,119 @@
+import { useState } from "react";
 import { fmt } from "../../../../utils/format.js";
 import { SECTOR_LABELS } from "../../../../data/sectors.js";
-import { styles, COLORS, CSS_EXTRA } from "../../../../styles/theme.js";
+import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+
+const CATEGORIES = {
+  realestate: { label: "Immobilier", badge: "immo", file: "immobilier" },
+  business: { label: "Entreprise", badge: "biz", file: "entreprise" },
+  stock: { label: "Actions", badge: "actions", file: "actions" },
+};
+
+const FILTERS = [
+  { key: "all", label: "Toutes" },
+  { key: "realestate", label: "Immobilier" },
+  { key: "business", label: "Entreprises" },
+  { key: "stock", label: "Actions" },
+];
+
+function photoFile(listing) {
+  const cat = CATEGORIES[listing.card.type];
+  if (!cat) return "listings/divers-1.png";
+  const variant = (listing.id.split("").reduce((s, c) => s + c.charCodeAt(0), 0) % 5) + 1;
+  return `listings/${cat.file}-${variant}.png`;
+}
 
 export default function OpportunitySiteScreen({ listings, day, cash, currency, onOpen, onBack }) {
+  const C = useCapitalLifeColors();
+  const styles = getStyles(C);
+  const [filter, setFilter] = useState("all");
   const f = (n) => fmt(n, currency);
+
+  const filtered = filter === "all" ? listings : listings.filter((l) => l.card.type === filter);
+
   return (
-    <div className="screen-in" style={{ ...styles.app, overflowY: "auto", padding: "16px 14px 40px", alignItems: "center", display: "flex", flexDirection: "column" }}>
-      <style>{CSS_EXTRA}</style>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", maxWidth: 460, marginBottom: 10 }}>
-        <button className="btn-small" style={styles.smallBtn} onClick={onBack}>← Retour</button>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: COLORS.ink, fontWeight: 700 }}>🏷️ Site d'opportunités</div>
-        <div style={{ width: 70 }} />
+    <div style={styles.app}>
+      <div style={styles.topBar}>
+        <button style={styles.backBtn} onClick={onBack}>←</button>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>🏷️ OppMarket</div>
+          <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
+            {listings.length} annonce{listings.length > 1 ? "s" : ""} active{listings.length > 1 ? "s" : ""} · liquidités {f(cash)}
+          </div>
+        </div>
       </div>
-      <div style={{ fontSize: 12, color: COLORS.inkSoft, textAlign: "center", marginBottom: 14 }}>
-        Liquidités : <b style={{ color: COLORS.ink }}>{f(cash)}</b> · {listings.length} annonce{listings.length > 1 ? "s" : ""} active{listings.length > 1 ? "s" : ""}
+
+      <div style={{ flexShrink: 0, display: "flex", gap: 8, padding: "10px 16px", overflowX: "auto", borderBottom: `1px solid ${C.line}` }}>
+        {FILTERS.map((ft) => (
+          <button key={ft.key} style={{ ...styles.chip, ...(filter === ft.key ? styles.chipActive : {}) }} onClick={() => setFilter(ft.key)}>
+            {ft.label}
+          </button>
+        ))}
       </div>
-      {listings.length === 0 && <div style={{ fontSize: 13, color: COLORS.inkSoft, fontStyle: "italic" }}>Aucune annonce pour l'instant, revenez demain.</div>}
-      <div style={{ width: "100%", maxWidth: 460, display: "flex", flexDirection: "column", gap: 8 }}>
-        {listings.map((l) => {
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
+        {filtered.length === 0 && (
+          <div style={{ fontSize: 13, color: C.inkSoft, fontStyle: "italic", textAlign: "center", marginTop: 24 }}>
+            Aucune annonce pour l'instant, revenez demain.
+          </div>
+        )}
+        {filtered.map((l) => {
           const daysLeft = l.expiresDay - day;
-          const affordable = cash >= (l.card.downPayment != null ? l.card.downPayment : l.card.cost);
+          const cat = CATEGORIES[l.card.type];
+          const apport = l.card.downPayment != null ? l.card.downPayment : l.card.cost;
+          const affordable = cash >= apport;
+          const yieldPct = l.card.cost > 0 ? ((l.card.cashflow * 12) / l.card.cost) * 100 : 0;
+          const expiryTone = daysLeft <= 1 ? "urgent" : daysLeft <= 3 ? "soon" : "normal";
+
           return (
-            <button key={l.id} className="btn-small" style={{ ...styles.ledger, textAlign: "left", cursor: "pointer", textTransform: "none", letterSpacing: 0, width: "100%", boxSizing: "border-box" }} onClick={() => onOpen(l)}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                  {l.kind === "jackpot" && <div style={{ fontSize: 10, color: COLORS.mustard, fontWeight: 700, textTransform: "uppercase" }}>🌟 Exceptionnelle</div>}
-                  <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, color: COLORS.ink, fontSize: 14 }}>{l.card.title}</div>
-                  <div style={{ fontSize: 10, color: COLORS.inkSoft, textTransform: "uppercase" }}>{SECTOR_LABELS[l.card.sector] || ""}</div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontFamily: "'Courier New', monospace", fontWeight: 700, color: affordable ? COLORS.teal : COLORS.rust, fontSize: 13 }}>{f(l.card.cost)}</div>
-                  <div style={{ fontSize: 11, color: COLORS.inkSoft }}>+{f(l.card.cashflow)}/mois</div>
-                </div>
+            <button
+              key={l.id}
+              onClick={() => onOpen(l)}
+              style={{ ...styles.card, textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit", padding: 0 }}
+            >
+              <div style={{ ...styles.placeholderImg, height: 108, borderRadius: 0, borderLeft: "none", borderRight: "none", borderTop: "none" }}>
+                📷
+                {cat && (
+                  <span style={{ position: "absolute", top: 8, left: 8, fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "#fff", padding: "4px 8px", borderRadius: 6, background: C[`cat${cat.badge[0].toUpperCase()}${cat.badge.slice(1)}`] }}>
+                    {cat.label}
+                  </span>
+                )}
+                {l.kind === "jackpot" && (
+                  <span style={{ position: "absolute", top: 8, right: 8, fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "#fff", background: C.warn, padding: "4px 8px", borderRadius: 6 }}>
+                    🌟 Exceptionnelle
+                  </span>
+                )}
+                <span style={{ ...styles.placeholderFile, position: "absolute", bottom: 8 }}>{photoFile(l)}</span>
               </div>
-              <div style={{ fontSize: 10, color: daysLeft <= 1 ? COLORS.rust : COLORS.inkSoft, marginTop: 4, fontStyle: "italic" }}>
-                Expire dans {daysLeft} jour{daysLeft > 1 ? "s" : ""}
+
+              <div style={{ padding: "12px 14px 14px" }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: C.ink, marginBottom: 2 }}>{l.card.title}</div>
+                <div style={{ fontSize: 9.5, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>{SECTOR_LABELS[l.card.sector] || ""}</div>
+                {l.card.desc && <div style={{ fontSize: 11.5, color: C.inkSoft, lineHeight: 1.4, marginBottom: 10 }}>{l.card.desc}</div>}
+
+                <div style={{ display: "flex", gap: 16, marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 9.5, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>Apport</div>
+                    <div style={{ ...styles.mono, fontSize: 13.5, fontWeight: 700, marginTop: 1, color: affordable ? C.ink : C.bad }}>{f(apport)}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 9.5, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>Cash-flow</div>
+                    <div style={{ ...styles.mono, fontSize: 13.5, fontWeight: 700, marginTop: 1, color: l.card.cashflow >= 0 ? C.good : C.bad }}>
+                      {l.card.cashflow >= 0 ? "+" : ""}{f(l.card.cashflow)}/mois
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 9.5, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>Rentabilité</div>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 1 }}>{yieldPct.toFixed(1)} %</div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 10, borderTop: `1px solid ${C.line}`, fontSize: 11 }}>
+                  <span style={{ color: expiryTone === "urgent" ? C.bad : expiryTone === "soon" ? C.warn : C.inkSoft, fontWeight: expiryTone === "normal" ? 400 : 700 }}>
+                    ⏳ Expire dans {daysLeft} jour{daysLeft > 1 ? "s" : ""}
+                  </span>
+                  {!affordable && <span style={{ color: C.bad, fontWeight: 700 }}>Apport insuffisant</span>}
+                </div>
               </div>
             </button>
           );

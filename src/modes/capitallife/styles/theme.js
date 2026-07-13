@@ -73,7 +73,7 @@ export function getStyles(C) {
       fontSize: 11.5, padding: "6px 12px", borderRadius: 999, border: `1px solid ${C.line}`, color: C.inkSoft,
       whiteSpace: "nowrap", cursor: "pointer", background: "transparent",
     },
-    chipActive: { background: C.accent, color: C.accentInk, borderColor: C.accent, fontWeight: 600 },
+    chipActive: { background: C.accent, color: C.accentInk, border: `1px solid ${C.accent}`, fontWeight: 600 },
     placeholderImg: {
       background: C.placeholderBg, border: `1.5px dashed ${C.placeholderLine}`,
       display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
