@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Liberté Financière</string>
+    <string name="title_activity_main">Liberté Financière</string>
+    <string name="package_name">com.sikiroux.libertefinanciere</string>
+    <string name="custom_url_scheme">com.sikiroux.libertefinanciere</string>
+</resources>

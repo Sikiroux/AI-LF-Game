@@ -38,6 +38,9 @@ export default function MenuScreen({ hasSave, profession, phase, cash, currency,
           )}
 
           <button className="btn-small" style={styles.smallBtn} onClick={onRules}><span style={styles.menuBtnIcon}>📖</span>Règles du jeu</button>
+          <a className="btn-small" style={{ ...styles.smallBtn, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" }} href={`${import.meta.env.BASE_URL}manuels/manuel-classique.pdf`} target="_blank" rel="noopener noreferrer">
+            <span style={styles.menuBtnIcon}>📄</span>Manuel PDF
+          </a>
           <button className="btn-small" style={styles.smallBtn} onClick={onOptions}><span style={styles.menuBtnIcon}>⚙️</span>Options</button>
           {onExitHome && (
             <button className="btn-small" style={{ ...styles.smallBtn, background: "transparent", border: "none", opacity: 0.7 }} onClick={onExitHome}>← Autres modes de jeu</button>
