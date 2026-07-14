@@ -6,7 +6,7 @@ import TokenListItem from "./TokenListItem.jsx";
 import Row from "../ledger/Row.jsx";
 import { styles, COLORS, CSS_EXTRA } from "../../styles/theme.js";
 
-export default function TradingScreen({ tokens, portfolio, journal, cash, currency, marketTurn, traderJournalActive, onToggleTraderJournal, onBuy, onSell, onBack }) {
+export default function TradingScreen({ tokens, portfolio, journal, cash, currency, marketTurn, traderJournalActive, onToggleTraderJournal, onBuy, onSell, onBack, advanceHint, advanceSubHint }) {
   const [selectedSymbol, setSelectedSymbol] = useState(tokens[0] ? tokens[0].symbol : null);
   const [qty, setQty] = useState(1);
   const [expandedNews, setExpandedNews] = useState(null);
@@ -35,10 +35,10 @@ export default function TradingScreen({ tokens, portfolio, journal, cash, curren
 
       <div style={{ ...styles.ledger, marginBottom: 14, textAlign: "center" }}>
         <div style={{ fontSize: 11, color: COLORS.inkSoft }}>
-          🎲 Jour {marketTurn} — le marché avance à chaque lancé de dé sur le plateau.
+          🎲 Jour {marketTurn} — {advanceHint || "le marché avance à chaque lancé de dé sur le plateau."}
         </div>
         <div style={{ fontSize: 10, color: COLORS.inkSoft, marginTop: 4, fontStyle: "italic" }}>
-          Retourne jouer la course infernale pour faire évoluer tes positions.
+          {advanceSubHint || "Retourne jouer la course infernale pour faire évoluer tes positions."}
         </div>
       </div>
 

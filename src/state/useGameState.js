@@ -7,14 +7,12 @@ import { BIG_DEALS } from "../data/bigDeals.js";
 import { JACKPOT_DEALS } from "../data/jackpotDeals.js";
 import { MARKET_CARDS } from "../data/marketCards.js";
 import { DOODAD_CARDS } from "../data/doodadCards.js";
-import { SECTOR_LABELS } from "../data/sectors.js";
 import { generateDealDeck } from "../data/proceduralDeals.js";
 import { RAT_RACE_SEQUENCE } from "../engine/ratRace.js";
 import { FAST_TRACK_SEQUENCE, drawFastDeal } from "../engine/fastTrack.js";
-import { generateTokens, makeCandle } from "../engine/bourse/tokenGenerator.js";
-import { ARC_TEMPLATES, GLOBAL_ECONOMY_NEWS, TRADER_SENTIMENTS_POSITIVE, TRADER_SENTIMENTS_NEGATIVE } from "../engine/bourse/arcs.js";
-import { BROKERAGE_FEE_RATE } from "../engine/bourse/market.js";
-import { computeFinancing, getYieldMultiplier, amortizedPayment, calcExpenses, calcPassiveIncome, calcDebtPayments, MAX_DEBT_RATIO, BANK_LOAN_RATE, BANK_LOAN_UNIT } from "../engine/financing.js";
+import { generateTokens } from "../engine/bourse/tokenGenerator.js";
+import { BROKERAGE_FEE_RATE, tickMarketDays } from "../engine/bourse/market.js";
+import { computeFinancing, getYieldMultiplier, amortizedPayment, calcExpenses, calcPassiveIncome, calcDebtPayments, randomizeLiabilities, LIABILITY_LABELS, MAX_DEBT_RATIO, BANK_LOAN_RATE, BANK_LOAN_UNIT } from "../engine/financing.js";
 
 export default function useGameState() {
   const [isDesktop, setIsDesktop] = useState(typeof window !== "undefined" ? window.innerWidth >= 900 : false);
@@ -33,6 +31,7 @@ export default function useGameState() {
   const [cash, setCash] = useState(0);
   const [kids, setKids] = useState(0);
   const [assets, setAssets] = useState([]);
+  const [liabilities, setLiabilities] = useState({});
   const [extraMonthly, setExtraMonthly] = useState(0);
   const [extraDebtBalance, setExtraDebtBalance] = useState(0);
   const [bankLoanBalance, setBankLoanBalance] = useState(0);
@@ -91,6 +90,7 @@ export default function useGameState() {
           const s = JSON.parse(res.value);
           setPhase(s.phase); setProfession(s.profession); setDream(s.dream || null); setWinReason(s.winReason || null); setPosition(s.position); setDisplayPosition(s.position || 0);
           setCash(s.cash); setKids(s.kids); setAssets(s.assets);
+          if (s.liabilities) setLiabilities(s.liabilities);
           setExtraMonthly(s.extraMonthly); setExtraDebtBalance(s.extraDebtBalance);
           setBankLoanBalance(s.bankLoanBalance || 0);
           setCasinoHandsPlayed(s.casinoHandsPlayed || 0);
@@ -141,9 +141,9 @@ export default function useGameState() {
 
   useEffect(() => {
     if (!loaded) return;
-    const s = { phase, profession, dream, winReason, position, cash, kids, assets, extraMonthly, extraDebtBalance, bankLoanBalance, charityTurnsLeft, skipTurns, fastTrack, turnCount, marketTurn, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, activeSmallDeals, activeBigDeals, casinoHandsPlayed, casinoNetResult };
+    const s = { phase, profession, dream, winReason, position, cash, kids, assets, liabilities, extraMonthly, extraDebtBalance, bankLoanBalance, charityTurnsLeft, skipTurns, fastTrack, turnCount, marketTurn, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, activeSmallDeals, activeBigDeals, casinoHandsPlayed, casinoNetResult };
     storage.set("cashflow-save", JSON.stringify(s)).catch(() => {});
-  }, [loaded, phase, profession, dream, winReason, position, cash, kids, assets, extraMonthly, extraDebtBalance, bankLoanBalance, charityTurnsLeft, skipTurns, fastTrack, turnCount, marketTurn, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, activeSmallDeals, activeBigDeals, casinoHandsPlayed, casinoNetResult]);
+  }, [loaded, phase, profession, dream, winReason, position, cash, kids, assets, liabilities, extraMonthly, extraDebtBalance, bankLoanBalance, charityTurnsLeft, skipTurns, fastTrack, turnCount, marketTurn, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, activeSmallDeals, activeBigDeals, casinoHandsPlayed, casinoNetResult]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -153,10 +153,10 @@ export default function useGameState() {
 
   const passiveIncome = profession ? calcPassiveIncome(assets) : 0;
   const bankLoanMonthly = Math.round(bankLoanBalance * BANK_LOAN_RATE);
-  const totalExpenses = profession ? calcExpenses(profession, kids, extraMonthly) + bankLoanMonthly : 0;
+  const totalExpenses = profession ? calcExpenses(profession, kids, extraMonthly, liabilities) + bankLoanMonthly : 0;
   const totalIncome = profession ? profession.salary + passiveIncome : 0;
   const netCashflow = totalIncome - totalExpenses;
-  const currentDebtPayments = profession ? calcDebtPayments(profession, extraMonthly, assets) + bankLoanMonthly : 0;
+  const currentDebtPayments = profession ? calcDebtPayments(profession, extraMonthly, assets, liabilities) + bankLoanMonthly : 0;
   const hasSave = loaded && !!profession && phase !== "won" && phase !== "bankrupt";
 
   useEffect(() => {
@@ -179,6 +179,7 @@ export default function useGameState() {
     setCash(prof.cash);
     setKids(initialKids || 0);
     setAssets([]);
+    setLiabilities(randomizeLiabilities(prof));
     setExtraMonthly(0);
     setExtraDebtBalance(0);
     setBankLoanBalance(0);
@@ -221,7 +222,7 @@ export default function useGameState() {
 
   function resetGame() {
     storage.delete("cashflow-save").catch(() => {});
-    setProfession(null); setDream(null); setWinReason(null); setAssets([]); setFastTrack(null);
+    setProfession(null); setDream(null); setWinReason(null); setAssets([]); setLiabilities({}); setFastTrack(null);
     setSkipTurns(0); setCharityTurnsLeft(0); setMarketTurn(0); setBankLoanBalance(0);
     setCasinoHandsPlayed(0); setCasinoNetResult(0);
     setPendingDecision(null); setLastEvent(null);
@@ -265,122 +266,14 @@ export default function useGameState() {
   // Tout est calculé en local puis appliqué en une seule fois pour rester cohérent
   // sur plusieurs jours d'affilée (chaque jour dépend du prix de clôture précédent).
   function advanceMarket(days) {
-    let curTokens = tokens.map((t) => ({ ...t }));
-    let curPendingArcs = pendingArcs.map((p) => ({ ...p }));
-    let curSectorConditions = { ...sectorConditions };
-    let curEconomicModifier = { ...economicModifier };
-    let curMarketTurn = marketTurn;
-    let newJournalEntries = [];
-    let cashDelta = 0;
-
-    for (let d = 0; d < days; d++) {
-      curMarketTurn += 1;
-      const nextTurn = curMarketTurn;
-      const dueEvents = [];
-      const remaining = [];
-      curPendingArcs.forEach((p) => { if (p.triggerTurn <= nextTurn) dueEvents.push(p); else remaining.push(p); });
-      curPendingArcs = remaining;
-
-      const bySymbol = Object.fromEntries(curTokens.map((t) => [t.symbol, t]));
-
-      dueEvents.forEach((p) => {
-        const arc = ARC_TEMPLATES.find((a) => a.id === p.arcId);
-        const token = bySymbol[p.tokenSymbol];
-        if (!arc || !token) return;
-        const stage = arc.stages[p.stageIndex];
-        newJournalEntries.push({ id: uid(), turn: nextTurn, title: stage.title(token), detail: stage.detail, token: token.symbol, sector: token.sector, effect: stage.effect, arc: arc.id });
-        if (stage.sectorEffect) {
-          const duration = economicEffectPermanent ? Infinity : economicEffectDuration;
-          curSectorConditions[token.sector] = { kind: stage.sectorEffect.kind, expiresTurn: nextTurn + duration };
-          if (stage.sectorEffect.kind === "bankrupt") {
-            let hit = 0;
-            assets.forEach((a) => { if (a.sector === token.sector) hit += Math.round((a.downPayment != null ? a.downPayment : a.cost * 0.1) * 0.2); });
-            if (hit > 0) {
-              cashDelta -= hit;
-              newJournalEntries.push({ id: uid(), turn: nextTurn, title: "Contagion sectorielle", detail: `Une faillite dans ${SECTOR_LABELS[token.sector]} coûte ${f(hit)} à vos actifs.`, token: null, sector: token.sector, effect: 0, arc: null });
-            }
-          }
-        }
-        if (p.stageIndex + 1 < arc.stages.length) {
-          const [lo, hi] = arc.delayRange;
-          const delay = lo + Math.floor(Math.random() * (hi - lo + 1));
-          curPendingArcs.push({ arcId: arc.id, tokenSymbol: token.symbol, stageIndex: p.stageIndex + 1, triggerTurn: nextTurn + delay });
-        }
-      });
-
-      const trigger = Math.random() < 0.4;
-      if (trigger) {
-        const activeArcTokens = curPendingArcs.map((p) => p.arcId + ":" + p.tokenSymbol);
-        if (Math.random() < 0.35) {
-          const arc = rand(ARC_TEMPLATES);
-          const candidates = curTokens.filter((t) => arc.sectors.includes(t.sector) && !activeArcTokens.includes(arc.id + ":" + t.symbol));
-          if (candidates.length) {
-            const token = rand(candidates);
-            const stage = arc.stages[0];
-            newJournalEntries.push({ id: uid(), turn: nextTurn, title: stage.title(token), detail: stage.detail, token: token.symbol, sector: token.sector, effect: stage.effect, arc: arc.id });
-            if (stage.sectorEffect) {
-              const duration = economicEffectPermanent ? Infinity : economicEffectDuration;
-              curSectorConditions[token.sector] = { kind: stage.sectorEffect.kind, expiresTurn: nextTurn + duration };
-            }
-            const [lo, hi] = arc.delayRange;
-            const delay = lo + Math.floor(Math.random() * (hi - lo + 1));
-            curPendingArcs.push({ arcId: arc.id, tokenSymbol: token.symbol, stageIndex: 1, triggerTurn: nextTurn + delay });
-          }
-        } else if (Math.random() < 0.3) {
-          const news = rand(GLOBAL_ECONOMY_NEWS);
-          newJournalEntries.push({ id: uid(), turn: nextTurn, title: news.title, detail: news.detail, token: null, sector: null, effect: news.effect, arc: null });
-          const duration = economicEffectPermanent ? Infinity : economicEffectDuration;
-          curEconomicModifier = { loanRateMult: news.loanRateMult, expiresTurn: nextTurn + duration };
-        } else {
-          const token = rand(curTokens);
-          const isGood = Math.random() < 0.5;
-          const effect = (isGood ? 1 : -1) * (0.03 + Math.random() * 0.06);
-          newJournalEntries.push({ id: uid(), turn: nextTurn, title: isGood ? `${token.name} publie de bons résultats` : `${token.name} déçoit le marché`, detail: isGood ? "Le titre progresse." : "Le titre recule.", token: token.symbol, sector: token.sector, effect, arc: null });
-        }
-      }
-
-      if (traderJournalActive) {
-        const cost = Math.max(10, Math.round(curTokens.length * 2));
-        cashDelta -= cost;
-        const token = rand(curTokens);
-        const reliable = Math.random() < 0.75;
-        const trulyPositive = token.solidity >= 50;
-        const showPositive = reliable ? trulyPositive : !trulyPositive;
-        const phrase = rand(showPositive ? TRADER_SENTIMENTS_POSITIVE : TRADER_SENTIMENTS_NEGATIVE).replace("{t}", token.name);
-        newJournalEntries.push({ id: uid(), turn: nextTurn, title: phrase, detail: "Source : Journal des Traders (abonnement).", token: token.symbol, sector: token.sector, effect: 0, arc: null, sentiment: true });
-      }
-
-      const dayEvents = newJournalEntries.filter((e) => e.turn === nextTurn);
-      curTokens = curTokens.map((t) => {
-        let trend = t.trend, trendTurnsLeft = t.trendTurnsLeft - 1;
-        if (trendTurnsLeft <= 0) {
-          const bullChance = t.solidity > 60 ? 0.55 : t.solidity > 35 ? 0.4 : 0.25;
-          const roll = Math.random();
-          trend = roll < bullChance ? "bull" : roll < bullChance + 0.3 ? "flat" : "bear";
-          trendTurnsLeft = 4 + Math.floor(Math.random() * 7);
-        }
-        const trendBias = trend === "bull" ? t.volatility * 0.5 : trend === "bear" ? -t.volatility * 0.5 : 0;
-        let extraEffect = 0;
-        dayEvents.forEach((ev) => { if (ev.token === t.symbol) extraEffect += ev.effect; });
-        const cond = curSectorConditions[t.sector];
-        if (cond && nextTurn < cond.expiresTurn) {
-          if (cond.kind === "boom") extraEffect += 0.01;
-          if (cond.kind === "bankrupt") extraEffect -= 0.01;
-        }
-        const candle = makeCandle(t.price, t.volatility, trendBias, extraEffect);
-        const history = [...t.history, candle].slice(-40);
-        const lastChangePct = (candle.close - candle.open) / candle.open;
-        return { ...t, price: candle.close, history, lastChangePct, trend, trendTurnsLeft };
-      });
-    }
-
-    setTokens(curTokens);
-    setPendingArcs(curPendingArcs);
-    setSectorConditions(curSectorConditions);
-    setEconomicModifier(curEconomicModifier);
-    setMarketTurn(curMarketTurn);
-    if (cashDelta !== 0) setCash((c) => Math.max(0, c + cashDelta));
-    if (newJournalEntries.length) setJournal((j) => [...newJournalEntries.slice().reverse(), ...j].slice(0, 60));
+    const result = tickMarketDays({ tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive, economicEffectDuration, economicEffectPermanent, assets, currency }, days);
+    setTokens(result.tokens);
+    setPendingArcs(result.pendingArcs);
+    setSectorConditions(result.sectorConditions);
+    setEconomicModifier(result.economicModifier);
+    setMarketTurn(result.marketTurn);
+    if (result.cashDelta !== 0) setCash((c) => Math.max(0, c + result.cashDelta));
+    if (result.journalEntries.length) setJournal((j) => [...result.journalEntries.slice().reverse(), ...j].slice(0, 60));
   }
 
   // Petit mouvement intrajournalier (swing trading) : prolonge la dernière bougie
@@ -744,6 +637,16 @@ export default function useGameState() {
     }, 80);
   }
 
+  // Solde d'un coup une des 4 dettes de départ (prêt immo/auto/carte/étudiant).
+  // Une fois soldée, sa mensualité fixe cesse de compter dans les dépenses.
+  function payOffLiability(key) {
+    const balance = liabilities[key];
+    if (!(balance > 0) || cash < balance) return;
+    setCash((c) => c - balance);
+    setLiabilities((l) => ({ ...l, [key]: 0 }));
+    banner("Dette remboursée", `${LIABILITY_LABELS[key]} soldé pour ${f(balance)}.`, "good");
+  }
+
   // Rembourse le solde entier d'un actif financé, d'un coup (comme dans le vrai jeu).
   function payOffLoan(assetId) {
     const a = assets.find((x) => x.id === assetId);
@@ -878,6 +781,7 @@ export default function useGameState() {
     cash, setCash,
     kids, setKids,
     assets, setAssets,
+    liabilities, setLiabilities,
     extraMonthly, setExtraMonthly,
     extraDebtBalance, setExtraDebtBalance,
     bankLoanBalance, setBankLoanBalance,
@@ -938,6 +842,7 @@ export default function useGameState() {
     skipFastBusiness,
     resolveFastCharity,
     rollDice,
+    payOffLiability,
     payOffLoan,
     payOffAllLoans,
     startAmortization,
