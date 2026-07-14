@@ -2,5 +2,10 @@
   "appId": "com.sikiroux.libertefinanciere",
   "appName": "Liberté Financière",
   "webDir": "dist",
-  "bundledWebRuntime": false
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css"
+    }
+  }
 }
