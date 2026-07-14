@@ -9,6 +9,7 @@ const APPS = [
   { key: "trading", emoji: "📈", label: "Bourse", file: "icon-bourse.png" },
   { key: "assets", emoji: "📁", label: "Mes actifs", file: "icon-actifs.png" },
   { key: "debts", emoji: "💳", label: "Mes dettes", file: "icon-dettes.png" },
+  { key: "career", emoji: "💼", label: "Carrière", file: "icon-carriere.png" },
   { key: "casino", emoji: "🎰", label: "Casino", file: "icon-casino.png" },
 ];
 

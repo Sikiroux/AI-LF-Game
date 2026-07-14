@@ -1,8 +1,9 @@
 import { CURRENCIES, CURRENCY_ORDER } from "../../../../data/currencies.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
 import { MANAGEMENT_THRESHOLD_OPTIONS } from "../../engine/assetIndicators.js";
+import { DAILY_ACTION_POINTS_OPTIONS } from "../../engine/actionPoints.js";
 
-export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, babyEnabled, onToggleBaby, layoffEnabled, onToggleLayoff, skipMonthMode, onChangeSkipMonthMode, managementThresholdPct, onChangeManagementThreshold, onBack }) {
+export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, babyEnabled, onToggleBaby, layoffEnabled, onToggleLayoff, skipMonthMode, onChangeSkipMonthMode, managementThresholdPct, onChangeManagementThreshold, dailyActionPoints, onChangeDailyActionPoints, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   return (
@@ -35,6 +36,20 @@ export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, b
             <input type="checkbox" checked={layoffEnabled} onChange={onToggleLayoff} />
             📉 Licenciement (2 mois sans salaire, au moins 6 mois d'écart)
           </label>
+        </div>
+
+        <div style={{ ...styles.card, padding: 16, marginBottom: 14 }}>
+          <div style={styles.sectionTitle}>Points d'action par jour</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+            {DAILY_ACTION_POINTS_OPTIONS.map((n) => (
+              <button key={n} style={{ ...styles.chip, ...(dailyActionPoints === n ? styles.chipActive : {}) }} onClick={() => onChangeDailyActionPoints(n)}>
+                ⚡ {n}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: 10, color: C.inkSoft }}>
+            Budget quotidien pour gérer vos actifs, vous former ou faire des missions. Le surmenage se mesure par rapport à ce budget : le dépenser en entier plusieurs jours d'affilée augmente le risque de burnout.
+          </div>
         </div>
 
         <div style={{ ...styles.card, padding: 16, marginBottom: 14 }}>

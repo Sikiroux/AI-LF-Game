@@ -14,6 +14,7 @@ import TradingScreen from "./components/apps/TradingScreen.jsx";
 import CasinoScreen from "./components/apps/CasinoScreen.jsx";
 import AssetsScreen from "./components/apps/AssetsScreen.jsx";
 import AssetDetailScreen from "./components/apps/AssetDetailScreen.jsx";
+import CareerScreen from "./components/apps/CareerScreen.jsx";
 import DebtsScreen from "../../components/ledger/DebtsScreen.jsx";
 
 export default function CapitalLifeApp({ onExitHome }) {
@@ -32,6 +33,9 @@ export default function CapitalLifeApp({ onExitHome }) {
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,
     casinoHandsPlayed, casinoNetResult, actionPoints, onCasinoCashDelta, onCasinoHandPlayed,
     currency, setCurrency,
+    dailyActionPoints, setDailyActionPoints,
+    skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay,
+    beginTraining, applyToJob, doMission,
   } = useCapitalLifeState();
 
   if (!loaded) return <LoadingScreen />;
@@ -51,6 +55,8 @@ export default function CapitalLifeApp({ onExitHome }) {
         onChangeSkipMonthMode={setSkipMonthMode}
         managementThresholdPct={managementThresholdPct}
         onChangeManagementThreshold={setManagementThresholdPct}
+        dailyActionPoints={dailyActionPoints}
+        onChangeDailyActionPoints={setDailyActionPoints}
         onBack={() => setView("menu")}
       />
     );
@@ -110,6 +116,17 @@ export default function CapitalLifeApp({ onExitHome }) {
         onTrain={(employeeId) => trainAssetEmployee(selectedAssetId, employeeId)}
         onBuyStake={(assetId, delta, useLoan) => buyAssetStake(assetId, delta, useLoan)}
         onBack={() => setView("assets")}
+      />
+    );
+  }
+  if (view === "career") {
+    return (
+      <CareerScreen
+        profession={profession} skills={skills} training={training} missions={missions}
+        cash={cash} currency={currency} day={day} actionPoints={actionPoints} dailyActionPoints={dailyActionPoints}
+        daysWithoutRest={daysWithoutRest} enCouple={enCouple} lastJobRejectionDay={lastJobRejectionDay}
+        onBeginTraining={beginTraining} onApplyToJob={applyToJob} onDoMission={doMission}
+        onBack={() => setView("game")}
       />
     );
   }

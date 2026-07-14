@@ -12,6 +12,13 @@ import {
   applyStakePurchase, DEFAULT_MANAGEMENT_THRESHOLD_PCT,
 } from "../engine/assetIndicators.js";
 import { DAILY_ACTION_POINTS, ACTION_COSTS } from "../engine/actionPoints.js";
+import {
+  TRAININGS, startTraining, tickTraining, jobRequirementsMet, rollApplication,
+  JOB_APPLY_PA_COST, JOB_REJECTION_COOLDOWN_DAYS, generateMissions, completeMission,
+  REST_THRESHOLD_DAYS, rollBurnout, burnoutCost, BURNOUT_LAYOFF_MONTHS, rollDivorce, divorceCost,
+} from "../engine/career.js";
+import { PROFESSIONS } from "../../../data/professions.js";
+import { SKILL_LABELS } from "../../../data/skills.js";
 
 const SAVE_KEY = "capitallife-save";
 const SETTINGS_KEY = "capitallife-settings";
@@ -37,11 +44,21 @@ export default function useCapitalLifeState() {
   const [casinoNetResult, setCasinoNetResult] = useState(0);
   const [actionPoints, setActionPoints] = useState(DAILY_ACTION_POINTS);
 
+  // --- Carrière : compétences, formation, job board, missions freelance,
+  // surmenage et statut de couple (cf. engine/career.js).
+  const [skills, setSkills] = useState({});
+  const [training, setTraining] = useState(null);
+  const [missions, setMissions] = useState([]);
+  const [daysWithoutRest, setDaysWithoutRest] = useState(0);
+  const [enCouple, setEnCouple] = useState(false);
+  const [lastJobRejectionDay, setLastJobRejectionDay] = useState(null);
+
   const [currency, setCurrency] = useState("EUR");
   const [babyEnabled, setBabyEnabled] = useState(true);
   const [layoffEnabled, setLayoffEnabled] = useState(true);
   const [skipMonthMode, setSkipMonthMode] = useState("auto"); // auto | calm
   const [managementThresholdPct, setManagementThresholdPct] = useState(DEFAULT_MANAGEMENT_THRESHOLD_PCT);
+  const [dailyActionPoints, setDailyActionPoints] = useState(DAILY_ACTION_POINTS);
   const [layoffMonthsLeft, setLayoffMonthsLeft] = useState(0);
   const [lastSmallDoodadDay, setLastSmallDoodadDay] = useState(null);
   const [lastBigDoodadDay, setLastBigDoodadDay] = useState(null);
@@ -95,6 +112,12 @@ export default function useCapitalLifeState() {
           if (s.economicModifier) setEconomicModifier(s.economicModifier);
           if (s.traderJournalActive !== undefined) setTraderJournalActive(s.traderJournalActive);
           if (s.marketTurn !== undefined) setMarketTurn(s.marketTurn);
+          if (s.skills) setSkills(s.skills);
+          if (s.training !== undefined) setTraining(s.training);
+          if (Array.isArray(s.missions)) setMissions(s.missions);
+          if (s.daysWithoutRest != null) setDaysWithoutRest(s.daysWithoutRest);
+          if (s.enCouple !== undefined) setEnCouple(s.enCouple);
+          if (s.lastJobRejectionDay !== undefined) setLastJobRejectionDay(s.lastJobRejectionDay);
         }
       } catch (e) { /* pas de sauvegarde existante */ }
       try {
@@ -106,6 +129,7 @@ export default function useCapitalLifeState() {
           if (st.layoffEnabled !== undefined) setLayoffEnabled(st.layoffEnabled);
           if (st.skipMonthMode) setSkipMonthMode(st.skipMonthMode);
           if (st.managementThresholdPct != null) setManagementThresholdPct(st.managementThresholdPct);
+          if (st.dailyActionPoints != null) setDailyActionPoints(st.dailyActionPoints);
         }
       } catch (e) { /* pas de réglages existants */ }
       setLoaded(true);
@@ -119,15 +143,16 @@ export default function useCapitalLifeState() {
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
       casinoHandsPlayed, casinoNetResult, actionPoints,
       tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn,
+      skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay,
     };
     storage.set(SAVE_KEY, JSON.stringify(s)).catch(() => {});
-  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, casinoHandsPlayed, casinoNetResult, actionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn]);
+  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, casinoHandsPlayed, casinoNetResult, actionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay]);
 
   useEffect(() => {
     if (!loaded) return;
-    const st = { currency, babyEnabled, layoffEnabled, skipMonthMode, managementThresholdPct };
+    const st = { currency, babyEnabled, layoffEnabled, skipMonthMode, managementThresholdPct, dailyActionPoints };
     storage.set(SETTINGS_KEY, JSON.stringify(st)).catch(() => {});
-  }, [loaded, currency, babyEnabled, layoffEnabled, skipMonthMode, managementThresholdPct]);
+  }, [loaded, currency, babyEnabled, layoffEnabled, skipMonthMode, managementThresholdPct, dailyActionPoints]);
 
   const hasSave = loaded && day > 0 && phase !== "won" && phase !== "bankrupt";
   const passiveIncome = calcPassiveIncome(assets);
@@ -177,7 +202,7 @@ export default function useCapitalLifeState() {
     setPendingDecision(null);
     setLastEvent(null);
     setCasinoHandsPlayed(0); setCasinoNetResult(0);
-    setActionPoints(DAILY_ACTION_POINTS);
+    setActionPoints(dailyActionPoints);
     setLayoffMonthsLeft(0);
     setLastSmallDoodadDay(null); setLastBigDoodadDay(null); setLastBabyDay(null); setLastLayoffDay(null);
     setLuckyUntilDay(0);
@@ -186,6 +211,12 @@ export default function useCapitalLifeState() {
     setTokens(generateTokens(16));
     setPortfolio({}); setJournal([]); setPendingArcs([]); setSectorConditions({});
     setEconomicModifier({ loanRateMult: 1, expiresTurn: 0 }); setTraderJournalActive(false); setMarketTurn(0);
+    setSkills({ ...(scenarioDraft.profession.startingSkills || {}) });
+    setTraining(null);
+    setMissions(generateMissions(scenarioDraft.profession.startingSkills || {}));
+    setDaysWithoutRest(0);
+    setEnCouple(Math.random() < 0.5);
+    setLastJobRejectionDay(null);
     setView("game");
   }
 
@@ -197,6 +228,12 @@ export default function useCapitalLifeState() {
     setPhase("playing");
     setDebts([]);
     setLiabilities({});
+    setSkills({});
+    setTraining(null);
+    setMissions([]);
+    setDaysWithoutRest(0);
+    setEnCouple(false);
+    setLastJobRejectionDay(null);
     setView("menu");
   }
 
@@ -452,7 +489,7 @@ export default function useCapitalLifeState() {
     setLastBabyDay(result.lastBabyDay);
     setLastLayoffDay(result.lastLayoffDay);
     setLuckyUntilDay(result.luckyUntilDay);
-    setActionPoints(DAILY_ACTION_POINTS);
+    setActionPoints(dailyActionPoints);
     if (result.bankrupt) setPhase("bankrupt");
     if (result.journalEntries.length) setJournal((j) => [...result.journalEntries.slice().reverse(), ...j].slice(0, 60));
     if (result.events.length === 1) {
@@ -474,15 +511,65 @@ export default function useCapitalLifeState() {
   }
   const refs = () => ({ small: lastSmallDoodadCardRef, big: lastBigDoodadCardRef, market: lastMarketCardRef });
 
+  // Applique la formation en cours (numDays jours) et régénère les missions
+  // freelance pour la période à venir — commun à "Jour suivant" et "Sauter le
+  // mois". Retourne le coût en PA/jour de la formation encore active (0 si
+  // aucune), pour ajuster le budget de la journée qui commence.
+  function tickCareer(numDays) {
+    const result = tickTraining(training, skills, numDays);
+    setTraining(result.training);
+    setSkills(result.skills);
+    setMissions(generateMissions(result.skills));
+    if (result.completed) banner("Formation terminée", "Votre compétence a progressé.", "good");
+    return result.training ? result.training.paCost : 0;
+  }
+
   function nextDay() {
-    applySimResult(simulateDays(snapshot(), 1, { quiet: false, currency, refs: refs() }));
+    // Surmenage : mesuré sur les PA restants à la fin de la journée qui
+    // s'achève (avant que le budget du lendemain ne soit recalculé). Chaque
+    // jour où tout le budget a été dépensé (formation + missions + gestion)
+    // compte comme un jour sans repos ; se reposer un seul jour remet à zéro.
+    const usedAllPA = actionPoints <= 0;
+    const newDaysWithoutRest = usedAllPA ? daysWithoutRest + 1 : 0;
+
+    let careerEvent = null;
+    let cashAdjust = 0;
+    let forcedLayoffMonths = 0;
+    if (newDaysWithoutRest > REST_THRESHOLD_DAYS) {
+      if (rollBurnout(newDaysWithoutRest)) {
+        const cost = burnoutCost();
+        cashAdjust -= cost;
+        forcedLayoffMonths = BURNOUT_LAYOFF_MONTHS;
+        careerEvent = { title: "Burnout", detail: `Vous craquez sous la charge de travail : arrêt ${BURNOUT_LAYOFF_MONTHS} mois, -${f(cost)} de frais médicaux/psy.`, tone: "bad" };
+      } else if (enCouple && rollDivorce(newDaysWithoutRest)) {
+        const cost = divorceCost(cash);
+        cashAdjust -= cost;
+        setEnCouple(false);
+        careerEvent = { title: "Divorce", detail: `Le rythme a eu raison du couple : -${f(cost)} de règlement.`, tone: "bad" };
+      }
+    }
+    setDaysWithoutRest(forcedLayoffMonths > 0 ? 0 : newDaysWithoutRest);
+
+    const trainingPaCost = tickCareer(1);
+
+    const snap = snapshot();
+    if (forcedLayoffMonths > 0) snap.layoffMonthsLeft = Math.max(snap.layoffMonthsLeft, forcedLayoffMonths);
+    if (cashAdjust !== 0) snap.cash = Math.max(0, snap.cash + cashAdjust);
+
+    applySimResult(simulateDays(snap, 1, { quiet: false, currency, refs: refs() }));
+    if (careerEvent) banner(careerEvent.title, careerEvent.detail, careerEvent.tone);
+    setActionPoints(Math.max(0, dailyActionPoints - trainingPaCost));
   }
 
   // Avance jusqu'au premier jour du mois suivant (jamais moins d'un jour).
+  // Le surmenage ne s'accumule pas pendant un saut (pas de décisions de PA
+  // prises jour par jour) — le compteur repart à zéro.
   function skipMonth() {
     const daysToSkip = 30 - ((day - 1) % 30);
     const fromDay = day;
     const cashBefore = cash;
+    const trainingPaCost = tickCareer(daysToSkip);
+    setDaysWithoutRest(0);
     const result = simulateDays(snapshot(), daysToSkip, { quiet: skipMonthMode === "calm", currency, refs: refs() });
     applySimResult(result, {
       mode: skipMonthMode,
@@ -490,6 +577,52 @@ export default function useCapitalLifeState() {
       cashBefore, cashAfter: result.cash,
       events: result.events, journalEntries: result.journalEntries,
     });
+    setActionPoints(Math.max(0, dailyActionPoints - trainingPaCost));
+  }
+
+  // --- Carrière : formation, job board, missions freelance ---
+
+  function beginTraining(skillKey, trainingKey) {
+    if (training) { banner("Formation impossible", "Une formation est déjà en cours.", "info"); return; }
+    const t = TRAININGS.find((x) => x.key === trainingKey);
+    if (!t) return;
+    if (cash < t.cashCost) { banner("Formation impossible", "Liquidités insuffisantes.", "info"); return; }
+    setCash((c) => c - t.cashCost);
+    setTraining(startTraining(skillKey, trainingKey));
+    banner("Formation commencée", `${t.label} en ${SKILL_LABELS[skillKey]} : ${t.days} jours, -${t.paCost} PA/jour, -${f(t.cashCost)}.`, "good");
+  }
+
+  function applyToJob(professionId) {
+    if (lastJobRejectionDay != null && day - lastJobRejectionDay < JOB_REJECTION_COOLDOWN_DAYS) {
+      banner("Candidature impossible", `Revenez dans ${JOB_REJECTION_COOLDOWN_DAYS - (day - lastJobRejectionDay)} jour${JOB_REJECTION_COOLDOWN_DAYS - (day - lastJobRejectionDay) > 1 ? "s" : ""}.`, "info");
+      return;
+    }
+    if (!jobRequirementsMet(skills, professionId)) {
+      banner("Candidature impossible", "Compétences insuffisantes pour ce poste.", "info");
+      return;
+    }
+    if (!spendActionPoints(JOB_APPLY_PA_COST)) return;
+    const prof = PROFESSIONS.find((p) => p.id === professionId);
+    const result = rollApplication(skills, professionId);
+    if (result.accepted) {
+      setProfession(prof);
+      setLastJobRejectionDay(null);
+      banner("Poste obtenu !", `Vous êtes désormais ${prof.name} (${f(prof.salary)}/mois).`, "good");
+    } else {
+      setLastJobRejectionDay(day);
+      banner("Candidature refusée", `${prof.name} : la candidature n'a pas abouti cette fois-ci.`, "bad");
+    }
+  }
+
+  function doMission(missionId) {
+    const m = missions.find((x) => x.id === missionId);
+    if (!m) return;
+    if (!spendActionPoints(m.paCost)) return;
+    const result = completeMission(m, skills);
+    setSkills(result.skills);
+    setCash((c) => c + m.pay);
+    setMissions((list) => list.filter((x) => x.id !== missionId));
+    banner("Mission accomplie", `${m.title} : +${f(m.pay)}${result.gained > 0 ? ` · +${result.gained} en ${SKILL_LABELS[m.skill]}` : ""}.`, "good");
   }
 
   return {
@@ -512,5 +645,8 @@ export default function useCapitalLifeState() {
     onCasinoCashDelta: (amount) => setCash((c) => Math.max(0, c + amount)),
     onCasinoHandPlayed: (netProfit) => { setCasinoHandsPlayed((n) => n + 1); setCasinoNetResult((n) => n + netProfit); },
     currency, setCurrency,
+    dailyActionPoints, setDailyActionPoints,
+    skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay,
+    beginTraining, applyToJob, doMission,
   };
 }
