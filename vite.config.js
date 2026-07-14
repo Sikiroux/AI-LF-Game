@@ -5,8 +5,10 @@ import { VitePWA } from "vite-plugin-pwa";
 // `base` ne s'applique qu'au build de production (GitHub Pages sert le
 // projet depuis /AI-LF-Game/, pas la racine) — le serveur de dev reste sur
 // "/" pour ne rien casser dans les scripts de vérification existants.
+// Le build Capacitor (APK) charge les fichiers en local, donc il a besoin
+// de chemins relatifs plutôt que du sous-dossier GitHub Pages.
 export default defineConfig(({ command }) => {
-  const base = command === "build" ? "/AI-LF-Game/" : "/";
+  const base = command === "build" ? (process.env.CAP_BUILD ? "./" : "/AI-LF-Game/") : "/";
   return {
   base,
   plugins: [
