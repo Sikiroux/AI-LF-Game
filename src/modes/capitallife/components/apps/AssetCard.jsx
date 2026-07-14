@@ -30,7 +30,10 @@ export default function AssetCard({ asset, currency, cash, onPayOff, onStartAmor
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <div style={{ fontWeight: 700, color: C.ink, fontSize: 14 }}>{asset.name}</div>
-          <div style={{ fontSize: 10, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>{SECTOR_LABELS[asset.sector] || ""} · {TYPE_LABELS[asset.type] || asset.type}</div>
+          <div style={{ fontSize: 10, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+            {SECTOR_LABELS[asset.sector] || ""} · {TYPE_LABELS[asset.type] || asset.type}
+            {(asset.stakePct ?? 100) < 100 && <> · {asset.stakePct}% détenu</>}
+          </div>
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontFamily: "ui-monospace, monospace", fontWeight: 700, color: C.good, fontSize: 14 }}>+{f(asset.cashflow)}/mois</div>

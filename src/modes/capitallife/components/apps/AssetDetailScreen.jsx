@@ -4,7 +4,9 @@ import { SECTOR_LABELS } from "../../../../data/sectors.js";
 import {
   qualitativeLabel, canPerformMaintenance, MAINTENANCE_COST_RATE,
   generateCandidate, trainingCost, fireSeverance, MAX_EMPLOYEES,
+  canManage, DEFAULT_MANAGEMENT_THRESHOLD_PCT,
 } from "../../engine/assetIndicators.js";
+import { computeFinancing } from "../../../../engine/financing.js";
 import { ACTION_COSTS } from "../../engine/actionPoints.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
 
@@ -80,7 +82,60 @@ function CandidateRow({ candidate, currency, onHire, disabled, C, styles }) {
   );
 }
 
-export default function AssetDetailScreen({ asset, cash, currency, day, actionPoints, onMaintenance, onHire, onFire, onTrain, onBack }) {
+function StakeSection({ asset, cash, actionPoints, currency, managementThreshold, onBuyStake, C, styles }) {
+  const [deltaPct, setDeltaPct] = useState(10);
+  const f = (n) => fmt(n, currency);
+  const currentPct = asset.stakePct ?? 100;
+  const remaining = 100 - currentPct;
+  const presets = [10, 25, remaining].filter((v, i, arr) => v > 0 && v <= remaining && arr.indexOf(v) === i);
+  const clampedDelta = Math.min(deltaPct, remaining);
+  const perPctCost = asset.cost / currentPct;
+  const perPctGross = (asset.baseGrossCashflow ?? asset.grossCashflow ?? 0) / currentPct;
+  const addedCost = Math.round(perPctCost * clampedDelta);
+  const addedGross = Math.round(perPctGross * clampedDelta);
+  const fin = computeFinancing({ cost: addedCost, cashflow: addedGross, type: "business" }, "simple", 10, 1, "realiste", 1);
+  const paOk = actionPoints == null || actionPoints >= ACTION_COSTS.buyAsset;
+  const affordCash = cash >= addedCost && paOk;
+  const affordLoan = cash >= fin.downPayment && paOk;
+  const willUnlock = currentPct < managementThreshold && currentPct + clampedDelta >= managementThreshold;
+
+  if (remaining <= 0) return null;
+
+  return (
+    <div style={{ ...styles.card, marginTop: 14 }}>
+      <div style={{ padding: 16 }}>
+        <div style={styles.sectionTitle}>Participation</div>
+        <Row C={C} label="Détenu actuellement" value={`${currentPct}%`} />
+        <div style={{ fontSize: 11.5, color: C.inkSoft, margin: "6px 0 12px", lineHeight: 1.5 }}>
+          {currentPct >= managementThreshold
+            ? "Vous détenez assez de parts pour gérer le personnel."
+            : `Détenez au moins ${managementThreshold}% pour débloquer la gestion du personnel.`}
+        </div>
+        <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+          {presets.map((opt) => (
+            <button key={opt} style={{ ...styles.chip, ...(clampedDelta === opt ? styles.chipActive : {}) }} onClick={() => setDeltaPct(opt)}>
+              +{opt}%{opt === remaining ? " (tout)" : ""}
+            </button>
+          ))}
+        </div>
+        <Row C={C} label={`Coût pour +${clampedDelta}%`} value={f(addedCost)} />
+        <Row C={C} label="Cash-flow supplémentaire" value={`+${f(addedGross)}/mois`} tone="good" />
+        {willUnlock && <div style={{ fontSize: 11, color: C.good, marginTop: 4, fontWeight: 700 }}>🔓 Débloque la gestion du personnel</div>}
+        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          <button style={{ ...styles.primaryBtn, flex: 1, opacity: affordCash ? 1 : 0.4 }} disabled={!affordCash} onClick={() => onBuyStake(clampedDelta, false)}>
+            Payer comptant (⚡{ACTION_COSTS.buyAsset})
+          </button>
+          <button style={{ ...styles.smallBtn, flex: 1, opacity: affordLoan ? 1 : 0.4 }} disabled={!affordLoan} onClick={() => onBuyStake(clampedDelta, true)}>
+            Financer ({f(fin.downPayment)} apport)
+          </button>
+        </div>
+        {!paOk && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>Plus assez de points d'action aujourd'hui.</div>}
+      </div>
+    </div>
+  );
+}
+
+export default function AssetDetailScreen({ asset, cash, currency, day, actionPoints, managementThreshold = DEFAULT_MANAGEMENT_THRESHOLD_PCT, onMaintenance, onHire, onFire, onTrain, onBuyStake, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const [tab, setTab] = useState("vue");
@@ -154,8 +209,9 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
               <div style={{ ...styles.card, marginTop: 14 }}>
                 <div style={{ padding: 16 }}>
                   <div style={styles.sectionTitle}>Entreprise</div>
+                  {(asset.stakePct ?? 100) < 100 && <Row C={C} label="Participation" value={`${asset.stakePct}%`} />}
                   <Row C={C} label="Réputation" value={qualitativeLabel(asset.reputation)} />
-                  <Row C={C} label="Moral du personnel" value={qualitativeLabel(asset.staffMorale)} />
+                  {asset.staffMorale != null && <Row C={C} label="Moral du personnel" value={qualitativeLabel(asset.staffMorale)} />}
                 </div>
               </div>
             )}
@@ -198,31 +254,48 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
           </div>
         )}
 
-        {tab === "decisions" && !isRealestate && asset.employees && (
-          <>
-            <div style={{ ...styles.sectionTitle, marginTop: 18 }}>Employés ({asset.employees.length}/{MAX_EMPLOYEES})</div>
-            {asset.employees.length === 0 && <div style={{ fontSize: 12.5, color: C.inkSoft, fontStyle: "italic", marginBottom: 10 }}>Aucun employé pour l'instant.</div>}
-            {asset.employees.map((emp) => (
-              <EmployeeRow key={emp.id} employee={emp} cash={cash} actionPoints={actionPoints} currency={currency} onFire={onFire} onTrain={onTrain} C={C} styles={styles} />
-            ))}
+        {tab === "decisions" && !isRealestate && (
+          <StakeSection asset={asset} cash={cash} actionPoints={actionPoints} currency={currency} managementThreshold={managementThreshold} onBuyStake={(delta, useLoan) => onBuyStake(asset.id, delta, useLoan)} C={C} styles={styles} />
+        )}
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 18, marginBottom: 4 }}>
-              <div style={styles.sectionTitle}>Recruter</div>
-              <button style={{ ...styles.smallBtn, padding: "4px 10px", fontSize: 11 }} onClick={regenerateCandidates}>↻ Autres candidats</button>
+        {tab === "decisions" && !isRealestate && (
+          canManage(asset, managementThreshold) ? (
+            asset.employees && (
+              <>
+                <div style={{ ...styles.sectionTitle, marginTop: 18 }}>Employés ({asset.employees.length}/{MAX_EMPLOYEES})</div>
+                {asset.employees.length === 0 && <div style={{ fontSize: 12.5, color: C.inkSoft, fontStyle: "italic", marginBottom: 10 }}>Aucun employé pour l'instant.</div>}
+                {asset.employees.map((emp) => (
+                  <EmployeeRow key={emp.id} employee={emp} cash={cash} actionPoints={actionPoints} currency={currency} onFire={onFire} onTrain={onTrain} C={C} styles={styles} />
+                ))}
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 18, marginBottom: 4 }}>
+                  <div style={styles.sectionTitle}>Recruter</div>
+                  <button style={{ ...styles.smallBtn, padding: "4px 10px", fontSize: 11 }} onClick={regenerateCandidates}>↻ Autres candidats</button>
+                </div>
+                {asset.employees.length >= MAX_EMPLOYEES ? (
+                  <div style={{ fontSize: 12.5, color: C.inkSoft, fontStyle: "italic" }}>Effectif maximum atteint.</div>
+                ) : (
+                  candidates.map((c) => (
+                    <CandidateRow
+                      key={c.id} candidate={c} currency={currency}
+                      disabled={asset.employees.length >= MAX_EMPLOYEES || (actionPoints != null && actionPoints < ACTION_COSTS.hire)}
+                      onHire={(candidate) => { onHire(candidate); setCandidates((list) => list.filter((x) => x.id !== candidate.id)); }}
+                      C={C} styles={styles}
+                    />
+                  ))
+                )}
+              </>
+            )
+          ) : (
+            <div style={{ ...styles.card, marginTop: 18 }}>
+              <div style={{ padding: 16 }}>
+                <div style={styles.sectionTitle}>Personnel</div>
+                <div style={{ fontSize: 12.5, color: C.inkSoft, lineHeight: 1.5 }}>
+                  Vous détenez {asset.stakePct ?? 100}% de cette entreprise — rachetez des parts jusqu'à {managementThreshold}% pour débloquer le recrutement et la gestion du personnel.
+                </div>
+              </div>
             </div>
-            {asset.employees.length >= MAX_EMPLOYEES ? (
-              <div style={{ fontSize: 12.5, color: C.inkSoft, fontStyle: "italic" }}>Effectif maximum atteint.</div>
-            ) : (
-              candidates.map((c) => (
-                <CandidateRow
-                  key={c.id} candidate={c} currency={currency}
-                  disabled={asset.employees.length >= MAX_EMPLOYEES || (actionPoints != null && actionPoints < ACTION_COSTS.hire)}
-                  onHire={(candidate) => { onHire(candidate); setCandidates((list) => list.filter((x) => x.id !== candidate.id)); }}
-                  C={C} styles={styles}
-                />
-              ))
-            )}
-          </>
+          )
         )}
 
         {tab === "historique" && (

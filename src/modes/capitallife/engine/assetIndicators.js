@@ -18,6 +18,21 @@ function randomName() {
 
 export const MAX_EMPLOYEES = 5;
 
+// Seuil de participation (%) à partir duquel la gestion du personnel
+// (recruter/former/licencier) se débloque sur une entreprise détenue en
+// parts (cf. bug "Laverie (part)" gérable comme une entreprise à 100%).
+// Réglable par le joueur dans les Options (34/50/100), 50% par défaut.
+export const MANAGEMENT_THRESHOLD_OPTIONS = [50, 100];
+export const DEFAULT_MANAGEMENT_THRESHOLD_PCT = 50;
+
+// En dessous du seuil, l'actif business se comporte comme un placement
+// financier pur : cash-flow proportionnel à la part détenue, mais pas
+// d'accès à la gestion du personnel.
+export function canManage(asset, threshold = DEFAULT_MANAGEMENT_THRESHOLD_PCT) {
+  if (asset.type !== "business") return true;
+  return (asset.stakePct ?? 100) >= threshold;
+}
+
 // Un employé n'a que 4 champs — le reste (risque d'incident, performance) est
 // calculé, pas géré à la main (cf. discussion "pas 50 statistiques par employé").
 export function generateCandidate(refSalary) {
@@ -67,7 +82,7 @@ export function trainEmployee(asset, employeeId) {
   return { ...next, stability: computeStability(next) };
 }
 
-export function initAssetIndicators(card) {
+export function initAssetIndicators(card, managementThreshold = DEFAULT_MANAGEMENT_THRESHOLD_PCT) {
   if (card.type === "realestate") {
     return {
       condition: 90 + Math.round(Math.random() * 10),
@@ -79,16 +94,49 @@ export function initAssetIndicators(card) {
     };
   }
   if (card.type === "business") {
-    const refSalary = Math.max(200, Math.round(card.cashflow * 0.18));
-    const employees = Array.from({ length: 1 + Math.round(Math.random()) }, () => generateCandidate(refSalary));
-    return {
+    const stakePct = card.stakePct ?? 100;
+    const base = {
       condition: 90 + Math.round(Math.random() * 10),
       reputation: 55 + Math.round(Math.random() * 30),
-      employees,
-      staffMorale: computeStaffMorale(employees),
+      stakePct,
     };
+    // Participation minoritaire (achat "(part)") : placement financier pur
+    // tant que le seuil de gestion n'est pas atteint, pas de personnel.
+    if (stakePct < managementThreshold) {
+      return { ...base, employees: [], staffMorale: null };
+    }
+    const refSalary = Math.max(200, Math.round(card.cashflow * 0.18));
+    const employees = Array.from({ length: 1 + Math.round(Math.random()) }, () => generateCandidate(refSalary));
+    return { ...base, employees, staffMorale: computeStaffMorale(employees) };
   }
   return null;
+}
+
+// Rachat de parts supplémentaires sur une entreprise déjà partiellement
+// détenue : fait croître la participation, le coût cumulé et le cash-flow
+// proportionnellement, et fait apparaître le personnel la première fois que
+// le seuil de gestion est franchi (avant, aucun employé n'était généré).
+export function applyStakePurchase(asset, { newPct, addedCost, addedGross, loanAmount = 0, loanMonthly = 0, annualRate = 0 }, managementThreshold = DEFAULT_MANAGEMENT_THRESHOLD_PCT) {
+  const currentPct = asset.stakePct ?? 100;
+  const baseGross = (asset.baseGrossCashflow ?? asset.grossCashflow ?? 0) + addedGross;
+  let next = {
+    ...asset,
+    stakePct: newPct,
+    cost: asset.cost + addedCost,
+    loanAmount: (asset.loanAmount || 0) + loanAmount,
+    loanBalance: (asset.loanBalance || 0) + loanAmount,
+    loanMonthly: (asset.loanMonthly || 0) + loanMonthly,
+    annualRate: loanAmount > 0 ? annualRate : asset.annualRate,
+    grossCashflow: (asset.grossCashflow || 0) + addedGross,
+    baseGrossCashflow: baseGross,
+  };
+  if (currentPct < managementThreshold && newPct >= managementThreshold && (!next.employees || next.employees.length === 0)) {
+    const refSalary = Math.max(200, Math.round(baseGross * 0.18));
+    const employees = Array.from({ length: 1 + Math.round(Math.random()) }, () => generateCandidate(refSalary));
+    next = { ...next, employees, staffMorale: computeStaffMorale(employees) };
+  }
+  next.cashflow = next.grossCashflow - next.loanMonthly - totalSalaries(next);
+  return { ...next, stability: computeStability(next) };
 }
 
 export function computeStability(asset) {
@@ -99,7 +147,8 @@ export function computeStability(asset) {
   }
   if (asset.type === "business") {
     const { condition, reputation, staffMorale } = asset;
-    if (condition == null || reputation == null || staffMorale == null) return null;
+    if (condition == null || reputation == null) return null;
+    if (staffMorale == null) return Math.round(0.55 * condition + 0.45 * reputation);
     return Math.round(0.4 * condition + 0.3 * reputation + 0.3 * staffMorale);
   }
   return null;

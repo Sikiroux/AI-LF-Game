@@ -1,7 +1,8 @@
 import { CURRENCIES, CURRENCY_ORDER } from "../../../../data/currencies.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { MANAGEMENT_THRESHOLD_OPTIONS } from "../../engine/assetIndicators.js";
 
-export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, babyEnabled, onToggleBaby, layoffEnabled, onToggleLayoff, skipMonthMode, onChangeSkipMonthMode, onBack }) {
+export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, babyEnabled, onToggleBaby, layoffEnabled, onToggleLayoff, skipMonthMode, onChangeSkipMonthMode, managementThresholdPct, onChangeManagementThreshold, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   return (
@@ -34,6 +35,20 @@ export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, b
             <input type="checkbox" checked={layoffEnabled} onChange={onToggleLayoff} />
             📉 Licenciement (2 mois sans salaire, au moins 6 mois d'écart)
           </label>
+        </div>
+
+        <div style={{ ...styles.card, padding: 16, marginBottom: 14 }}>
+          <div style={styles.sectionTitle}>Seuil de contrôle des entreprises</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+            {MANAGEMENT_THRESHOLD_OPTIONS.map((pct) => (
+              <button key={pct} style={{ ...styles.chip, ...(managementThresholdPct === pct ? styles.chipActive : {}) }} onClick={() => onChangeManagementThreshold(pct)}>
+                {pct}% {pct === 50 ? "(majorité)" : "(contrôle total)"}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: 10, color: C.inkSoft }}>
+            Sur une entreprise détenue en parts (achat "(part)"), la gestion du personnel (recruter/former/licencier) ne se débloque qu'à partir de ce pourcentage de participation.
+          </div>
         </div>
 
         <div style={{ ...styles.card, padding: 16 }}>

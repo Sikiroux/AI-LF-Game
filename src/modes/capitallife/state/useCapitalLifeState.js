@@ -9,6 +9,7 @@ import { simulateDays } from "../engine/dayLoop.js";
 import {
   initAssetIndicators, canPerformMaintenance, performMaintenance,
   totalSalaries, hireEmployee, fireEmployee, fireSeverance, trainEmployee, trainingCost, MAX_EMPLOYEES,
+  applyStakePurchase, DEFAULT_MANAGEMENT_THRESHOLD_PCT,
 } from "../engine/assetIndicators.js";
 import { DAILY_ACTION_POINTS, ACTION_COSTS } from "../engine/actionPoints.js";
 
@@ -40,6 +41,7 @@ export default function useCapitalLifeState() {
   const [babyEnabled, setBabyEnabled] = useState(true);
   const [layoffEnabled, setLayoffEnabled] = useState(true);
   const [skipMonthMode, setSkipMonthMode] = useState("auto"); // auto | calm
+  const [managementThresholdPct, setManagementThresholdPct] = useState(DEFAULT_MANAGEMENT_THRESHOLD_PCT);
   const [layoffMonthsLeft, setLayoffMonthsLeft] = useState(0);
   const [lastSmallDoodadDay, setLastSmallDoodadDay] = useState(null);
   const [lastBigDoodadDay, setLastBigDoodadDay] = useState(null);
@@ -103,6 +105,7 @@ export default function useCapitalLifeState() {
           if (st.babyEnabled !== undefined) setBabyEnabled(st.babyEnabled);
           if (st.layoffEnabled !== undefined) setLayoffEnabled(st.layoffEnabled);
           if (st.skipMonthMode) setSkipMonthMode(st.skipMonthMode);
+          if (st.managementThresholdPct != null) setManagementThresholdPct(st.managementThresholdPct);
         }
       } catch (e) { /* pas de réglages existants */ }
       setLoaded(true);
@@ -122,9 +125,9 @@ export default function useCapitalLifeState() {
 
   useEffect(() => {
     if (!loaded) return;
-    const st = { currency, babyEnabled, layoffEnabled, skipMonthMode };
+    const st = { currency, babyEnabled, layoffEnabled, skipMonthMode, managementThresholdPct };
     storage.set(SETTINGS_KEY, JSON.stringify(st)).catch(() => {});
-  }, [loaded, currency, babyEnabled, layoffEnabled, skipMonthMode]);
+  }, [loaded, currency, babyEnabled, layoffEnabled, skipMonthMode, managementThresholdPct]);
 
   const hasSave = loaded && day > 0 && phase !== "won";
   const passiveIncome = calcPassiveIncome(assets);
@@ -257,7 +260,7 @@ export default function useCapitalLifeState() {
       loanMonthly = Math.round(amortizedPayment(fin.loanAmount, fin.annualRate, mode / 12));
       amortizing = true; amortMonths = mode;
     }
-    const indicators = initAssetIndicators(card);
+    const indicators = initAssetIndicators(card, managementThresholdPct);
     const netCashflow = fin.grossCashflow - loanMonthly - totalSalaries({ employees: indicators?.employees });
 
     if (useLoan) {
@@ -402,6 +405,32 @@ export default function useCapitalLifeState() {
     banner("Formation", `${emp.name} monte en compétence chez ${a.name} (-${f(cost)}).`, "good");
   }
 
+  // Rachat de parts supplémentaires sur une entreprise détenue en participation
+  // minoritaire (cf. bug "Laverie (part)") : cash ou financement, même logique
+  // simplifiée que l'achat initial (10% d'apport, taux "simple").
+  function buyAssetStake(assetId, deltaPct, useLoan) {
+    const a = assets.find((x) => x.id === assetId);
+    if (!a || a.type !== "business") return;
+    const currentPct = a.stakePct ?? 100;
+    const newPct = Math.min(100, currentPct + deltaPct);
+    const actualDelta = newPct - currentPct;
+    if (actualDelta <= 0) return;
+    const perPctCost = a.cost / currentPct;
+    const perPctGross = (a.baseGrossCashflow ?? a.grossCashflow ?? 0) / currentPct;
+    const addedCost = Math.round(perPctCost * actualDelta);
+    const addedGross = Math.round(perPctGross * actualDelta);
+    const loanRateMult = marketTurn < economicModifier.expiresTurn ? economicModifier.loanRateMult : 1;
+    const fin = useLoan
+      ? computeFinancing({ cost: addedCost, cashflow: addedGross, type: "business" }, "simple", 10, loanRateMult, "realiste", 1)
+      : { downPayment: addedCost, loanAmount: 0, loanMonthly: 0, annualRate: 0 };
+    if (cash < fin.downPayment) { banner("Rachat de parts impossible", "Liquidités insuffisantes pour l'apport.", "info"); return; }
+    if (!spendActionPoints(ACTION_COSTS.buyAsset)) return;
+    const updated = applyStakePurchase(a, { newPct, addedCost, addedGross, loanAmount: fin.loanAmount, loanMonthly: fin.loanMonthly, annualRate: fin.annualRate }, managementThresholdPct);
+    setCash((c) => c - fin.downPayment);
+    setAssets((list) => list.map((x) => (x.id === assetId ? updated : x)));
+    banner("Parts rachetées", `${a.name} : participation portée à ${newPct}% (+${f(addedGross)}/mois).`, "good");
+  }
+
   // --- Avancée du temps : un jour, ou sauter jusqu'au prochain jour de paie ---
 
   function applySimResult(result, report) {
@@ -468,6 +497,7 @@ export default function useCapitalLifeState() {
     profession, day, cash, debts, liabilities, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
     payOffLiability, payOffDebt,
     skipMonthMode, setSkipMonthMode,
+    managementThresholdPct, setManagementThresholdPct,
     babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft,
     lastEvent, lastSkipReport,
     tokens, portfolio, journal, marketTurn, traderJournalActive,
@@ -476,7 +506,7 @@ export default function useCapitalLifeState() {
     listings, pendingDecision, openListing, skipListing, buyListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     selectedAssetId, setSelectedAssetId, performAssetMaintenance,
-    hireAssetEmployee, fireAssetEmployee, trainAssetEmployee,
+    hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,
     casinoHandsPlayed, casinoNetResult, actionPoints,
     onCasinoCashDelta: (amount) => setCash((c) => Math.max(0, c + amount)),
     onCasinoHandPlayed: (netProfit) => { setCasinoHandsPlayed((n) => n + 1); setCasinoNetResult((n) => n + netProfit); },

@@ -22,12 +22,13 @@ export default function CapitalLifeApp({ onExitHome }) {
     profession, day, cash, debts, liabilities, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
     payOffLiability, payOffDebt,
     skipMonthMode, setSkipMonthMode,
+    managementThresholdPct, setManagementThresholdPct,
     babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft, lastEvent, lastSkipReport,
     tokens, portfolio, journal, marketTurn, traderJournalActive, onToggleTraderJournal, buyStock, sellStock,
     listings, pendingDecision, openListing, skipListing, buyListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     selectedAssetId, setSelectedAssetId, performAssetMaintenance,
-    hireAssetEmployee, fireAssetEmployee, trainAssetEmployee,
+    hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,
     casinoHandsPlayed, casinoNetResult, actionPoints, onCasinoCashDelta, onCasinoHandPlayed,
     currency, setCurrency,
   } = useCapitalLifeState();
@@ -47,6 +48,8 @@ export default function CapitalLifeApp({ onExitHome }) {
         onToggleLayoff={() => setLayoffEnabled((v) => !v)}
         skipMonthMode={skipMonthMode}
         onChangeSkipMonthMode={setSkipMonthMode}
+        managementThresholdPct={managementThresholdPct}
+        onChangeManagementThreshold={setManagementThresholdPct}
         onBack={() => setView("menu")}
       />
     );
@@ -95,10 +98,12 @@ export default function CapitalLifeApp({ onExitHome }) {
       <AssetDetailScreen
         asset={assets.find((a) => a.id === selectedAssetId)}
         cash={cash} currency={currency} day={day} actionPoints={actionPoints}
+        managementThreshold={managementThresholdPct}
         onMaintenance={performAssetMaintenance}
         onHire={(candidate) => hireAssetEmployee(selectedAssetId, candidate)}
         onFire={(employeeId) => fireAssetEmployee(selectedAssetId, employeeId)}
         onTrain={(employeeId) => trainAssetEmployee(selectedAssetId, employeeId)}
+        onBuyStake={(assetId, delta, useLoan) => buyAssetStake(assetId, delta, useLoan)}
         onBack={() => setView("assets")}
       />
     );
