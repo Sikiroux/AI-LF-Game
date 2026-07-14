@@ -1,13 +1,14 @@
 import Row from "./Row.jsx";
 import { fmt } from "../../utils/format.js";
-import { BANK_LOAN_RATE } from "../../engine/financing.js";
+import { BANK_LOAN_RATE, LIABILITY_KEYS, LIABILITY_LABELS } from "../../engine/financing.js";
 import { COLORS, styles } from "../../styles/theme.js";
 
-export default function Ledger({ profession, cash, kids, assets, extraDebtBalance, extraMonthly, bankLoanBalance, onTakeBankLoan, onRepayBankLoan, passiveIncome, totalExpenses, totalIncome, netCashflow, currency, tokens, portfolio, onOpenAssets }) {
+export default function Ledger({ profession, cash, kids, assets, liabilities, extraDebtBalance, extraMonthly, bankLoanBalance, onTakeBankLoan, onRepayBankLoan, passiveIncome, totalExpenses, totalIncome, netCashflow, currency, tokens, portfolio, onOpenAssets, onOpenDebts }) {
   const e = profession.expenses;
   const f = (n) => fmt(n, currency);
   const bankLoanMonthly = Math.round(bankLoanBalance * BANK_LOAN_RATE);
   const portfolioValue = tokens.reduce((s, t) => s + ((portfolio[t.symbol]?.shares) || 0) * t.price, 0);
+  const liabilitiesDue = LIABILITY_KEYS.reduce((s, key) => s + (liabilities[key] > 0 ? liabilities[key] : 0), 0);
   return (
     <div style={styles.ledger}>
       <div style={styles.ledgerTitle}>Compte de résultat</div>
@@ -16,10 +17,9 @@ export default function Ledger({ profession, cash, kids, assets, extraDebtBalanc
       <Row label="Revenu total" value={f(totalIncome)} bold />
       <div style={styles.ledgerDivider} />
       {e.taxes > 0 && <Row label="Impôts" value={f(e.taxes)} negative />}
-      {e.mortgage > 0 && <Row label="Prêt immobilier" value={f(e.mortgage)} negative />}
-      {e.carLoan > 0 && <Row label="Prêt auto" value={f(e.carLoan)} negative />}
-      {e.creditCard > 0 && <Row label="Carte de crédit" value={f(e.creditCard)} negative />}
-      {e.schoolLoan > 0 && <Row label="Prêt étudiant" value={f(e.schoolLoan)} negative />}
+      {LIABILITY_KEYS.map((key) => (liabilities[key] > 0) && (
+        <Row key={key} label={LIABILITY_LABELS[key]} value={f(e[key])} negative />
+      ))}
       {e.other > 0 && <Row label="Autres dépenses" value={f(e.other)} negative />}
       {kids > 0 && <Row label={`Enfants (${kids})`} value={f(kids * profession.perChild)} negative />}
       {extraMonthly > 0 && <Row label="Dette imprévue" value={f(extraMonthly)} negative />}
@@ -32,6 +32,9 @@ export default function Ledger({ profession, cash, kids, assets, extraDebtBalanc
       <Row label="Liquidités" value={f(cash)} bold />
       <button className="btn-small" style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 6, marginBottom: 6 }} onClick={onOpenAssets}>
         📁 Mes actifs ({assets.length}){assets.some((a) => a.loanBalance > 0) ? ` — ${f(assets.reduce((s, a) => s + (a.loanBalance || 0), 0))} dû` : ""}
+      </button>
+      <button className="btn-small" style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginBottom: 6 }} onClick={onOpenDebts}>
+        💳 Mes dettes{liabilitiesDue > 0 ? ` — ${f(liabilitiesDue)} dû` : ""}
       </button>
       {portfolioValue > 0 && <Row label="Portefeuille boursier" value={f(portfolioValue)} bold />}
       {extraDebtBalance > 0 && <Row label="Dette imprévue (solde)" value={f(extraDebtBalance)} negative />}

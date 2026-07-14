@@ -53,15 +53,45 @@ export const MAX_DEBT_RATIO = 0.33; // taux d'endettement maximum usuel (33%)
 export const BANK_LOAN_RATE = 0.10; // vrai "prêt bancaire" du jeu officiel : 10%/mois, remboursable par tranches
 export const BANK_LOAN_UNIT = 1000; // emprunt/remboursement par tranches de 1000 (comme la règle officielle)
 
-export function calcDebtPayments(profession, extraMonthly, assets) {
-  const e = profession.expenses;
-  const assetLoans = assets.reduce((s, a) => s + (a.loanMonthly || 0), 0);
-  return e.mortgage + e.carLoan + e.creditCard + e.schoolLoan + extraMonthly + assetLoans;
+// Les 4 dettes de départ liées au métier (prêt immo/auto/carte de crédit/prêt
+// étudiant) : un solde à rembourser en plus de la mensualité fixe déjà comptée
+// dans profession.expenses.
+export const LIABILITY_KEYS = ["mortgage", "carLoan", "creditCard", "schoolLoan"];
+export const LIABILITY_LABELS = { mortgage: "Prêt immobilier", carLoan: "Prêt auto", creditCard: "Carte de crédit", schoolLoan: "Prêt étudiant" };
+
+// Tire un solde de départ plausible autour de la valeur de référence du métier
+// (±30%), pour que deux parties avec le même métier ne partent jamais avec
+// exactement la même dette. Un métier qui n'a pas ce type de dette (valeur à 0)
+// reste à 0.
+export function randomizeLiabilities(profession) {
+  const ref = profession.liabilities || {};
+  const out = {};
+  for (const key of LIABILITY_KEYS) {
+    const base = ref[key] || 0;
+    out[key] = base > 0 ? Math.round(base * (0.7 + Math.random() * 0.6)) : 0;
+  }
+  return out;
 }
 
-export function calcExpenses(profession, kids, extraMonthly) {
+// `liabilities`, si fourni, est le solde restant dû de chaque dette de départ
+// ({mortgage, carLoan, creditCard, schoolLoan}) : une fois soldée (valeur à 0),
+// sa mensualité fixe cesse de compter. Sans ce paramètre, comportement inchangé
+// (toutes les mensualités comptent, comme avant l'ajout du système de dettes).
+function activeExpense(e, key, liabilities) {
+  if (!liabilities) return e[key];
+  return liabilities[key] > 0 ? e[key] : 0;
+}
+
+export function calcDebtPayments(profession, extraMonthly, assets, liabilities) {
   const e = profession.expenses;
-  return e.taxes + e.mortgage + e.carLoan + e.creditCard + e.schoolLoan + e.other + kids * profession.perChild + extraMonthly;
+  const assetLoans = assets.reduce((s, a) => s + (a.loanMonthly || 0), 0);
+  return activeExpense(e, "mortgage", liabilities) + activeExpense(e, "carLoan", liabilities) + activeExpense(e, "creditCard", liabilities) + activeExpense(e, "schoolLoan", liabilities) + extraMonthly + assetLoans;
+}
+
+export function calcExpenses(profession, kids, extraMonthly, liabilities) {
+  const e = profession.expenses;
+  const debtExpenses = activeExpense(e, "mortgage", liabilities) + activeExpense(e, "carLoan", liabilities) + activeExpense(e, "creditCard", liabilities) + activeExpense(e, "schoolLoan", liabilities);
+  return e.taxes + debtExpenses + e.other + kids * profession.perChild + extraMonthly;
 }
 export function calcPassiveIncome(assets) {
   return assets.reduce((s, a) => s + a.cashflow, 0);

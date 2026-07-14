@@ -12,12 +12,14 @@ import SkipReportScreen from "./components/screens/SkipReportScreen.jsx";
 import TradingScreen from "./components/apps/TradingScreen.jsx";
 import CasinoScreen from "./components/apps/CasinoScreen.jsx";
 import AssetsScreen from "./components/apps/AssetsScreen.jsx";
+import DebtsScreen from "../../components/ledger/DebtsScreen.jsx";
 
 export default function CapitalLifeApp({ onExitHome }) {
   const {
     loaded, view, setView, phase,
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
-    profession, day, cash, debts, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
+    profession, day, cash, debts, liabilities, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
+    payOffLiability, payOffDebt,
     skipMonthMode, setSkipMonthMode,
     babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft, lastEvent, lastSkipReport,
     tokens, portfolio, journal, marketTurn, traderJournalActive, onToggleTraderJournal, buyStock, sellStock,
@@ -84,9 +86,25 @@ export default function CapitalLifeApp({ onExitHome }) {
         profession={profession}
         kids={kids}
         debts={debts}
+        liabilities={liabilities}
         passiveIncome={passiveIncome}
         layoffMonthsLeft={layoffMonthsLeft}
         currency={currency}
+        onBack={() => setView("game")}
+      />
+    );
+  }
+  if (view === "debts") {
+    return (
+      <DebtsScreen
+        variant="capitallife"
+        profession={profession}
+        liabilities={liabilities}
+        extraDebts={debts}
+        cash={cash}
+        currency={currency}
+        onPayOffLiability={payOffLiability}
+        onPayOffDebt={payOffDebt}
         onBack={() => setView("game")}
       />
     );
@@ -132,6 +150,7 @@ export default function CapitalLifeApp({ onExitHome }) {
       cash={cash}
       profession={profession}
       debts={debts}
+      liabilities={liabilities}
       kids={kids}
       assets={assets}
       passiveIncome={passiveIncome}

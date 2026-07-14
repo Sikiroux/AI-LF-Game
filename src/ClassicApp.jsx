@@ -13,6 +13,7 @@ import RulesScreen from "./components/screens/RulesScreen.jsx";
 import TradingScreen from "./components/trading/TradingScreen.jsx";
 import CasinoScreen from "./components/casino/CasinoScreen.jsx";
 import AssetsScreen from "./components/ledger/AssetsScreen.jsx";
+import DebtsScreen from "./components/ledger/DebtsScreen.jsx";
 
 import Header from "./components/Header.jsx";
 import FastBoard from "./components/board/FastBoard.jsx";
@@ -40,6 +41,7 @@ export default function ClassicApp({ onExitHome }) {
     cash, setCash,
     kids, setKids,
     assets, setAssets,
+    liabilities, setLiabilities,
     extraMonthly, setExtraMonthly,
     extraDebtBalance, setExtraDebtBalance,
     bankLoanBalance, setBankLoanBalance,
@@ -100,6 +102,7 @@ export default function ClassicApp({ onExitHome }) {
     skipFastBusiness,
     resolveFastCharity,
     rollDice,
+    payOffLiability,
     payOffLoan,
     payOffAllLoans,
     startAmortization,
@@ -133,6 +136,7 @@ export default function ClassicApp({ onExitHome }) {
   );
   if (view === "casino") return <CasinoScreen cash={cash} currency={currency} onCashDelta={(amount) => setCash((c) => Math.max(0, c + amount))} handsPlayed={casinoHandsPlayed} netResult={casinoNetResult} onHandPlayed={(netProfit) => { setCasinoHandsPlayed((n) => n + 1); setCasinoNetResult((n) => n + netProfit); }} onBack={() => setView("game")} />;
   if (view === "assets") return <AssetsScreen assets={assets} cash={cash} currency={currency} onPayOff={payOffLoan} onPayOffAll={payOffAllLoans} onStartAmortization={startAmortization} onCancelAmortization={cancelAmortization} onBack={() => setView("game")} />;
+  if (view === "debts") return <DebtsScreen variant="classic" profession={profession} liabilities={liabilities} cash={cash} currency={currency} onPayOffLiability={payOffLiability} onPayOffDebt={() => {}} onBack={() => setView("game")} />;
   if (phase === "won") return <WonScreen fastTrack={fastTrack} winReason={winReason} turnCount={turnCount} onReset={resetGame} currency={currency} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} bankLoanBalance={bankLoanBalance} />;
   if (phase === "bankrupt") return <BankruptScreen turnCount={turnCount} onReset={resetGame} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} bankLoanBalance={bankLoanBalance} currency={currency} />;
 
@@ -155,7 +159,7 @@ export default function ClassicApp({ onExitHome }) {
           {phase === "fasttrack" ? (
             <FastLedger fastTrack={fastTrack} currency={currency} />
           ) : (
-            <Ledger profession={profession} cash={cash} kids={kids} assets={assets} extraDebtBalance={extraDebtBalance} extraMonthly={extraMonthly} bankLoanBalance={bankLoanBalance} onTakeBankLoan={takeBankLoan} onRepayBankLoan={repayBankLoan} passiveIncome={passiveIncome} totalExpenses={totalExpenses} totalIncome={totalIncome} netCashflow={netCashflow} currency={currency} tokens={tokens} portfolio={portfolio} onOpenAssets={() => setView("assets")} />
+            <Ledger profession={profession} cash={cash} kids={kids} assets={assets} liabilities={liabilities} extraDebtBalance={extraDebtBalance} extraMonthly={extraMonthly} bankLoanBalance={bankLoanBalance} onTakeBankLoan={takeBankLoan} onRepayBankLoan={repayBankLoan} passiveIncome={passiveIncome} totalExpenses={totalExpenses} totalIncome={totalIncome} netCashflow={netCashflow} currency={currency} tokens={tokens} portfolio={portfolio} onOpenAssets={() => setView("assets")} onOpenDebts={() => setView("debts")} />
           )}
         </div>
       </div>

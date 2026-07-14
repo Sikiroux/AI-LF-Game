@@ -1,5 +1,5 @@
 import { PROFESSIONS } from "../../../data/professions.js";
-import { rand } from "../../../utils/format.js";
+import { rand, uid } from "../../../utils/format.js";
 
 const DEBT_REASONS = [
   "Crédit voiture", "Prêt étudiant", "Rénovation de la cuisine", "Mobilier à crédit",
@@ -16,6 +16,7 @@ export function generateScenario() {
   const monthlyPayment = Math.round(profession.salary * (0.04 + Math.random() * 0.12));
   const monthsRemaining = 6 + Math.floor(Math.random() * 30);
   const debt = {
+    id: uid(),
     reason: rand(DEBT_REASONS),
     monthlyPayment,
     monthsRemaining,

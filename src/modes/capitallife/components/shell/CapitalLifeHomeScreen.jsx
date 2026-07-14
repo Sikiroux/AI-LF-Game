@@ -8,11 +8,12 @@ const APPS = [
   { key: "opportunities", emoji: "🏷️", label: "OppMarket", file: "icon-oppmarket.png" },
   { key: "trading", emoji: "📈", label: "Bourse", file: "icon-bourse.png" },
   { key: "assets", emoji: "📁", label: "Mes actifs", file: "icon-actifs.png" },
+  { key: "debts", emoji: "💳", label: "Mes dettes", file: "icon-dettes.png" },
   { key: "casino", emoji: "🎰", label: "Casino", file: "icon-casino.png" },
 ];
 
 export default function CapitalLifeHomeScreen({
-  day, cash, profession, debts, kids, assets, passiveIncome, layoffMonthsLeft, currency,
+  day, cash, profession, debts, liabilities, kids, assets, passiveIncome, layoffMonthsLeft, currency,
   lastEvent, hasSkipReport, skipMonthMode, onChangeSkipMonthMode,
   onNextDay, onSkipMonth, onOpenApp, onOpenSkipReport, onMenu,
 }) {
@@ -23,7 +24,7 @@ export default function CapitalLifeHomeScreen({
   const month = Math.floor((day - 1) / 30) + 1;
   const dayOfMonth = ((day - 1) % 30) + 1;
   const debtMonthly = debts.reduce((s, d) => s + d.monthlyPayment, 0);
-  const expenses = profession ? calcExpenses(profession, kids, debtMonthly) : 0;
+  const expenses = profession ? calcExpenses(profession, kids, debtMonthly, liabilities) : 0;
   const salary = layoffMonthsLeft > 0 ? 0 : (profession ? profession.salary : 0);
   const netCashflow = salary + passiveIncome - expenses;
   const objectifPct = Math.max(0, Math.min(100, Math.round((passiveIncome / Math.max(1, expenses)) * 100)));

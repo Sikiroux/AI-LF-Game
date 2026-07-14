@@ -12,7 +12,7 @@ import { RAT_RACE_SEQUENCE } from "../engine/ratRace.js";
 import { FAST_TRACK_SEQUENCE, drawFastDeal } from "../engine/fastTrack.js";
 import { generateTokens } from "../engine/bourse/tokenGenerator.js";
 import { BROKERAGE_FEE_RATE, tickMarketDays } from "../engine/bourse/market.js";
-import { computeFinancing, getYieldMultiplier, amortizedPayment, calcExpenses, calcPassiveIncome, calcDebtPayments, MAX_DEBT_RATIO, BANK_LOAN_RATE, BANK_LOAN_UNIT } from "../engine/financing.js";
+import { computeFinancing, getYieldMultiplier, amortizedPayment, calcExpenses, calcPassiveIncome, calcDebtPayments, randomizeLiabilities, LIABILITY_LABELS, MAX_DEBT_RATIO, BANK_LOAN_RATE, BANK_LOAN_UNIT } from "../engine/financing.js";
 
 export default function useGameState() {
   const [isDesktop, setIsDesktop] = useState(typeof window !== "undefined" ? window.innerWidth >= 900 : false);
@@ -31,6 +31,7 @@ export default function useGameState() {
   const [cash, setCash] = useState(0);
   const [kids, setKids] = useState(0);
   const [assets, setAssets] = useState([]);
+  const [liabilities, setLiabilities] = useState({});
   const [extraMonthly, setExtraMonthly] = useState(0);
   const [extraDebtBalance, setExtraDebtBalance] = useState(0);
   const [bankLoanBalance, setBankLoanBalance] = useState(0);
@@ -89,6 +90,7 @@ export default function useGameState() {
           const s = JSON.parse(res.value);
           setPhase(s.phase); setProfession(s.profession); setDream(s.dream || null); setWinReason(s.winReason || null); setPosition(s.position); setDisplayPosition(s.position || 0);
           setCash(s.cash); setKids(s.kids); setAssets(s.assets);
+          if (s.liabilities) setLiabilities(s.liabilities);
           setExtraMonthly(s.extraMonthly); setExtraDebtBalance(s.extraDebtBalance);
           setBankLoanBalance(s.bankLoanBalance || 0);
           setCasinoHandsPlayed(s.casinoHandsPlayed || 0);
@@ -139,9 +141,9 @@ export default function useGameState() {
 
   useEffect(() => {
     if (!loaded) return;
-    const s = { phase, profession, dream, winReason, position, cash, kids, assets, extraMonthly, extraDebtBalance, bankLoanBalance, charityTurnsLeft, skipTurns, fastTrack, turnCount, marketTurn, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, activeSmallDeals, activeBigDeals, casinoHandsPlayed, casinoNetResult };
+    const s = { phase, profession, dream, winReason, position, cash, kids, assets, liabilities, extraMonthly, extraDebtBalance, bankLoanBalance, charityTurnsLeft, skipTurns, fastTrack, turnCount, marketTurn, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, activeSmallDeals, activeBigDeals, casinoHandsPlayed, casinoNetResult };
     storage.set("cashflow-save", JSON.stringify(s)).catch(() => {});
-  }, [loaded, phase, profession, dream, winReason, position, cash, kids, assets, extraMonthly, extraDebtBalance, bankLoanBalance, charityTurnsLeft, skipTurns, fastTrack, turnCount, marketTurn, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, activeSmallDeals, activeBigDeals, casinoHandsPlayed, casinoNetResult]);
+  }, [loaded, phase, profession, dream, winReason, position, cash, kids, assets, liabilities, extraMonthly, extraDebtBalance, bankLoanBalance, charityTurnsLeft, skipTurns, fastTrack, turnCount, marketTurn, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, activeSmallDeals, activeBigDeals, casinoHandsPlayed, casinoNetResult]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -151,10 +153,10 @@ export default function useGameState() {
 
   const passiveIncome = profession ? calcPassiveIncome(assets) : 0;
   const bankLoanMonthly = Math.round(bankLoanBalance * BANK_LOAN_RATE);
-  const totalExpenses = profession ? calcExpenses(profession, kids, extraMonthly) + bankLoanMonthly : 0;
+  const totalExpenses = profession ? calcExpenses(profession, kids, extraMonthly, liabilities) + bankLoanMonthly : 0;
   const totalIncome = profession ? profession.salary + passiveIncome : 0;
   const netCashflow = totalIncome - totalExpenses;
-  const currentDebtPayments = profession ? calcDebtPayments(profession, extraMonthly, assets) + bankLoanMonthly : 0;
+  const currentDebtPayments = profession ? calcDebtPayments(profession, extraMonthly, assets, liabilities) + bankLoanMonthly : 0;
   const hasSave = loaded && !!profession && phase !== "won" && phase !== "bankrupt";
 
   useEffect(() => {
@@ -177,6 +179,7 @@ export default function useGameState() {
     setCash(prof.cash);
     setKids(initialKids || 0);
     setAssets([]);
+    setLiabilities(randomizeLiabilities(prof));
     setExtraMonthly(0);
     setExtraDebtBalance(0);
     setBankLoanBalance(0);
@@ -219,7 +222,7 @@ export default function useGameState() {
 
   function resetGame() {
     storage.delete("cashflow-save").catch(() => {});
-    setProfession(null); setDream(null); setWinReason(null); setAssets([]); setFastTrack(null);
+    setProfession(null); setDream(null); setWinReason(null); setAssets([]); setLiabilities({}); setFastTrack(null);
     setSkipTurns(0); setCharityTurnsLeft(0); setMarketTurn(0); setBankLoanBalance(0);
     setCasinoHandsPlayed(0); setCasinoNetResult(0);
     setPendingDecision(null); setLastEvent(null);
@@ -634,6 +637,16 @@ export default function useGameState() {
     }, 80);
   }
 
+  // Solde d'un coup une des 4 dettes de départ (prêt immo/auto/carte/étudiant).
+  // Une fois soldée, sa mensualité fixe cesse de compter dans les dépenses.
+  function payOffLiability(key) {
+    const balance = liabilities[key];
+    if (!(balance > 0) || cash < balance) return;
+    setCash((c) => c - balance);
+    setLiabilities((l) => ({ ...l, [key]: 0 }));
+    banner("Dette remboursée", `${LIABILITY_LABELS[key]} soldé pour ${f(balance)}.`, "good");
+  }
+
   // Rembourse le solde entier d'un actif financé, d'un coup (comme dans le vrai jeu).
   function payOffLoan(assetId) {
     const a = assets.find((x) => x.id === assetId);
@@ -768,6 +781,7 @@ export default function useGameState() {
     cash, setCash,
     kids, setKids,
     assets, setAssets,
+    liabilities, setLiabilities,
     extraMonthly, setExtraMonthly,
     extraDebtBalance, setExtraDebtBalance,
     bankLoanBalance, setBankLoanBalance,
@@ -828,6 +842,7 @@ export default function useGameState() {
     skipFastBusiness,
     resolveFastCharity,
     rollDice,
+    payOffLiability,
     payOffLoan,
     payOffAllLoans,
     startAmortization,

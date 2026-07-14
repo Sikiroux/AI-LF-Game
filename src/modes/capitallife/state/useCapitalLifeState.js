@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { storage } from "../../../state/storage.js";
-import { computeFinancing, amortizedPayment, calcExpenses, calcPassiveIncome, MAX_DEBT_RATIO } from "../../../engine/financing.js";
+import { computeFinancing, amortizedPayment, calcExpenses, calcPassiveIncome, randomizeLiabilities, LIABILITY_LABELS, MAX_DEBT_RATIO } from "../../../engine/financing.js";
 import { generateTokens } from "../../../engine/bourse/tokenGenerator.js";
 import { BROKERAGE_FEE_RATE } from "../../../engine/bourse/market.js";
 import { fmt, uid } from "../../../utils/format.js";
@@ -19,6 +19,7 @@ export default function useCapitalLifeState() {
   const [day, setDay] = useState(0);
   const [cash, setCash] = useState(0);
   const [debts, setDebts] = useState([]);
+  const [liabilities, setLiabilities] = useState({});
   const [kids, setKids] = useState(0);
   const [assets, setAssets] = useState([]);
   const [listings, setListings] = useState([]);
@@ -66,6 +67,7 @@ export default function useCapitalLifeState() {
           if (s.casinoHandsPlayed != null) setCasinoHandsPlayed(s.casinoHandsPlayed);
           if (s.casinoNetResult != null) setCasinoNetResult(s.casinoNetResult);
           if (Array.isArray(s.debts)) setDebts(s.debts);
+          if (s.liabilities) setLiabilities(s.liabilities);
           if (s.kids != null) setKids(s.kids);
           if (Array.isArray(s.assets)) setAssets(s.assets);
           if (Array.isArray(s.listings)) setListings(s.listings);
@@ -102,13 +104,13 @@ export default function useCapitalLifeState() {
   useEffect(() => {
     if (!loaded || day === 0) return;
     const s = {
-      day, cash, profession, phase, debts, kids, assets, listings, layoffMonthsLeft,
+      day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
       casinoHandsPlayed, casinoNetResult,
       tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn,
     };
     storage.set(SAVE_KEY, JSON.stringify(s)).catch(() => {});
-  }, [loaded, day, cash, profession, phase, debts, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, casinoHandsPlayed, casinoNetResult, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn]);
+  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, casinoHandsPlayed, casinoNetResult, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -122,11 +124,11 @@ export default function useCapitalLifeState() {
   useEffect(() => {
     if (phase !== "playing" || !profession) return;
     const debtMonthly = debts.reduce((s, d) => s + d.monthlyPayment, 0);
-    const totalExpenses = calcExpenses(profession, kids, debtMonthly);
+    const totalExpenses = calcExpenses(profession, kids, debtMonthly, liabilities);
     if (totalExpenses > 0 && passiveIncome >= totalExpenses) {
       setPhase("won");
     }
-  }, [phase, profession, debts, kids, passiveIncome]);
+  }, [phase, profession, debts, liabilities, kids, passiveIncome]);
 
   function banner(title, detail, tone) {
     setLastEvent({ title, detail, tone });
@@ -146,6 +148,7 @@ export default function useCapitalLifeState() {
     setCash(scenarioDraft.startingCash);
     setPhase("playing");
     setDebts([scenarioDraft.debt]);
+    setLiabilities(randomizeLiabilities(scenarioDraft.profession));
     setKids(0);
     setAssets([]);
     setListings([]);
@@ -170,6 +173,7 @@ export default function useCapitalLifeState() {
     setProfession(null);
     setPhase("playing");
     setDebts([]);
+    setLiabilities({});
     setView("menu");
   }
 
@@ -258,6 +262,26 @@ export default function useCapitalLifeState() {
     setPendingDecision(null);
   }
 
+  // --- Mes dettes ---
+
+  // Solde d'un coup une des 4 dettes de départ (prêt immo/auto/carte/étudiant).
+  function payOffLiability(key) {
+    const balance = liabilities[key];
+    if (!(balance > 0) || cash < balance) return;
+    setCash((c) => c - balance);
+    setLiabilities((l) => ({ ...l, [key]: 0 }));
+    banner("Dette remboursée", `${LIABILITY_LABELS[key]} soldé pour ${f(balance)}.`, "good");
+  }
+
+  // Solde par anticipation une dette de scénario/imprévu (tableau `debts`).
+  function payOffDebt(debtId) {
+    const d = debts.find((x) => x.id === debtId);
+    if (!d || !(d.balance > 0) || cash < d.balance) return;
+    setCash((c) => c - d.balance);
+    setDebts((list) => list.filter((x) => x.id !== debtId));
+    banner("Dette remboursée", `${d.reason} soldée pour ${f(d.balance)}.`, "good");
+  }
+
   // --- Mes actifs ---
 
   function payOffLoan(assetId) {
@@ -306,6 +330,7 @@ export default function useCapitalLifeState() {
     setDay(result.day);
     setCash(result.cash);
     setDebts(result.debts);
+    setLiabilities(result.liabilities);
     setKids(result.kids);
     setAssets(result.assets);
     setListings(result.listings);
@@ -332,7 +357,7 @@ export default function useCapitalLifeState() {
 
   function snapshot() {
     return {
-      day, cash, profession, debts, kids, assets, listings,
+      day, cash, profession, debts, liabilities, kids, assets, listings,
       tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
       babyEnabled, layoffEnabled, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
@@ -361,7 +386,8 @@ export default function useCapitalLifeState() {
   return {
     loaded, view, setView, phase,
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
-    profession, day, cash, debts, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
+    profession, day, cash, debts, liabilities, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
+    payOffLiability, payOffDebt,
     skipMonthMode, setSkipMonthMode,
     babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft,
     lastEvent, lastSkipReport,

@@ -1,4 +1,4 @@
-import { fmt, randNoRepeat } from "../../../utils/format.js";
+import { fmt, randNoRepeat, uid } from "../../../utils/format.js";
 import { MARKET_CARDS } from "../../../data/marketCards.js";
 import { calcExpenses, calcPassiveIncome } from "../../../engine/financing.js";
 import { tickMarketDays } from "../../../engine/bourse/market.js";
@@ -32,7 +32,7 @@ function amortizeAssetsList(assetList) {
 // consécutives, cohérent sur plusieurs jours simulés d'affilée.
 export function simulateDays(state, numDays, { quiet = false, currency = "EUR", refs }) {
   let {
-    day, cash, profession, debts, kids, assets, listings,
+    day, cash, profession, debts, liabilities, kids, assets, listings,
     tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
@@ -70,7 +70,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
         const financed = scaleDoodadAmount(card.bankLoanAdd, ratio);
         const monthlyPayment = Math.max(1, Math.round(financed / BIG_DOODAD_TERM_MONTHS));
         cashDelta -= amount;
-        debts = [...debts, { reason: card.title, monthlyPayment, monthsRemaining: BIG_DOODAD_TERM_MONTHS, totalMonths: BIG_DOODAD_TERM_MONTHS, balance: monthlyPayment * BIG_DOODAD_TERM_MONTHS }];
+        debts = [...debts, { id: uid(), reason: card.title, monthlyPayment, monthsRemaining: BIG_DOODAD_TERM_MONTHS, totalMonths: BIG_DOODAD_TERM_MONTHS, balance: monthlyPayment * BIG_DOODAD_TERM_MONTHS }];
         lastBigDoodadDay = nd;
         events.push({ title: "Grosse dépense", detail: `${card.title} : -${fmt(amount, currency)} comptant + ${fmt(monthlyPayment, currency)}/mois pendant ${BIG_DOODAD_TERM_MONTHS} mois`, tone: "bad" });
       } else if (eventType === "market") {
@@ -109,7 +109,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     let payday = 0;
     if ((nd - 1) % 30 === 0) {
       const debtMonthly = debts.reduce((s, deb) => s + deb.monthlyPayment, 0);
-      const expenses = calcExpenses(profession, kids, debtMonthly);
+      const expenses = calcExpenses(profession, kids, debtMonthly, liabilities);
       const salary = layoffMonthsLeft > 0 ? 0 : profession.salary;
       const passiveIncome = calcPassiveIncome(assets);
       payday = salary + passiveIncome - expenses;
@@ -128,7 +128,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
   }
 
   return {
-    day, cash, profession, debts, kids, assets, listings,
+    day, cash, profession, debts, liabilities, kids, assets, listings,
     tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
