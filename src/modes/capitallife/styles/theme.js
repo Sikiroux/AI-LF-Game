@@ -43,12 +43,21 @@ export function useCapitalLifeColors() {
 
 // Styles partagés dérivés des couleurs courantes. Appelé après le hook
 // ci-dessus dans chaque composant : `const styles = getStyles(COLORS)`.
+// Largeur max de "l'écran de téléphone" — au-delà (desktop), le contenu se
+// recentre plutôt que d'étirer chaque carte sur toute la largeur de la
+// fenêtre, ce qui rendait certains blocs (ex. compte de résultat) difficiles
+// à lire. N'a aucun effet sur mobile/APK, où la fenêtre est déjà plus étroite.
+export const APP_MAX_WIDTH = 560;
+
 export function getStyles(C) {
   return {
     app: {
-      position: "fixed", inset: 0, background: C.bg, color: C.ink,
+      position: "fixed", top: 0, bottom: 0, left: "50%", transform: "translateX(-50%)",
+      width: "100%", maxWidth: APP_MAX_WIDTH,
+      background: C.bg, color: C.ink,
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
       display: "flex", flexDirection: "column", overflow: "hidden",
+      boxShadow: "0 0 0 1px rgba(0,0,0,0.04)",
     },
     mono: { fontFamily: "ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Consolas, monospace", fontVariantNumeric: "tabular-nums" },
     topBar: {
