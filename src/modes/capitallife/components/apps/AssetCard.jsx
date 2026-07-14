@@ -14,7 +14,7 @@ function Row({ label, value, tone, C }) {
 
 const TYPE_LABELS = { stock: "Actions", realestate: "Immobilier", business: "Business" };
 
-export default function AssetCard({ asset, currency, cash, onPayOff, onStartAmortization, onCancelAmortization, C, styles }) {
+export default function AssetCard({ asset, currency, cash, onPayOff, onStartAmortization, onCancelAmortization, onSelect, C, styles }) {
   const f = (n) => fmt(n, currency);
   const [showAmort, setShowAmort] = useState(false);
   const maxMonths = maxAmortMonths(asset.type);
@@ -22,6 +22,8 @@ export default function AssetCard({ asset, currency, cash, onPayOff, onStartAmor
   const hasLoan = asset.loanBalance > 0;
   const previewPayment = hasLoan ? Math.round(amortizedPayment(asset.loanBalance, asset.annualRate, months / 12)) : 0;
   const canPayOff = hasLoan && cash >= asset.loanBalance;
+  const manageable = asset.condition != null && onSelect;
+  const needsAttention = asset.condition != null && asset.condition < 50;
 
   return (
     <div style={{ ...styles.card, padding: 14, marginBottom: 10 }}>
@@ -34,6 +36,12 @@ export default function AssetCard({ asset, currency, cash, onPayOff, onStartAmor
           <div style={{ fontFamily: "ui-monospace, monospace", fontWeight: 700, color: C.good, fontSize: 14 }}>+{f(asset.cashflow)}/mois</div>
         </div>
       </div>
+
+      {manageable && (
+        <button style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 10, ...(needsAttention ? { borderColor: C.bad, color: C.bad } : {}) }} onClick={() => onSelect(asset.id)}>
+          {needsAttention ? "⚠ Gérer — nécessite votre attention" : "Gérer"}
+        </button>
+      )}
 
       {hasLoan && (
         <>

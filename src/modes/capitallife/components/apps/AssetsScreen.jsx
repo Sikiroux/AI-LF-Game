@@ -2,7 +2,7 @@ import { fmt } from "../../../../utils/format.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
 import AssetCard from "./AssetCard.jsx";
 
-export default function AssetsScreen({ assets, cash, currency, onPayOff, onPayOffAll, onStartAmortization, onCancelAmortization, onBack }) {
+export default function AssetsScreen({ assets, cash, currency, onPayOff, onPayOffAll, onStartAmortization, onCancelAmortization, onSelect, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const f = (n) => fmt(n, currency);
@@ -37,7 +37,7 @@ export default function AssetsScreen({ assets, cash, currency, onPayOff, onPayOf
         )}
         {assets.length === 0 && <div style={{ fontSize: 13, color: C.inkSoft, fontStyle: "italic", textAlign: "center", marginTop: 24 }}>Aucun actif pour l'instant.</div>}
         {assets.map((a) => (
-          <AssetCard key={a.id} asset={a} currency={currency} cash={cash} onPayOff={onPayOff} onStartAmortization={onStartAmortization} onCancelAmortization={onCancelAmortization} C={C} styles={styles} />
+          <AssetCard key={a.id} asset={a} currency={currency} cash={cash} onPayOff={onPayOff} onStartAmortization={onStartAmortization} onCancelAmortization={onCancelAmortization} onSelect={onSelect} C={C} styles={styles} />
         ))}
       </div>
     </div>

@@ -70,7 +70,8 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
         const result = applyAssetEvent(a, type, nd, currency);
         cashDelta += result.cashDelta;
         if (result.event) events.push(result.event);
-        return result.asset;
+        const history = result.event ? [{ day: nd, ...result.event }, ...(result.asset.history || [])].slice(0, 8) : result.asset.history;
+        return { ...result.asset, history };
       });
     }
 

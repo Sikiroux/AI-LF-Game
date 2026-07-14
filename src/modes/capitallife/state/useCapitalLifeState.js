@@ -6,7 +6,7 @@ import { BROKERAGE_FEE_RATE } from "../../../engine/bourse/market.js";
 import { fmt, uid } from "../../../utils/format.js";
 import { generateScenario } from "../data/scenarioGenerator.js";
 import { simulateDays } from "../engine/dayLoop.js";
-import { initAssetIndicators } from "../engine/assetIndicators.js";
+import { initAssetIndicators, canPerformMaintenance, performMaintenance } from "../engine/assetIndicators.js";
 
 const SAVE_KEY = "capitallife-save";
 const SETTINGS_KEY = "capitallife-settings";
@@ -23,6 +23,7 @@ export default function useCapitalLifeState() {
   const [liabilities, setLiabilities] = useState({});
   const [kids, setKids] = useState(0);
   const [assets, setAssets] = useState([]);
+  const [selectedAssetId, setSelectedAssetId] = useState(null);
   const [listings, setListings] = useState([]);
   const [pendingDecision, setPendingDecision] = useState(null);
   const [lastEvent, setLastEvent] = useState(null);
@@ -326,6 +327,20 @@ export default function useCapitalLifeState() {
     banner("Tout rembourser", `${paidIds.length} prêt${paidIds.length > 1 ? "s" : ""} soldé${paidIds.length > 1 ? "s" : ""}.`, "good");
   }
 
+  // Entretien préventif choisi par le joueur, pour contrer la dérive naturelle
+  // de l'état sans attendre une panne/réparation forcée.
+  function performAssetMaintenance(assetId) {
+    const a = assets.find((x) => x.id === assetId);
+    if (!a) return;
+    const check = canPerformMaintenance(a, day, cash);
+    if (!check.ok) { banner("Entretien impossible", check.reason, "info"); return; }
+    const { asset: updated, cost } = performMaintenance(a, day);
+    const history = [{ day, title: "Entretien préventif", detail: `-${f(cost)}, état amélioré.`, tone: "good" }, ...(a.history || [])].slice(0, 8);
+    setCash((c) => c - cost);
+    setAssets((list) => list.map((x) => (x.id === assetId ? { ...updated, history } : x)));
+    banner("Entretien réalisé", `${a.name} : -${f(cost)}, état amélioré.`, "good");
+  }
+
   // --- Avancée du temps : un jour, ou sauter jusqu'au prochain jour de paie ---
 
   function applySimResult(result, report) {
@@ -398,6 +413,7 @@ export default function useCapitalLifeState() {
     buyStock, sellStock,
     listings, pendingDecision, openListing, skipListing, buyListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
+    selectedAssetId, setSelectedAssetId, performAssetMaintenance,
     casinoHandsPlayed, casinoNetResult,
     onCasinoCashDelta: (amount) => setCash((c) => Math.max(0, c + amount)),
     onCasinoHandPlayed: (netProfit) => { setCasinoHandsPlayed((n) => n + 1); setCasinoNetResult((n) => n + netProfit); },

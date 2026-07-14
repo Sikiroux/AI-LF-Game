@@ -14,7 +14,7 @@ const APPS = [
 
 export default function CapitalLifeHomeScreen({
   day, cash, profession, debts, liabilities, kids, assets, passiveIncome, layoffMonthsLeft, currency,
-  lastEvent, hasSkipReport, skipMonthMode, onChangeSkipMonthMode,
+  lastEvent, hasSkipReport, skipMonthMode, onChangeSkipMonthMode, assetsNeedingAttention,
   onNextDay, onSkipMonth, onOpenApp, onOpenSkipReport, onMenu,
 }) {
   const C = useCapitalLifeColors();
@@ -94,7 +94,14 @@ export default function CapitalLifeHomeScreen({
         <div style={styles.sectionTitle}>Vos applications</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "18px 10px" }}>
           {APPS.map((app) => (
-            <AppIcon key={app.key} emoji={app.emoji} label={app.label} file={app.file} onClick={() => onOpenApp(app.key)} />
+            <AppIcon
+              key={app.key}
+              emoji={app.emoji}
+              label={app.label}
+              file={app.file}
+              badge={app.key === "assets" ? assetsNeedingAttention : null}
+              onClick={() => onOpenApp(app.key)}
+            />
           ))}
         </div>
       </div>

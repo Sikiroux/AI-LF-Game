@@ -12,6 +12,7 @@ import SkipReportScreen from "./components/screens/SkipReportScreen.jsx";
 import TradingScreen from "./components/apps/TradingScreen.jsx";
 import CasinoScreen from "./components/apps/CasinoScreen.jsx";
 import AssetsScreen from "./components/apps/AssetsScreen.jsx";
+import AssetDetailScreen from "./components/apps/AssetDetailScreen.jsx";
 import DebtsScreen from "../../components/ledger/DebtsScreen.jsx";
 
 export default function CapitalLifeApp({ onExitHome }) {
@@ -25,6 +26,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     tokens, portfolio, journal, marketTurn, traderJournalActive, onToggleTraderJournal, buyStock, sellStock,
     listings, pendingDecision, openListing, skipListing, buyListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
+    selectedAssetId, setSelectedAssetId, performAssetMaintenance,
     casinoHandsPlayed, casinoNetResult, onCasinoCashDelta, onCasinoHandPlayed,
     currency, setCurrency,
   } = useCapitalLifeState();
@@ -77,7 +79,25 @@ export default function CapitalLifeApp({ onExitHome }) {
     return <CasinoScreen cash={cash} currency={currency} onCashDelta={onCasinoCashDelta} handsPlayed={casinoHandsPlayed} netResult={casinoNetResult} onHandPlayed={onCasinoHandPlayed} onBack={() => setView("game")} />;
   }
   if (view === "assets") {
-    return <AssetsScreen assets={assets} cash={cash} currency={currency} onPayOff={payOffLoan} onPayOffAll={payOffAllLoans} onStartAmortization={startAmortization} onCancelAmortization={cancelAmortization} onBack={() => setView("game")} />;
+    return (
+      <AssetsScreen
+        assets={assets} cash={cash} currency={currency}
+        onPayOff={payOffLoan} onPayOffAll={payOffAllLoans}
+        onStartAmortization={startAmortization} onCancelAmortization={cancelAmortization}
+        onSelect={(id) => { setSelectedAssetId(id); setView("assetDetail"); }}
+        onBack={() => setView("game")}
+      />
+    );
+  }
+  if (view === "assetDetail") {
+    return (
+      <AssetDetailScreen
+        asset={assets.find((a) => a.id === selectedAssetId)}
+        cash={cash} currency={currency} day={day}
+        onMaintenance={performAssetMaintenance}
+        onBack={() => setView("assets")}
+      />
+    );
   }
   if (view === "finances") {
     return (
@@ -158,6 +178,7 @@ export default function CapitalLifeApp({ onExitHome }) {
       currency={currency}
       lastEvent={lastEvent}
       hasSkipReport={!!lastSkipReport}
+      assetsNeedingAttention={assets.filter((a) => a.condition != null && a.condition < 50).length}
       skipMonthMode={skipMonthMode}
       onChangeSkipMonthMode={setSkipMonthMode}
       onNextDay={nextDay}

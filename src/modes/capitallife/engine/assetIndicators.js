@@ -43,9 +43,42 @@ export function computeStability(asset) {
   return null;
 }
 
-// Dérive lente une fois par mois (appelé au jour de paie). Pas encore de
-// levier d'entretien/investissement pour contrer la baisse — ce sera ajouté
-// avec les décisions de gestion (écran de détail par actif).
+// Bandes qualitatives affichées au joueur — jamais le chiffre brut (cf. principe
+// "pas de tableau de bord de jauges cachées" de la conception du moteur d'actifs).
+export function qualitativeLabel(value) {
+  if (value == null) return null;
+  if (value >= 80) return "Excellent";
+  if (value >= 60) return "Bon";
+  if (value >= 40) return "Moyen";
+  if (value >= 20) return "Fragile";
+  return "Critique";
+}
+
+export const MAINTENANCE_COOLDOWN_DAYS = 24;
+export const MAINTENANCE_COST_RATE = 0.02; // 2% de la valeur de l'actif
+
+// Entretien préventif déclenché par le joueur : restaure l'état contre
+// paiement, avec un cooldown pour que ça reste un vrai choix stratégique
+// plutôt qu'un bouton à spammer pour neutraliser le risque de panne/problème.
+export function canPerformMaintenance(asset, day, cash) {
+  if (asset.condition == null) return { ok: false, reason: "Aucun entretien possible sur ce type d'actif." };
+  if (asset.condition >= 95) return { ok: false, reason: "Déjà en excellent état." };
+  if (asset.lastMaintenanceDay != null && day - asset.lastMaintenanceDay < MAINTENANCE_COOLDOWN_DAYS) {
+    return { ok: false, reason: `Entretien déjà fait récemment (revenez dans ${MAINTENANCE_COOLDOWN_DAYS - (day - asset.lastMaintenanceDay)} jours).` };
+  }
+  const cost = Math.round(asset.cost * MAINTENANCE_COST_RATE);
+  if (cash < cost) return { ok: false, reason: "Liquidités insuffisantes." };
+  return { ok: true, cost };
+}
+
+export function performMaintenance(asset, day) {
+  const cost = Math.round(asset.cost * MAINTENANCE_COST_RATE);
+  const condition = clamp(asset.condition + 20 + Math.round(Math.random() * 10));
+  const next = { ...asset, condition, lastMaintenanceDay: day };
+  return { asset: { ...next, stability: computeStability(next) }, cost };
+}
+
+// Dérive lente une fois par mois (appelé au jour de paie).
 export function driftAssetIndicators(asset) {
   if (asset.type === "realestate" && asset.condition != null && asset.tenant) {
     const condition = clamp(asset.condition - (1 + Math.round(Math.random() * 2)), 15, 100);
