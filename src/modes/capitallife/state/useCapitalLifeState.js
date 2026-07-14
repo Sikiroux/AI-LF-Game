@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { storage } from "../../../state/storage.js";
 import { computeFinancing, amortizedPayment, calcExpenses, calcPassiveIncome, randomizeLiabilities, LIABILITY_LABELS, MAX_DEBT_RATIO } from "../../../engine/financing.js";
 import { generateTokens } from "../../../engine/bourse/tokenGenerator.js";
-import { BROKERAGE_FEE_RATE } from "../../../engine/bourse/market.js";
+import { BROKERAGE_FEE_RATE, tickMarketDays } from "../../../engine/bourse/market.js";
 import { fmt, uid } from "../../../utils/format.js";
 import { generateScenario } from "../data/scenarioGenerator.js";
 import { simulateDays } from "../engine/dayLoop.js";
+import { advanceListings } from "../engine/opportunitySite.js";
 import {
   initAssetIndicators, canPerformMaintenance, performMaintenance,
   totalSalaries, hireEmployee, fireEmployee, fireSeverance, trainEmployee, trainingCost, MAX_EMPLOYEES,
@@ -201,7 +202,6 @@ export default function useCapitalLifeState() {
     setLiabilities(randomizeLiabilities(scenarioDraft.profession));
     setKids(0);
     setAssets([]);
-    setListings([]);
     setPendingDecision(null);
     setLastEvent(null);
     setCasinoHandsPlayed(0); setCasinoNetResult(0);
@@ -211,9 +211,25 @@ export default function useCapitalLifeState() {
     setLuckyUntilDay(0);
     lastSmallDoodadCardRef.current = null; lastBigDoodadCardRef.current = null; lastMarketCardRef.current = null;
     setDay(1);
-    setTokens(generateTokens(16));
-    setPortfolio({}); setJournal([]); setPendingArcs([]); setSectorConditions({});
-    setEconomicModifier({ loanRateMult: 1, expiresTurn: 0 }); setTraderJournalActive(false); setMarketTurn(0);
+
+    // Pré-remplit le site d'annonces et le journal des marchés avant le premier
+    // geste du joueur — sinon les deux sont vides à l'arrivée sur l'accueil.
+    let seedListings = [];
+    for (let i = 0; i < 3; i++) seedListings = advanceListings(seedListings, 1, scenarioDraft.startingCash);
+    setListings(seedListings);
+
+    const warmup = tickMarketDays({
+      tokens: generateTokens(16), pendingArcs: [], sectorConditions: {}, economicModifier: { loanRateMult: 1, expiresTurn: 0 },
+      marketTurn: 0, traderJournalActive: false, economicEffectDuration: 10, economicEffectPermanent: false, assets: [], currency,
+    }, 5);
+    setTokens(warmup.tokens);
+    setPortfolio({});
+    setJournal(warmup.journalEntries.slice().reverse());
+    setPendingArcs(warmup.pendingArcs);
+    setSectorConditions(warmup.sectorConditions);
+    setEconomicModifier(warmup.economicModifier);
+    setTraderJournalActive(false);
+    setMarketTurn(warmup.marketTurn);
     setSkills({ ...(scenarioDraft.profession.startingSkills || {}) });
     setTraining(null);
     setMissions(generateMissions(scenarioDraft.profession.startingSkills || {}));
