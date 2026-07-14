@@ -14,7 +14,7 @@ export const COLORS = {
 };
 
 export const styles = {
-  app: { position: "fixed", inset: 0, background: COLORS.paper, backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(35,42,49,0.05) 27px)`, fontFamily: "'Helvetica Neue', Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" },
+  app: { position: "fixed", inset: 0, background: COLORS.paper, backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(35,42,49,0.05) 27px)`, fontFamily: "'Helvetica Neue', Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", paddingTop: "var(--safe-area-inset-top, env(safe-area-inset-top, 0px))", paddingBottom: "var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))", paddingLeft: "var(--safe-area-inset-left, env(safe-area-inset-left, 0px))", paddingRight: "var(--safe-area-inset-right, env(safe-area-inset-right, 0px))", boxSizing: "border-box" },
   header: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px dashed ${COLORS.inkSoft}`, flexShrink: 0, background: COLORS.paperDark },
   main: { display: "flex", flex: 1, overflow: "auto", padding: 12, gap: 14 },
   boardCol: { display: "flex", flexDirection: "column", alignItems: "center", flex: 1, minWidth: 0 },
