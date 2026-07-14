@@ -11,7 +11,7 @@ export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, b
         <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>⚙️ Options — Capital Life</div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+      <div style={{ ...styles.content, padding: 16 }}>
         <div style={{ ...styles.card, padding: 16, marginBottom: 14 }}>
           <div style={styles.sectionTitle}>Devise</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

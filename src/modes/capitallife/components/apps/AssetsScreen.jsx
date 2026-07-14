@@ -22,7 +22,7 @@ export default function AssetsScreen({ assets, cash, currency, onPayOff, onPayOf
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+      <div style={{ ...styles.content, padding: 16 }}>
         {loanedAssets.length > 1 && (
           <div style={{ marginBottom: 14 }}>
             <button

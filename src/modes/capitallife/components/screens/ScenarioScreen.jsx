@@ -28,7 +28,7 @@ export default function ScenarioScreen({ scenario, currency, onStart, onReroll, 
         <div style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>Votre mise en situation</div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+      <div style={{ ...styles.content, padding: 16 }}>
         <div style={{ textAlign: "center", marginBottom: 16 }}>
           <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: C.accent, fontWeight: 700 }}>Profession</div>
           <div style={{ fontSize: 22, color: C.ink, marginTop: 4, fontWeight: 700 }}>{profession.icon} {profession.name}</div>

@@ -41,7 +41,7 @@ export default function TradingScreen({ tokens, portfolio, journal, cash, curren
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+      <div style={{ ...styles.content, padding: 16 }}>
         <div style={{ ...styles.card, padding: "10px 14px", textAlign: "center", marginBottom: 14 }}>
           <div style={{ fontSize: 11, color: C.inkSoft }}>🎲 Jour {marketTurn} — {advanceHint || "le marché avance à chaque jour qui passe."}</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 4, fontStyle: "italic" }}>{advanceSubHint || "Retourne à l'accueil et avance d'un jour pour faire évoluer tes positions."}</div>

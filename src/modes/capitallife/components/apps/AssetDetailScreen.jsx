@@ -118,13 +118,15 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
         </div>
       </div>
 
-      <div style={{ flexShrink: 0, display: "flex", gap: 8, padding: "10px 16px", borderBottom: `1px solid ${C.line}` }}>
-        {TABS.map((t) => (
-          <button key={t.key} style={{ ...styles.chip, ...(tab === t.key ? styles.chipActive : {}) }} onClick={() => setTab(t.key)}>{t.label}</button>
-        ))}
+      <div style={{ flexShrink: 0, display: "flex", padding: "10px 16px", borderBottom: `1px solid ${C.line}` }}>
+        <div style={{ ...styles.centerCol, display: "flex", gap: 8 }}>
+          {TABS.map((t) => (
+            <button key={t.key} style={{ ...styles.chip, ...(tab === t.key ? styles.chipActive : {}) }} onClick={() => setTab(t.key)}>{t.label}</button>
+          ))}
+        </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+      <div style={{ ...styles.content, padding: 16 }}>
         {tab === "vue" && (
           <>
             <div style={styles.card}>

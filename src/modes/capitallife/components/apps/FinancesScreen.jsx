@@ -34,7 +34,7 @@ export default function FinancesScreen({ day, profession, kids, debts, liabiliti
         <div style={{ width: 30 }} />
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+      <div style={{ ...styles.content, padding: 16 }}>
         <div style={styles.card}>
           <div style={{ padding: 16 }}>
             <div style={styles.sectionTitle}>Compte de résultat mensuel</div>

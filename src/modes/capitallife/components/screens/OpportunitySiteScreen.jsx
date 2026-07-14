@@ -46,20 +46,24 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
         </div>
       </div>
       {!canNegotiate && (
-        <div style={{ flexShrink: 0, padding: "8px 16px", background: C.surfaceRaised, borderBottom: `1px solid ${C.line}`, fontSize: 11, color: C.bad, textAlign: "center" }}>
-          Plus assez de points d'action aujourd'hui pour négocier un achat — revenez demain.
+        <div style={{ flexShrink: 0, padding: "8px 16px", background: C.surfaceRaised, borderBottom: `1px solid ${C.line}` }}>
+          <div style={{ ...styles.centerCol, fontSize: 11, color: C.bad, textAlign: "center" }}>
+            Plus assez de points d'action aujourd'hui pour négocier un achat — revenez demain.
+          </div>
         </div>
       )}
 
-      <div style={{ flexShrink: 0, display: "flex", gap: 8, padding: "10px 16px", overflowX: "auto", borderBottom: `1px solid ${C.line}` }}>
-        {FILTERS.map((ft) => (
-          <button key={ft.key} style={{ ...styles.chip, ...(filter === ft.key ? styles.chipActive : {}) }} onClick={() => setFilter(ft.key)}>
-            {ft.label}
-          </button>
-        ))}
+      <div style={{ flexShrink: 0, display: "flex", padding: "10px 16px", overflowX: "auto", borderBottom: `1px solid ${C.line}` }}>
+        <div style={{ ...styles.centerCol, display: "flex", gap: 8 }}>
+          {FILTERS.map((ft) => (
+            <button key={ft.key} style={{ ...styles.chip, ...(filter === ft.key ? styles.chipActive : {}) }} onClick={() => setFilter(ft.key)}>
+              {ft.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ ...styles.content, padding: "14px 14px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
         {filtered.length === 0 && (
           <div style={{ fontSize: 13, color: C.inkSoft, fontStyle: "italic", textAlign: "center", marginTop: 24 }}>
             Aucune annonce pour l'instant, revenez demain.

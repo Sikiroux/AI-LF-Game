@@ -41,7 +41,7 @@ export default function DebtsScreen({ variant, profession, liabilities, extraDeb
             </div>
           </div>
         </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+        <div style={{ ...s.content, padding: 16 }}>
           {all.length === 0 && <div style={{ fontSize: 13, color: C.inkSoft, fontStyle: "italic", textAlign: "center", marginTop: 24 }}>Aucune dette en cours.</div>}
           {all.map((d) => <DebtCard key={d.id} debt={d} currency={currency} cash={cash} onPayOff={handlePayOff} theme={theme} />)}
         </div>

@@ -43,27 +43,33 @@ export function useCapitalLifeColors() {
 
 // Styles partagés dérivés des couleurs courantes. Appelé après le hook
 // ci-dessus dans chaque composant : `const styles = getStyles(COLORS)`.
-// Largeur max de "l'écran de téléphone" — au-delà (desktop), le contenu se
-// recentre plutôt que d'étirer chaque carte sur toute la largeur de la
-// fenêtre, ce qui rendait certains blocs (ex. compte de résultat) difficiles
-// à lire. N'a aucun effet sur mobile/APK, où la fenêtre est déjà plus étroite.
-export const APP_MAX_WIDTH = 560;
+// Largeur max du contenu lisible (cartes, listes, formulaires) sur desktop —
+// le fond de l'appli (barre du haut, bandeaux, pied de page) reste sur toute
+// la largeur de la fenêtre ; seul le contenu à lire se recentre au lieu de
+// s'étirer edge-to-edge, ce qui rendait certains blocs (ex. compte de
+// résultat) difficiles à lire. N'a aucun effet sur mobile/APK, où la fenêtre
+// est déjà plus étroite que ce seuil.
+export const CONTENT_MAX_WIDTH = 560;
 
 export function getStyles(C) {
   return {
     app: {
-      position: "fixed", top: 0, bottom: 0, left: "50%", transform: "translateX(-50%)",
-      width: "100%", maxWidth: APP_MAX_WIDTH,
-      background: C.bg, color: C.ink,
+      position: "fixed", inset: 0, background: C.bg, color: C.ink,
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
       display: "flex", flexDirection: "column", overflow: "hidden",
-      boxShadow: "0 0 0 1px rgba(0,0,0,0.04)",
     },
     mono: { fontFamily: "ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Consolas, monospace", fontVariantNumeric: "tabular-nums" },
     topBar: {
       flexShrink: 0, display: "flex", alignItems: "center", gap: 10,
       padding: "12px 16px 10px", background: C.surfaceRaised, borderBottom: `1px solid ${C.line}`,
     },
+    // Colonne centrée pour le contenu lisible, à l'intérieur d'un bandeau
+    // plein écran (fond de couleur, bordures) : le bandeau garde sa largeur
+    // pleine, seul ce qu'il contient se recentre.
+    centerCol: { width: "100%", maxWidth: CONTENT_MAX_WIDTH, margin: "0 auto", boxSizing: "border-box" },
+    // Zone de contenu scrollable principale, déjà recentrée — la plupart des
+    // écrans l'utilisent directement (pas de fond distinct à préserver).
+    content: { flex: 1, overflowY: "auto", width: "100%", maxWidth: CONTENT_MAX_WIDTH, margin: "0 auto", boxSizing: "border-box" },
     backBtn: {
       width: 30, height: 30, borderRadius: 9, background: C.surface, border: `1px solid ${C.line}`,
       display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: C.ink, cursor: "pointer", flexShrink: 0,
