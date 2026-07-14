@@ -10,7 +10,7 @@ import { advanceListings } from "../engine/opportunitySite.js";
 import {
   initAssetIndicators, canPerformMaintenance, performMaintenance,
   totalSalaries, hireEmployee, fireEmployee, fireSeverance, trainEmployee, trainingCost, MAX_EMPLOYEES,
-  applyStakePurchase, DEFAULT_MANAGEMENT_THRESHOLD_PCT,
+  applyStakePurchase, DEFAULT_MANAGEMENT_THRESHOLD_PCT, canRunAd, runAd,
 } from "../engine/assetIndicators.js";
 import { DAILY_ACTION_POINTS, ACTION_COSTS } from "../engine/actionPoints.js";
 import {
@@ -423,6 +423,21 @@ export default function useCapitalLifeState() {
     banner("Entretien réalisé", `${a.name} : -${f(cost)}, état amélioré.`, "good");
   }
 
+  // Campagne de publicité (business uniquement) : booste la réputation, ce
+  // qui remonte la santé globale et donc la dérive de revenu au fil des mois.
+  function performAssetAd(assetId) {
+    const a = assets.find((x) => x.id === assetId);
+    if (!a) return;
+    const check = canRunAd(a, day, cash);
+    if (!check.ok) { banner("Publicité impossible", check.reason, "info"); return; }
+    if (!spendActionPoints(ACTION_COSTS.ad)) return;
+    const { asset: updated, cost } = runAd(a, day);
+    const history = [{ day, title: "Campagne de publicité", detail: `-${f(cost)}, réputation améliorée.`, tone: "good" }, ...(a.history || [])].slice(0, 8);
+    setCash((c) => c - cost);
+    setAssets((list) => list.map((x) => (x.id === assetId ? { ...updated, history } : x)));
+    banner("Publicité lancée", `${a.name} : -${f(cost)}, réputation améliorée.`, "good");
+  }
+
   // --- Employés (business rachetés uniquement) ---
 
   function hireAssetEmployee(assetId, candidate) {
@@ -681,7 +696,7 @@ export default function useCapitalLifeState() {
     buyStock, sellStock,
     listings, pendingDecision, openListing, skipListing, buyListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
-    selectedAssetId, setSelectedAssetId, performAssetMaintenance,
+    selectedAssetId, setSelectedAssetId, performAssetMaintenance, performAssetAd,
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,
     casinoHandsPlayed, casinoNetResult, actionPoints,
     onCasinoCashDelta: (amount) => setCash((c) => Math.max(0, c + amount)),

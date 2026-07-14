@@ -29,7 +29,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     tokens, portfolio, journal, marketTurn, traderJournalActive, onToggleTraderJournal, buyStock, sellStock,
     listings, pendingDecision, openListing, skipListing, buyListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
-    selectedAssetId, setSelectedAssetId, performAssetMaintenance,
+    selectedAssetId, setSelectedAssetId, performAssetMaintenance, performAssetAd,
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,
     casinoHandsPlayed, casinoNetResult, actionPoints, onCasinoCashDelta, onCasinoHandPlayed,
     currency, setCurrency,
@@ -112,6 +112,7 @@ export default function CapitalLifeApp({ onExitHome }) {
         cash={cash} currency={currency} day={day} actionPoints={actionPoints}
         managementThreshold={managementThresholdPct}
         onMaintenance={performAssetMaintenance}
+        onAd={performAssetAd}
         onHire={(candidate) => hireAssetEmployee(selectedAssetId, candidate)}
         onFire={(employeeId) => fireAssetEmployee(selectedAssetId, employeeId)}
         onTrain={(employeeId) => trainAssetEmployee(selectedAssetId, employeeId)}

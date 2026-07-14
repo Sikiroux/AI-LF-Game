@@ -189,6 +189,42 @@ export function performMaintenance(asset, day) {
   return { asset: { ...next, stability: computeStability(next) }, cost };
 }
 
+export const AD_COOLDOWN_DAYS = 20;
+export const AD_COST_RATE = 0.03; // 3% de la valeur de l'actif
+
+// Campagne de publicité, business uniquement : booste la réputation contre
+// paiement, avec un cooldown — un levier actif qui remonte le stability et
+// donc la dérive de revenu (cf. performanceGrowthRate), en complément de la
+// gestion passive (personnel, entretien).
+export function canRunAd(asset, day, cash) {
+  if (asset.type !== "business" || asset.reputation == null) return { ok: false, reason: "Aucune campagne possible sur ce type d'actif." };
+  if (asset.reputation >= 95) return { ok: false, reason: "Déjà en excellente réputation." };
+  if (asset.lastAdDay != null && day - asset.lastAdDay < AD_COOLDOWN_DAYS) {
+    return { ok: false, reason: `Campagne déjà menée récemment (revenez dans ${AD_COOLDOWN_DAYS - (day - asset.lastAdDay)} jours).` };
+  }
+  const cost = Math.round(asset.cost * AD_COST_RATE);
+  if (cash < cost) return { ok: false, reason: "Liquidités insuffisantes." };
+  return { ok: true, cost };
+}
+
+export function runAd(asset, day) {
+  const cost = Math.round(asset.cost * AD_COST_RATE);
+  const reputation = clamp(asset.reputation + 10 + Math.round(Math.random() * 10));
+  const next = { ...asset, reputation, lastAdDay: day };
+  return { asset: { ...next, stability: computeStability(next) }, cost };
+}
+
+// Une entreprise bien gérée (stability élevée) devient plus rentable avec le
+// temps ; négligée, elle périclite — indépendamment des événements ponctuels
+// (pannes, bonnes nouvelles...) qui restent un système à part. C'est le
+// mécanisme qui fait que "le travail de gestion rapporte" concrètement.
+export function performanceGrowthRate(stability) {
+  if (stability == null) return 0;
+  if (stability >= 70) return 0.01 + ((Math.min(100, stability) - 70) / 30) * 0.02; // +1% à +3%/mois
+  if (stability <= 40) return -0.01 - ((40 - Math.max(0, stability)) / 40) * 0.02; // -1% à -3%/mois
+  return 0;
+}
+
 // Dérive lente une fois par mois (appelé au jour de paie).
 export function driftAssetIndicators(asset) {
   if (asset.type === "realestate" && asset.condition != null && asset.tenant) {
@@ -213,8 +249,16 @@ export function driftAssetIndicators(asset) {
     } else {
       staffMorale = clamp((asset.staffMorale != null ? asset.staffMorale : 60) + Math.round((Math.random() - 0.5) * 6));
     }
-    const next = { ...asset, condition, reputation, staffMorale, employees };
-    return { ...next, stability: computeStability(next) };
+    let next = { ...asset, condition, reputation, staffMorale, employees };
+    const stability = computeStability(next);
+    const growthRate = performanceGrowthRate(stability);
+    let baseGrossCashflow = asset.baseGrossCashflow ?? asset.grossCashflow ?? 0;
+    if (growthRate !== 0) baseGrossCashflow = Math.max(0, Math.round(baseGrossCashflow * (1 + growthRate)));
+    const hasTempEffect = asset.incomeEffectExpiresDay != null;
+    const grossCashflow = hasTempEffect ? asset.grossCashflow : baseGrossCashflow;
+    next = { ...next, baseGrossCashflow, grossCashflow };
+    next.cashflow = grossCashflow - (asset.loanMonthly || 0) - totalSalaries(next);
+    return { ...next, stability };
   }
   return asset;
 }

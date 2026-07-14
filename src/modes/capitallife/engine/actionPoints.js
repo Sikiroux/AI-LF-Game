@@ -14,4 +14,5 @@ export const ACTION_COSTS = {
   train: 3,
   fire: 1,
   buyAsset: 2,
+  ad: 2,
 };

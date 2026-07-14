@@ -4,7 +4,7 @@ import { SECTOR_LABELS } from "../../../../data/sectors.js";
 import {
   qualitativeLabel, canPerformMaintenance, MAINTENANCE_COST_RATE,
   generateCandidate, trainingCost, fireSeverance, MAX_EMPLOYEES,
-  canManage, DEFAULT_MANAGEMENT_THRESHOLD_PCT,
+  canManage, DEFAULT_MANAGEMENT_THRESHOLD_PCT, canRunAd, AD_COST_RATE,
 } from "../../engine/assetIndicators.js";
 import { computeFinancing } from "../../../../engine/financing.js";
 import { ACTION_COSTS } from "../../engine/actionPoints.js";
@@ -135,7 +135,7 @@ function StakeSection({ asset, cash, actionPoints, currency, managementThreshold
   );
 }
 
-export default function AssetDetailScreen({ asset, cash, currency, day, actionPoints, managementThreshold = DEFAULT_MANAGEMENT_THRESHOLD_PCT, onMaintenance, onHire, onFire, onTrain, onBuyStake, onBack }) {
+export default function AssetDetailScreen({ asset, cash, currency, day, actionPoints, managementThreshold = DEFAULT_MANAGEMENT_THRESHOLD_PCT, onMaintenance, onAd, onHire, onFire, onTrain, onBuyStake, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const [tab, setTab] = useState("vue");
@@ -162,6 +162,10 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
   const maintCost = Math.round(asset.cost * MAINTENANCE_COST_RATE);
   const maintPaOk = actionPoints == null || actionPoints >= ACTION_COSTS.maintenance;
   const canMaintain = maintCheck.ok && maintPaOk;
+  const adCheck = canRunAd(asset, day, cash);
+  const adCost = Math.round(asset.cost * AD_COST_RATE);
+  const adPaOk = actionPoints == null || actionPoints >= ACTION_COSTS.ad;
+  const canAd = adCheck.ok && adPaOk;
 
   return (
     <div style={styles.app}>
@@ -246,10 +250,30 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
                   >
                     Faire un entretien ({f(maintCost)} · ⚡{ACTION_COSTS.maintenance})
                   </button>
-                  {!maintCheck.ok && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>{maintCheck.reason}</div>}
+    {!maintCheck.ok && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>{maintCheck.reason}</div>}
                   {maintCheck.ok && !maintPaOk && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>Plus assez de points d'action aujourd'hui.</div>}
                 </>
               )}
+            </div>
+          </div>
+        )}
+
+        {tab === "decisions" && !isRealestate && (
+          <div style={{ ...styles.card, marginTop: 14 }}>
+            <div style={{ padding: 16 }}>
+              <div style={styles.sectionTitle}>Publicité</div>
+              <div style={{ fontSize: 12.5, color: C.inkSoft, marginBottom: 12, lineHeight: 1.5 }}>
+                Booste la réputation de l'entreprise, ce qui améliore sa santé globale et sa rentabilité au fil des mois.
+              </div>
+              <button
+                style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", opacity: canAd ? 1 : 0.4 }}
+                disabled={!canAd}
+                onClick={() => onAd(asset.id)}
+              >
+                Faire de la pub ({f(adCost)} · ⚡{ACTION_COSTS.ad})
+              </button>
+              {!adCheck.ok && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>{adCheck.reason}</div>}
+              {adCheck.ok && !adPaOk && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>Plus assez de points d'action aujourd'hui.</div>}
             </div>
           </div>
         )}
