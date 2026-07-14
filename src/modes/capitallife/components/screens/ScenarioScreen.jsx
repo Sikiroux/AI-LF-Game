@@ -1,4 +1,4 @@
-import { calcExpenses } from "../../../../engine/financing.js";
+import { calcExpenses, LIABILITY_KEYS, LIABILITY_LABELS } from "../../../../engine/financing.js";
 import { fmt } from "../../../../utils/format.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
 
@@ -14,10 +14,10 @@ function Row({ label, value, bold, tone, C }) {
 export default function ScenarioScreen({ scenario, currency, onStart, onReroll, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
-  const { profession, startingCash, debt } = scenario;
+  const { profession, startingCash, liabilities, debt } = scenario;
   const f = (n) => fmt(n, currency);
   const e = profession.expenses;
-  const expenses = calcExpenses(profession, 0, 0);
+  const expenses = calcExpenses(profession, 0, 0, liabilities);
   const totalExpenses = expenses + debt.monthlyPayment;
   const netCashflow = profession.salary - totalExpenses;
 
@@ -39,10 +39,9 @@ export default function ScenarioScreen({ scenario, currency, onStart, onReroll, 
             <div style={styles.sectionTitle}>Compte de résultat mensuel</div>
             <Row C={C} label="Salaire" value={f(profession.salary)} bold />
             {e.taxes > 0 && <Row C={C} label="Impôts" value={`-${f(e.taxes)}`} tone="bad" />}
-            {e.mortgage > 0 && <Row C={C} label="Prêt immobilier" value={`-${f(e.mortgage)}`} tone="bad" />}
-            {e.carLoan > 0 && <Row C={C} label="Prêt auto" value={`-${f(e.carLoan)}`} tone="bad" />}
-            {e.creditCard > 0 && <Row C={C} label="Carte de crédit" value={`-${f(e.creditCard)}`} tone="bad" />}
-            {e.schoolLoan > 0 && <Row C={C} label="Prêt étudiant" value={`-${f(e.schoolLoan)}`} tone="bad" />}
+            {LIABILITY_KEYS.map((key) => (liabilities[key] > 0) && (
+              <Row key={key} C={C} label={LIABILITY_LABELS[key]} value={`-${f(e[key])}`} tone="bad" />
+            ))}
             {e.other > 0 && <Row C={C} label="Autres dépenses" value={`-${f(e.other)}`} tone="bad" />}
             <Row C={C} label="Dépenses fixes" value={`-${f(expenses)}`} bold tone="bad" />
           </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { storage } from "../../../state/storage.js";
-import { computeFinancing, amortizedPayment, calcExpenses, calcPassiveIncome, randomizeLiabilities, LIABILITY_LABELS, MAX_DEBT_RATIO } from "../../../engine/financing.js";
+import { computeFinancing, amortizedPayment, calcExpenses, calcPassiveIncome, LIABILITY_LABELS, MAX_DEBT_RATIO } from "../../../engine/financing.js";
 import { generateTokens } from "../../../engine/bourse/tokenGenerator.js";
 import { BROKERAGE_FEE_RATE, tickMarketDays } from "../../../engine/bourse/market.js";
 import { fmt, uid } from "../../../utils/format.js";
@@ -199,7 +199,7 @@ export default function useCapitalLifeState() {
     setCash(scenarioDraft.startingCash);
     setPhase("playing");
     setDebts([scenarioDraft.debt]);
-    setLiabilities(randomizeLiabilities(scenarioDraft.profession));
+    setLiabilities(scenarioDraft.liabilities);
     setKids(0);
     setAssets([]);
     setPendingDecision(null);
