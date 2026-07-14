@@ -3,6 +3,7 @@ import { MARKET_CARDS } from "../../../data/marketCards.js";
 import { calcExpenses, calcPassiveIncome } from "../../../engine/financing.js";
 import { tickMarketDays } from "../../../engine/bourse/market.js";
 import { advanceListings } from "./opportunitySite.js";
+import { driftAssetIndicators } from "./assetIndicators.js";
 import {
   SMALL_DOODAD_CARDS, BIG_DOODAD_CARDS, BIG_DOODAD_TERM_MONTHS,
   incomeRatio, scaleDoodadAmount, buildDailyEventTable, rollDailyEvent,
@@ -119,7 +120,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
         return { ...deb, monthsRemaining, balance: deb.monthlyPayment * monthsRemaining };
       }).filter(Boolean);
       if (layoffMonthsLeft > 0) layoffMonthsLeft = Math.max(0, layoffMonthsLeft - 1);
-      assets = amortizeAssetsList(assets);
+      assets = amortizeAssetsList(assets).map(driftAssetIndicators);
       events.push({ title: "Jour de paie", detail: `Salaire + revenus passifs - dépenses = ${payday >= 0 ? "+" : ""}${fmt(payday, currency)}`, tone: payday >= 0 ? "good" : "bad" });
     }
 

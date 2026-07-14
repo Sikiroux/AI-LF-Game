@@ -6,6 +6,7 @@ import { BROKERAGE_FEE_RATE } from "../../../engine/bourse/market.js";
 import { fmt, uid } from "../../../utils/format.js";
 import { generateScenario } from "../data/scenarioGenerator.js";
 import { simulateDays } from "../engine/dayLoop.js";
+import { initAssetIndicators } from "../engine/assetIndicators.js";
 
 const SAVE_KEY = "capitallife-save";
 const SETTINGS_KEY = "capitallife-settings";
@@ -256,6 +257,7 @@ export default function useCapitalLifeState() {
       loanMonthly, annualRate: fin.annualRate || 0, amortizing, amortMonths,
       grossCashflow: fin.grossCashflow, baseGrossCashflow: fin.grossCashflow, incomeEffectExpiresTurn: null,
       cashflow: netCashflow,
+      ...initAssetIndicators(card),
     }]);
     setListings((ls) => ls.filter((l) => l.id !== listingId));
     banner("Achat réalisé", fin.loanAmount > 0 ? `${card.title} : apport ${f(fin.downPayment)}, solde dû ${f(fin.loanAmount)}, net +${f(netCashflow)}/mois` : `${card.title} (comptant) : +${f(netCashflow)}/mois`, "good");
