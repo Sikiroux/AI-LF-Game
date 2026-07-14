@@ -4,6 +4,7 @@ import { calcExpenses, calcPassiveIncome } from "../../../engine/financing.js";
 import { tickMarketDays } from "../../../engine/bourse/market.js";
 import { advanceListings } from "./opportunitySite.js";
 import { driftAssetIndicators } from "./assetIndicators.js";
+import { rollAssetEvent, applyAssetEvent } from "./assetEvents.js";
 import {
   SMALL_DOODAD_CARDS, BIG_DOODAD_CARDS, BIG_DOODAD_TERM_MONTHS,
   incomeRatio, scaleDoodadAmount, buildDailyEventTable, rollDailyEvent,
@@ -53,6 +54,26 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
 
     listings = advanceListings(listings, nd, cash);
 
+    // Restaure le revenu des actifs dont l'effet temporaire (vacance locative,
+    // baisse de fréquentation) est arrivé à expiration.
+    assets = assets.map((a) => {
+      if (a.incomeEffectExpiresDay != null && nd >= a.incomeEffectExpiresDay && a.baseGrossCashflow != null) {
+        return { ...a, grossCashflow: a.baseGrossCashflow, incomeEffectExpiresDay: null, cashflow: a.baseGrossCashflow - (a.loanMonthly || 0) };
+      }
+      return a;
+    });
+
+    if (!quiet) {
+      assets = assets.map((a) => {
+        const type = rollAssetEvent(a, nd);
+        if (!type) return a;
+        const result = applyAssetEvent(a, type, nd, currency);
+        cashDelta += result.cashDelta;
+        if (result.event) events.push(result.event);
+        return result.asset;
+      });
+    }
+
     if (!quiet) {
       const lucky = nd < luckyUntilDay;
       const table = buildDailyEventTable({ profession, day: nd, kids, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, lucky });
@@ -84,7 +105,12 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
             if (a.type !== card.assetType) return a;
             const base = a.baseGrossCashflow != null ? a.baseGrossCashflow : (a.grossCashflow != null ? a.grossCashflow : a.cashflow);
             const newGross = Math.max(0, Math.round(base * card.mult));
-            return { ...a, baseGrossCashflow: base, grossCashflow: newGross, cashflow: newGross - (a.loanMonthly || 0) };
+            // Si un effet temporaire d'actif est en cours (vacance locative, baisse
+            // de fréquentation), on met à jour la référence permanente sans écraser
+            // le revenu réduit affiché maintenant — il sera restauré vers cette
+            // nouvelle base à l'expiration de l'effet temporaire.
+            if (a.incomeEffectExpiresDay != null) return { ...a, baseGrossCashflow: newGross };
+            return { ...a, baseGrossCashflow: newGross, grossCashflow: newGross, cashflow: newGross - (a.loanMonthly || 0) };
           });
           const pct = Math.round((card.mult - 1) * 100);
           events.push({ title: "Marché", detail: `${card.title} — revenu mensuel ${pct >= 0 ? "+" : ""}${pct}% sur vos actifs concernés.`, tone: card.mult >= 1 ? "good" : "bad" });
