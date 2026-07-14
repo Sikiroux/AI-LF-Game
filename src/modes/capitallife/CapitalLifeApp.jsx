@@ -28,7 +28,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     selectedAssetId, setSelectedAssetId, performAssetMaintenance,
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee,
-    casinoHandsPlayed, casinoNetResult, onCasinoCashDelta, onCasinoHandPlayed,
+    casinoHandsPlayed, casinoNetResult, actionPoints, onCasinoCashDelta, onCasinoHandPlayed,
     currency, setCurrency,
   } = useCapitalLifeState();
 
@@ -94,7 +94,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     return (
       <AssetDetailScreen
         asset={assets.find((a) => a.id === selectedAssetId)}
-        cash={cash} currency={currency} day={day}
+        cash={cash} currency={currency} day={day} actionPoints={actionPoints}
         onMaintenance={performAssetMaintenance}
         onHire={(candidate) => hireAssetEmployee(selectedAssetId, candidate)}
         onFire={(employeeId) => fireAssetEmployee(selectedAssetId, employeeId)}
@@ -139,7 +139,7 @@ export default function CapitalLifeApp({ onExitHome }) {
   if (view === "opportunities") {
     return (
       <>
-        <OpportunitySiteScreen listings={listings} day={day} cash={cash} currency={currency} onOpen={openListing} onBack={() => setView("game")} />
+        <OpportunitySiteScreen listings={listings} day={day} cash={cash} currency={currency} actionPoints={actionPoints} onOpen={openListing} onBack={() => setView("game")} />
         {pendingDecision && (
           <DecisionModal
             decision={pendingDecision}
@@ -182,6 +182,7 @@ export default function CapitalLifeApp({ onExitHome }) {
       currency={currency}
       lastEvent={lastEvent}
       hasSkipReport={!!lastSkipReport}
+      actionPoints={actionPoints}
       assetsNeedingAttention={assets.filter((a) => a.condition != null && a.condition < 50).length}
       skipMonthMode={skipMonthMode}
       onChangeSkipMonthMode={setSkipMonthMode}

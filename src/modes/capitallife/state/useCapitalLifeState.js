@@ -10,6 +10,7 @@ import {
   initAssetIndicators, canPerformMaintenance, performMaintenance,
   totalSalaries, hireEmployee, fireEmployee, fireSeverance, trainEmployee, trainingCost, MAX_EMPLOYEES,
 } from "../engine/assetIndicators.js";
+import { DAILY_ACTION_POINTS, ACTION_COSTS } from "../engine/actionPoints.js";
 
 const SAVE_KEY = "capitallife-save";
 const SETTINGS_KEY = "capitallife-settings";
@@ -33,6 +34,7 @@ export default function useCapitalLifeState() {
   const [lastSkipReport, setLastSkipReport] = useState(null);
   const [casinoHandsPlayed, setCasinoHandsPlayed] = useState(0);
   const [casinoNetResult, setCasinoNetResult] = useState(0);
+  const [actionPoints, setActionPoints] = useState(DAILY_ACTION_POINTS);
 
   const [currency, setCurrency] = useState("EUR");
   const [babyEnabled, setBabyEnabled] = useState(true);
@@ -71,6 +73,7 @@ export default function useCapitalLifeState() {
           if (s.phase) setPhase(s.phase);
           if (s.casinoHandsPlayed != null) setCasinoHandsPlayed(s.casinoHandsPlayed);
           if (s.casinoNetResult != null) setCasinoNetResult(s.casinoNetResult);
+          if (s.actionPoints != null) setActionPoints(s.actionPoints);
           if (Array.isArray(s.debts)) setDebts(s.debts);
           if (s.liabilities) setLiabilities(s.liabilities);
           if (s.kids != null) setKids(s.kids);
@@ -111,11 +114,11 @@ export default function useCapitalLifeState() {
     const s = {
       day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
-      casinoHandsPlayed, casinoNetResult,
+      casinoHandsPlayed, casinoNetResult, actionPoints,
       tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn,
     };
     storage.set(SAVE_KEY, JSON.stringify(s)).catch(() => {});
-  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, casinoHandsPlayed, casinoNetResult, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn]);
+  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, casinoHandsPlayed, casinoNetResult, actionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -139,6 +142,17 @@ export default function useCapitalLifeState() {
     setLastEvent({ title, detail, tone });
   }
 
+  // Ne gate que les actions de gestion (négocier un achat, entretenir,
+  // recruter, former, licencier) — jamais la navigation entre applis.
+  function spendActionPoints(cost) {
+    if (actionPoints < cost) {
+      banner("Plus assez de temps aujourd'hui", `Cette action demande ${cost} points d'action, il n'en reste que ${actionPoints}. Revenez demain.`, "info");
+      return false;
+    }
+    setActionPoints((p) => p - cost);
+    return true;
+  }
+
   function goToNewScenario() {
     setScenarioDraft(generateScenario());
     setView("scenario");
@@ -160,6 +174,7 @@ export default function useCapitalLifeState() {
     setPendingDecision(null);
     setLastEvent(null);
     setCasinoHandsPlayed(0); setCasinoNetResult(0);
+    setActionPoints(DAILY_ACTION_POINTS);
     setLayoffMonthsLeft(0);
     setLastSmallDoodadDay(null); setLastBigDoodadDay(null); setLastBabyDay(null); setLastLayoffDay(null);
     setLuckyUntilDay(0);
@@ -254,6 +269,7 @@ export default function useCapitalLifeState() {
         return;
       }
     }
+    if (!spendActionPoints(ACTION_COSTS.buyAsset)) { setPendingDecision(null); return; }
 
     setCash((c) => c - fin.downPayment);
     setAssets((a) => [...a, {
@@ -338,6 +354,7 @@ export default function useCapitalLifeState() {
     if (!a) return;
     const check = canPerformMaintenance(a, day, cash);
     if (!check.ok) { banner("Entretien impossible", check.reason, "info"); return; }
+    if (!spendActionPoints(ACTION_COSTS.maintenance)) return;
     const { asset: updated, cost } = performMaintenance(a, day);
     const history = [{ day, title: "Entretien préventif", detail: `-${f(cost)}, état amélioré.`, tone: "good" }, ...(a.history || [])].slice(0, 8);
     setCash((c) => c - cost);
@@ -351,6 +368,7 @@ export default function useCapitalLifeState() {
     const a = assets.find((x) => x.id === assetId);
     if (!a) return;
     if ((a.employees || []).length >= MAX_EMPLOYEES) { banner("Recrutement impossible", "Effectif maximum atteint.", "info"); return; }
+    if (!spendActionPoints(ACTION_COSTS.hire)) return;
     const updated = hireEmployee(a, candidate);
     setAssets((list) => list.map((x) => (x.id === assetId ? { ...updated, cashflow: x.cashflow - candidate.salary } : x)));
     banner("Recrutement", `${candidate.name} rejoint ${a.name} (${f(candidate.salary)}/mois).`, "good");
@@ -363,6 +381,7 @@ export default function useCapitalLifeState() {
     if (!emp) return;
     const severance = fireSeverance(emp);
     if (cash < severance) { banner("Licenciement impossible", "Liquidités insuffisantes pour l'indemnité de départ.", "info"); return; }
+    if (!spendActionPoints(ACTION_COSTS.fire)) return;
     const updated = fireEmployee(a, employeeId);
     setCash((c) => c - severance);
     setAssets((list) => list.map((x) => (x.id === assetId ? { ...updated, cashflow: x.cashflow + emp.salary } : x)));
@@ -376,6 +395,7 @@ export default function useCapitalLifeState() {
     if (!emp) return;
     const cost = trainingCost(emp);
     if (cash < cost) { banner("Formation impossible", "Liquidités insuffisantes.", "info"); return; }
+    if (!spendActionPoints(ACTION_COSTS.train)) return;
     const updated = trainEmployee(a, employeeId);
     setCash((c) => c - cost);
     setAssets((list) => list.map((x) => (x.id === assetId ? updated : x)));
@@ -403,6 +423,7 @@ export default function useCapitalLifeState() {
     setLastBabyDay(result.lastBabyDay);
     setLastLayoffDay(result.lastLayoffDay);
     setLuckyUntilDay(result.luckyUntilDay);
+    setActionPoints(DAILY_ACTION_POINTS);
     if (result.journalEntries.length) setJournal((j) => [...result.journalEntries.slice().reverse(), ...j].slice(0, 60));
     if (result.events.length === 1) {
       const e = result.events[0];
@@ -456,7 +477,7 @@ export default function useCapitalLifeState() {
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     selectedAssetId, setSelectedAssetId, performAssetMaintenance,
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee,
-    casinoHandsPlayed, casinoNetResult,
+    casinoHandsPlayed, casinoNetResult, actionPoints,
     onCasinoCashDelta: (amount) => setCash((c) => Math.max(0, c + amount)),
     onCasinoHandPlayed: (netProfit) => { setCasinoHandsPlayed((n) => n + 1); setCasinoNetResult((n) => n + netProfit); },
     currency, setCurrency,

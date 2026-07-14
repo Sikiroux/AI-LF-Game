@@ -5,6 +5,7 @@ import {
   qualitativeLabel, canPerformMaintenance, MAINTENANCE_COST_RATE,
   generateCandidate, trainingCost, fireSeverance, MAX_EMPLOYEES,
 } from "../../engine/assetIndicators.js";
+import { ACTION_COSTS } from "../../engine/actionPoints.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
 
 const TYPE_LABELS = { stock: "Actions", realestate: "Immobilier", business: "Business" };
@@ -30,10 +31,12 @@ function labelTone(label, C) {
   return C.ink;
 }
 
-function EmployeeRow({ employee, cash, currency, onFire, onTrain, C, styles }) {
+function EmployeeRow({ employee, cash, actionPoints, currency, onFire, onTrain, C, styles }) {
   const f = (n) => fmt(n, currency);
   const trainCost = trainingCost(employee);
   const severance = fireSeverance(employee);
+  const canTrain = cash >= trainCost && actionPoints >= ACTION_COSTS.train;
+  const canFire = cash >= severance && actionPoints >= ACTION_COSTS.fire;
   return (
     <div style={{ ...styles.card, padding: 12, marginBottom: 8 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -46,11 +49,11 @@ function EmployeeRow({ employee, cash, currency, onFire, onTrain, C, styles }) {
         <span style={{ color: C.inkSoft }}>Loyauté <b style={{ color: C.ink }}>{qualitativeLabel(employee.loyalty)}</b></span>
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-        <button style={{ ...styles.smallBtn, flex: 1, opacity: cash >= trainCost ? 1 : 0.4 }} disabled={cash < trainCost} onClick={() => onTrain(employee.id)}>
-          Former ({f(trainCost)})
+        <button style={{ ...styles.smallBtn, flex: 1, opacity: canTrain ? 1 : 0.4 }} disabled={!canTrain} onClick={() => onTrain(employee.id)}>
+          Former ({f(trainCost)} · ⚡{ACTION_COSTS.train})
         </button>
-        <button style={{ ...styles.dangerBtn, flex: 1, opacity: cash >= severance ? 1 : 0.4 }} disabled={cash < severance} onClick={() => onFire(employee.id)}>
-          Licencier ({f(severance)})
+        <button style={{ ...styles.dangerBtn, flex: 1, opacity: canFire ? 1 : 0.4 }} disabled={!canFire} onClick={() => onFire(employee.id)}>
+          Licencier ({f(severance)} · ⚡{ACTION_COSTS.fire})
         </button>
       </div>
     </div>
@@ -71,13 +74,13 @@ function CandidateRow({ candidate, currency, onHire, disabled, C, styles }) {
         <span style={{ color: C.inkSoft }}>Loyauté <b style={{ color: C.ink }}>{qualitativeLabel(candidate.loyalty)}</b></span>
       </div>
       <button style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", marginTop: 10, opacity: disabled ? 0.4 : 1 }} disabled={disabled} onClick={() => onHire(candidate)}>
-        Embaucher
+        Embaucher (⚡{ACTION_COSTS.hire})
       </button>
     </div>
   );
 }
 
-export default function AssetDetailScreen({ asset, cash, currency, day, onMaintenance, onHire, onFire, onTrain, onBack }) {
+export default function AssetDetailScreen({ asset, cash, currency, day, actionPoints, onMaintenance, onHire, onFire, onTrain, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const [tab, setTab] = useState("vue");
@@ -102,6 +105,8 @@ export default function AssetDetailScreen({ asset, cash, currency, day, onMainte
   const stabilityLabel = qualitativeLabel(asset.stability);
   const maintCheck = canPerformMaintenance(asset, day, cash);
   const maintCost = Math.round(asset.cost * MAINTENANCE_COST_RATE);
+  const maintPaOk = actionPoints == null || actionPoints >= ACTION_COSTS.maintenance;
+  const canMaintain = maintCheck.ok && maintPaOk;
 
   return (
     <div style={styles.app}>
@@ -177,13 +182,14 @@ export default function AssetDetailScreen({ asset, cash, currency, day, onMainte
               ) : (
                 <>
                   <button
-                    style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", opacity: maintCheck.ok ? 1 : 0.4 }}
-                    disabled={!maintCheck.ok}
+                    style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", opacity: canMaintain ? 1 : 0.4 }}
+                    disabled={!canMaintain}
                     onClick={() => onMaintenance(asset.id)}
                   >
-                    Faire un entretien ({f(maintCost)})
+                    Faire un entretien ({f(maintCost)} · ⚡{ACTION_COSTS.maintenance})
                   </button>
                   {!maintCheck.ok && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>{maintCheck.reason}</div>}
+                  {maintCheck.ok && !maintPaOk && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>Plus assez de points d'action aujourd'hui.</div>}
                 </>
               )}
             </div>
@@ -195,7 +201,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, onMainte
             <div style={{ ...styles.sectionTitle, marginTop: 18 }}>Employés ({asset.employees.length}/{MAX_EMPLOYEES})</div>
             {asset.employees.length === 0 && <div style={{ fontSize: 12.5, color: C.inkSoft, fontStyle: "italic", marginBottom: 10 }}>Aucun employé pour l'instant.</div>}
             {asset.employees.map((emp) => (
-              <EmployeeRow key={emp.id} employee={emp} cash={cash} currency={currency} onFire={onFire} onTrain={onTrain} C={C} styles={styles} />
+              <EmployeeRow key={emp.id} employee={emp} cash={cash} actionPoints={actionPoints} currency={currency} onFire={onFire} onTrain={onTrain} C={C} styles={styles} />
             ))}
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 18, marginBottom: 4 }}>
@@ -208,7 +214,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, onMainte
               candidates.map((c) => (
                 <CandidateRow
                   key={c.id} candidate={c} currency={currency}
-                  disabled={asset.employees.length >= MAX_EMPLOYEES}
+                  disabled={asset.employees.length >= MAX_EMPLOYEES || (actionPoints != null && actionPoints < ACTION_COSTS.hire)}
                   onHire={(candidate) => { onHire(candidate); setCandidates((list) => list.filter((x) => x.id !== candidate.id)); }}
                   C={C} styles={styles}
                 />

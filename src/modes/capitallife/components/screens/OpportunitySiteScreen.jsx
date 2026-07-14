@@ -2,6 +2,7 @@ import { useState } from "react";
 import { fmt } from "../../../../utils/format.js";
 import { SECTOR_LABELS } from "../../../../data/sectors.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { ACTION_COSTS } from "../../engine/actionPoints.js";
 
 const CATEGORIES = {
   realestate: { label: "Immobilier", badge: "immo", file: "immobilier" },
@@ -23,11 +24,12 @@ function photoFile(listing) {
   return `listings/${cat.file}-${variant}.png`;
 }
 
-export default function OpportunitySiteScreen({ listings, day, cash, currency, onOpen, onBack }) {
+export default function OpportunitySiteScreen({ listings, day, cash, currency, actionPoints, onOpen, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const [filter, setFilter] = useState("all");
   const f = (n) => fmt(n, currency);
+  const canNegotiate = actionPoints == null || actionPoints >= ACTION_COSTS.buyAsset;
 
   const filtered = filter === "all" ? listings : listings.filter((l) => l.card.type === filter);
 
@@ -39,9 +41,15 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, o
           <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>🏷️ OppMarket</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
             {listings.length} annonce{listings.length > 1 ? "s" : ""} active{listings.length > 1 ? "s" : ""} · liquidités {f(cash)}
+            {actionPoints != null && <> · négocier coûte <span style={{ color: canNegotiate ? C.ink : C.bad, fontWeight: 600 }}>⚡{ACTION_COSTS.buyAsset}</span></>}
           </div>
         </div>
       </div>
+      {!canNegotiate && (
+        <div style={{ flexShrink: 0, padding: "8px 16px", background: C.surfaceRaised, borderBottom: `1px solid ${C.line}`, fontSize: 11, color: C.bad, textAlign: "center" }}>
+          Plus assez de points d'action aujourd'hui pour négocier un achat — revenez demain.
+        </div>
+      )}
 
       <div style={{ flexShrink: 0, display: "flex", gap: 8, padding: "10px 16px", overflowX: "auto", borderBottom: `1px solid ${C.line}` }}>
         {FILTERS.map((ft) => (

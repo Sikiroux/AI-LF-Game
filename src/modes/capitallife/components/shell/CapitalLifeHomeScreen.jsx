@@ -14,7 +14,7 @@ const APPS = [
 
 export default function CapitalLifeHomeScreen({
   day, cash, profession, debts, liabilities, kids, assets, passiveIncome, layoffMonthsLeft, currency,
-  lastEvent, hasSkipReport, skipMonthMode, onChangeSkipMonthMode, assetsNeedingAttention,
+  lastEvent, hasSkipReport, skipMonthMode, onChangeSkipMonthMode, assetsNeedingAttention, actionPoints,
   onNextDay, onSkipMonth, onOpenApp, onOpenSkipReport, onMenu,
 }) {
   const C = useCapitalLifeColors();
@@ -48,6 +48,7 @@ export default function CapitalLifeHomeScreen({
             <div style={{ fontSize: 12, color: C.inkSoft }}>
               <b style={{ color: C.ink, fontWeight: 600, display: "block", fontSize: 13 }}>Mois {month}</b>
               Jour {dayOfMonth}/30 · Niveau {niveau}
+              {actionPoints != null && <span> · <span style={{ color: actionPoints > 0 ? C.ink : C.bad, fontWeight: 600 }}>⚡ {actionPoints} PA</span></span>}
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
