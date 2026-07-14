@@ -1,6 +1,7 @@
 import { calcExpenses } from "../../../../engine/financing.js";
 import { fmt } from "../../../../utils/format.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { rentCost } from "../../engine/lifestyle.js";
 import AppIcon from "./AppIcon.jsx";
 
 const APPS = [
@@ -16,6 +17,7 @@ const APPS = [
 export default function CapitalLifeHomeScreen({
   day, cash, profession, debts, liabilities, kids, assets, passiveIncome, layoffMonthsLeft, currency,
   lastEvent, hasSkipReport, skipMonthMode, onChangeSkipMonthMode, assetsNeedingAttention, actionPoints,
+  rentTier,
   onNextDay, onSkipMonth, onOpenApp, onOpenSkipReport, onMenu,
 }) {
   const C = useCapitalLifeColors();
@@ -25,7 +27,7 @@ export default function CapitalLifeHomeScreen({
   const month = Math.floor((day - 1) / 30) + 1;
   const dayOfMonth = ((day - 1) % 30) + 1;
   const debtMonthly = debts.reduce((s, d) => s + d.monthlyPayment, 0);
-  const expenses = profession ? calcExpenses(profession, kids, debtMonthly, liabilities) : 0;
+  const expenses = profession ? calcExpenses(profession, kids, debtMonthly, liabilities) + rentCost(rentTier, profession.salary) : 0;
   const salary = layoffMonthsLeft > 0 ? 0 : (profession ? profession.salary : 0);
   const netCashflow = salary + passiveIncome - expenses;
   const objectifPct = Math.max(0, Math.min(100, Math.round((passiveIncome / Math.max(1, expenses)) * 100)));

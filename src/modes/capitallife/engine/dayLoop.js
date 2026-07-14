@@ -9,6 +9,7 @@ import {
   SMALL_DOODAD_CARDS, BIG_DOODAD_CARDS, BIG_DOODAD_TERM_MONTHS,
   incomeRatio, scaleDoodadAmount, buildDailyEventTable, rollDailyEvent,
 } from "./dailyEvents.js";
+import { rentCost } from "./lifestyle.js";
 
 // Faillite : quand les liquidités ne suffisent pas à couvrir un paiement (loyer,
 // imprévu, jour de paie...), on liquide en urgence les actifs les moins
@@ -161,7 +162,8 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     let payday = 0;
     if ((nd - 1) % 30 === 0) {
       const debtMonthly = debts.reduce((s, deb) => s + deb.monthlyPayment, 0);
-      const expenses = calcExpenses(profession, kids, debtMonthly, liabilities);
+      const rent = state.rentTier ? rentCost(state.rentTier, profession.salary) : 0;
+      const expenses = calcExpenses(profession, kids, debtMonthly, liabilities) + rent;
       const salary = layoffMonthsLeft > 0 ? 0 : profession.salary;
       const passiveIncome = calcPassiveIncome(assets);
       payday = salary + passiveIncome - expenses;

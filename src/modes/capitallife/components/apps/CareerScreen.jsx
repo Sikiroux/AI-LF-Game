@@ -6,12 +6,14 @@ import {
   skillLevelLabel, TRAININGS, jobRequirementsMet, applicationChance,
   JOB_APPLY_PA_COST, JOB_REJECTION_COOLDOWN_DAYS,
 } from "../../engine/career.js";
+import { RENT_TIERS, rentTierByKey, rentCost, moveCost, MOVE_PA_COST } from "../../engine/lifestyle.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
 
 const TABS = [
   { key: "competences", label: "Compétences" },
   { key: "emploi", label: "Emploi" },
   { key: "missions", label: "Missions" },
+  { key: "logement", label: "Train de vie" },
 ];
 
 function Row({ label, value, tone, C }) {
@@ -25,8 +27,8 @@ function Row({ label, value, tone, C }) {
 
 export default function CareerScreen({
   profession, skills, training, missions, cash, currency, day, actionPoints, dailyActionPoints,
-  daysWithoutRest, enCouple, lastJobRejectionDay,
-  onBeginTraining, onApplyToJob, onDoMission, onBack,
+  daysWithoutRest, enCouple, lastJobRejectionDay, rentTier,
+  onBeginTraining, onApplyToJob, onDoMission, onChangeRentTier, onBack,
 }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
@@ -200,6 +202,40 @@ export default function CareerScreen({
                   >
                     Effectuer (⚡{m.paCost})
                   </button>
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {tab === "logement" && (
+          <>
+            <div style={{ fontSize: 11.5, color: C.inkSoft, marginBottom: 12 }}>
+              Le loyer coûte un % de votre salaire (il suit vos promotions/changements de poste) et influe sur votre budget quotidien de Points d'Action : un cadre de vie plus confortable en donne plus, un logement trop modeste en retire.
+            </div>
+            {RENT_TIERS.map((t) => {
+              const isCurrent = t.key === rentTier;
+              const cost = rentCost(t.key, profession.salary);
+              const move = moveCost(t.key, profession.salary);
+              const afford = cash >= move && actionPoints >= MOVE_PA_COST;
+              return (
+                <div key={t.key} style={{ ...styles.card, padding: 12, marginBottom: 8, ...(isCurrent ? { borderColor: C.accent } : {}) }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: C.ink }}>{t.label}{isCurrent && " (actuel)"}</div>
+                    <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, color: C.bad }}>-{f(cost)}/mois</div>
+                  </div>
+                  <div style={{ fontSize: 10.5, color: C.inkSoft, marginTop: 4 }}>
+                    Train de vie : {t.moodLabel} · {t.paModifier > 0 ? `+${t.paModifier}` : t.paModifier} PA/jour
+                  </div>
+                  {!isCurrent && (
+                    <button
+                      style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8, opacity: afford ? 1 : 0.4 }}
+                      disabled={!afford}
+                      onClick={() => onChangeRentTier(t.key)}
+                    >
+                      Emménager ({f(move)} · ⚡{MOVE_PA_COST})
+                    </button>
+                  )}
                 </div>
               );
             })}

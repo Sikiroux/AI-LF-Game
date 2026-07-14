@@ -36,6 +36,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     dailyActionPoints, setDailyActionPoints,
     skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay,
     beginTraining, applyToJob, doMission,
+    rentTier, changeRentTier,
   } = useCapitalLifeState();
 
   if (!loaded) return <LoadingScreen />;
@@ -125,7 +126,8 @@ export default function CapitalLifeApp({ onExitHome }) {
         profession={profession} skills={skills} training={training} missions={missions}
         cash={cash} currency={currency} day={day} actionPoints={actionPoints} dailyActionPoints={dailyActionPoints}
         daysWithoutRest={daysWithoutRest} enCouple={enCouple} lastJobRejectionDay={lastJobRejectionDay}
-        onBeginTraining={beginTraining} onApplyToJob={applyToJob} onDoMission={doMission}
+        rentTier={rentTier}
+        onBeginTraining={beginTraining} onApplyToJob={applyToJob} onDoMission={doMission} onChangeRentTier={changeRentTier}
         onBack={() => setView("game")}
       />
     );
@@ -141,6 +143,7 @@ export default function CapitalLifeApp({ onExitHome }) {
         passiveIncome={passiveIncome}
         layoffMonthsLeft={layoffMonthsLeft}
         currency={currency}
+        rentTier={rentTier}
         onBack={() => setView("game")}
       />
     );
@@ -210,6 +213,7 @@ export default function CapitalLifeApp({ onExitHome }) {
       lastEvent={lastEvent}
       hasSkipReport={!!lastSkipReport}
       actionPoints={actionPoints}
+      rentTier={rentTier}
       assetsNeedingAttention={assets.filter((a) => a.condition != null && a.condition < 50).length}
       skipMonthMode={skipMonthMode}
       onChangeSkipMonthMode={setSkipMonthMode}

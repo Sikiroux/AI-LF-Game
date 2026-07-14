@@ -19,6 +19,7 @@ import {
 } from "../engine/career.js";
 import { PROFESSIONS } from "../../../data/professions.js";
 import { SKILL_LABELS } from "../../../data/skills.js";
+import { DEFAULT_RENT_TIER, rentTierByKey, rentCost, moveCost, MOVE_PA_COST } from "../engine/lifestyle.js";
 
 const SAVE_KEY = "capitallife-save";
 const SETTINGS_KEY = "capitallife-settings";
@@ -52,6 +53,7 @@ export default function useCapitalLifeState() {
   const [daysWithoutRest, setDaysWithoutRest] = useState(0);
   const [enCouple, setEnCouple] = useState(false);
   const [lastJobRejectionDay, setLastJobRejectionDay] = useState(null);
+  const [rentTier, setRentTierState] = useState(DEFAULT_RENT_TIER);
 
   const [currency, setCurrency] = useState("EUR");
   const [babyEnabled, setBabyEnabled] = useState(true);
@@ -118,6 +120,7 @@ export default function useCapitalLifeState() {
           if (s.daysWithoutRest != null) setDaysWithoutRest(s.daysWithoutRest);
           if (s.enCouple !== undefined) setEnCouple(s.enCouple);
           if (s.lastJobRejectionDay !== undefined) setLastJobRejectionDay(s.lastJobRejectionDay);
+          if (s.rentTier) setRentTierState(s.rentTier);
         }
       } catch (e) { /* pas de sauvegarde existante */ }
       try {
@@ -143,10 +146,10 @@ export default function useCapitalLifeState() {
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
       casinoHandsPlayed, casinoNetResult, actionPoints,
       tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn,
-      skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay,
+      skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay, rentTier,
     };
     storage.set(SAVE_KEY, JSON.stringify(s)).catch(() => {});
-  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, casinoHandsPlayed, casinoNetResult, actionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay]);
+  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, casinoHandsPlayed, casinoNetResult, actionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay, rentTier]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -160,11 +163,11 @@ export default function useCapitalLifeState() {
   useEffect(() => {
     if (phase !== "playing" || !profession) return;
     const debtMonthly = debts.reduce((s, d) => s + d.monthlyPayment, 0);
-    const totalExpenses = calcExpenses(profession, kids, debtMonthly, liabilities);
+    const totalExpenses = calcExpenses(profession, kids, debtMonthly, liabilities) + rentCost(rentTier, profession.salary);
     if (totalExpenses > 0 && passiveIncome >= totalExpenses) {
       setPhase("won");
     }
-  }, [phase, profession, debts, liabilities, kids, passiveIncome]);
+  }, [phase, profession, debts, liabilities, kids, passiveIncome, rentTier]);
 
   function banner(title, detail, tone) {
     setLastEvent({ title, detail, tone });
@@ -217,6 +220,7 @@ export default function useCapitalLifeState() {
     setDaysWithoutRest(0);
     setEnCouple(Math.random() < 0.5);
     setLastJobRejectionDay(null);
+    setRentTierState(DEFAULT_RENT_TIER);
     setView("game");
   }
 
@@ -234,6 +238,7 @@ export default function useCapitalLifeState() {
     setDaysWithoutRest(0);
     setEnCouple(false);
     setLastJobRejectionDay(null);
+    setRentTierState(DEFAULT_RENT_TIER);
     setView("menu");
   }
 
@@ -507,9 +512,17 @@ export default function useCapitalLifeState() {
       tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
       babyEnabled, layoffEnabled, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
+      rentTier,
     };
   }
   const refs = () => ({ small: lastSmallDoodadCardRef, big: lastBigDoodadCardRef, market: lastMarketCardRef });
+
+  // Budget de PA du jour : réglage de base + bonus/malus du train de vie
+  // (loyer) - coût de la formation en cours, jamais sous un plancher de 2.
+  function effectivePA(trainingPaCost) {
+    const paModifier = rentTierByKey(rentTier).paModifier;
+    return Math.max(2, dailyActionPoints + paModifier - trainingPaCost);
+  }
 
   // Applique la formation en cours (numDays jours) et régénère les missions
   // freelance pour la période à venir — commun à "Jour suivant" et "Sauter le
@@ -558,7 +571,7 @@ export default function useCapitalLifeState() {
 
     applySimResult(simulateDays(snap, 1, { quiet: false, currency, refs: refs() }));
     if (careerEvent) banner(careerEvent.title, careerEvent.detail, careerEvent.tone);
-    setActionPoints(Math.max(0, dailyActionPoints - trainingPaCost));
+    setActionPoints(effectivePA(trainingPaCost));
   }
 
   // Avance jusqu'au premier jour du mois suivant (jamais moins d'un jour).
@@ -577,7 +590,7 @@ export default function useCapitalLifeState() {
       cashBefore, cashAfter: result.cash,
       events: result.events, journalEntries: result.journalEntries,
     });
-    setActionPoints(Math.max(0, dailyActionPoints - trainingPaCost));
+    setActionPoints(effectivePA(trainingPaCost));
   }
 
   // --- Carrière : formation, job board, missions freelance ---
@@ -625,6 +638,19 @@ export default function useCapitalLifeState() {
     banner("Mission accomplie", `${m.title} : +${f(m.pay)}${result.gained > 0 ? ` · +${result.gained} en ${SKILL_LABELS[m.skill]}` : ""}.`, "good");
   }
 
+  // --- Train de vie : choix du loyer, qui affecte le budget de PA ---
+
+  function changeRentTier(tierKey) {
+    if (tierKey === rentTier) return;
+    const cost = moveCost(tierKey, profession.salary);
+    if (cash < cost) { banner("Déménagement impossible", "Liquidités insuffisantes pour l'emménagement.", "info"); return; }
+    if (!spendActionPoints(MOVE_PA_COST)) return;
+    setCash((c) => c - cost);
+    setRentTierState(tierKey);
+    const tier = rentTierByKey(tierKey);
+    banner("Déménagement", `${tier.label} : -${f(cost)} de frais, loyer ${f(rentCost(tierKey, profession.salary))}/mois.`, "good");
+  }
+
   return {
     loaded, view, setView, phase,
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
@@ -648,5 +674,6 @@ export default function useCapitalLifeState() {
     dailyActionPoints, setDailyActionPoints,
     skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay,
     beginTraining, applyToJob, doMission,
+    rentTier, changeRentTier,
   };
 }

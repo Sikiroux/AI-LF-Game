@@ -1,6 +1,7 @@
 import { LIABILITY_KEYS, LIABILITY_LABELS } from "../../../../engine/financing.js";
 import { fmt } from "../../../../utils/format.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { rentCost } from "../../engine/lifestyle.js";
 
 function Row({ label, value, bold, tone, C }) {
   return (
@@ -11,7 +12,7 @@ function Row({ label, value, bold, tone, C }) {
   );
 }
 
-export default function FinancesScreen({ day, profession, kids, debts, liabilities, passiveIncome, layoffMonthsLeft, currency, onBack }) {
+export default function FinancesScreen({ day, profession, kids, debts, liabilities, passiveIncome, layoffMonthsLeft, currency, rentTier, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const f = (n) => fmt(n, currency);
@@ -21,7 +22,8 @@ export default function FinancesScreen({ day, profession, kids, debts, liabiliti
   const e = profession.expenses;
   const debtMonthly = debts.reduce((s, d) => s + d.monthlyPayment, 0);
   const liabilityExpenses = LIABILITY_KEYS.reduce((s, key) => s + ((liabilities[key] > 0) ? e[key] : 0), 0);
-  const fixedExpenses = e.taxes + e.other + kids * profession.perChild;
+  const rent = rentCost(rentTier, profession.salary);
+  const fixedExpenses = e.taxes + e.other + kids * profession.perChild + rent;
   const totalExpenses = fixedExpenses + liabilityExpenses;
   const salary = layoffMonthsLeft > 0 ? 0 : profession.salary;
   const netCashflow = salary + passiveIncome - totalExpenses - debtMonthly;
@@ -41,6 +43,7 @@ export default function FinancesScreen({ day, profession, kids, debts, liabiliti
             <Row C={C} label="Salaire" value={f(salary)} tone={layoffMonthsLeft > 0 ? "bad" : undefined} />
             {passiveIncome > 0 && <Row C={C} label="Revenus passifs" value={f(passiveIncome)} tone="good" />}
             {e.taxes > 0 && <Row C={C} label="Impôts" value={`-${f(e.taxes)}`} tone="bad" />}
+            {rent > 0 && <Row C={C} label="Loyer" value={`-${f(rent)}`} tone="bad" />}
             {LIABILITY_KEYS.map((key) => (liabilities[key] > 0) && (
               <Row key={key} C={C} label={LIABILITY_LABELS[key]} value={`-${f(e[key])}`} tone="bad" />
             ))}
