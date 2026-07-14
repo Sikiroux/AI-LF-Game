@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { fmt } from "../../../../utils/format.js";
 import { SECTOR_LABELS } from "../../../../data/sectors.js";
-import { qualitativeLabel, canPerformMaintenance, MAINTENANCE_COST_RATE } from "../../engine/assetIndicators.js";
+import {
+  qualitativeLabel, canPerformMaintenance, MAINTENANCE_COST_RATE,
+  generateCandidate, trainingCost, fireSeverance, MAX_EMPLOYEES,
+} from "../../engine/assetIndicators.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
 
 const TYPE_LABELS = { stock: "Actions", realestate: "Immobilier", business: "Business" };
@@ -27,11 +30,61 @@ function labelTone(label, C) {
   return C.ink;
 }
 
-export default function AssetDetailScreen({ asset, cash, currency, day, onMaintenance, onBack }) {
+function EmployeeRow({ employee, cash, currency, onFire, onTrain, C, styles }) {
+  const f = (n) => fmt(n, currency);
+  const trainCost = trainingCost(employee);
+  const severance = fireSeverance(employee);
+  return (
+    <div style={{ ...styles.card, padding: 12, marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div style={{ fontWeight: 700, fontSize: 13, color: C.ink }}>{employee.name}</div>
+        <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, color: C.bad }}>-{f(employee.salary)}/mois</div>
+      </div>
+      <div style={{ display: "flex", gap: 14, marginTop: 6, fontSize: 11 }}>
+        <span style={{ color: C.inkSoft }}>Compétence <b style={{ color: C.ink }}>{qualitativeLabel(employee.competence)}</b></span>
+        <span style={{ color: C.inkSoft }}>Motivation <b style={{ color: C.ink }}>{qualitativeLabel(employee.motivation)}</b></span>
+        <span style={{ color: C.inkSoft }}>Loyauté <b style={{ color: C.ink }}>{qualitativeLabel(employee.loyalty)}</b></span>
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        <button style={{ ...styles.smallBtn, flex: 1, opacity: cash >= trainCost ? 1 : 0.4 }} disabled={cash < trainCost} onClick={() => onTrain(employee.id)}>
+          Former ({f(trainCost)})
+        </button>
+        <button style={{ ...styles.dangerBtn, flex: 1, opacity: cash >= severance ? 1 : 0.4 }} disabled={cash < severance} onClick={() => onFire(employee.id)}>
+          Licencier ({f(severance)})
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CandidateRow({ candidate, currency, onHire, disabled, C, styles }) {
+  const f = (n) => fmt(n, currency);
+  return (
+    <div style={{ ...styles.card, padding: 12, marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div style={{ fontWeight: 700, fontSize: 13, color: C.ink }}>{candidate.name}</div>
+        <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, color: C.inkSoft }}>{f(candidate.salary)}/mois</div>
+      </div>
+      <div style={{ display: "flex", gap: 14, marginTop: 6, fontSize: 11 }}>
+        <span style={{ color: C.inkSoft }}>Compétence <b style={{ color: C.ink }}>{qualitativeLabel(candidate.competence)}</b></span>
+        <span style={{ color: C.inkSoft }}>Motivation <b style={{ color: C.ink }}>{qualitativeLabel(candidate.motivation)}</b></span>
+        <span style={{ color: C.inkSoft }}>Loyauté <b style={{ color: C.ink }}>{qualitativeLabel(candidate.loyalty)}</b></span>
+      </div>
+      <button style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", marginTop: 10, opacity: disabled ? 0.4 : 1 }} disabled={disabled} onClick={() => onHire(candidate)}>
+        Embaucher
+      </button>
+    </div>
+  );
+}
+
+export default function AssetDetailScreen({ asset, cash, currency, day, onMaintenance, onHire, onFire, onTrain, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const [tab, setTab] = useState("vue");
   const f = (n) => fmt(n, currency);
+  const refSalary = asset ? Math.max(200, Math.round((asset.baseGrossCashflow ?? asset.grossCashflow ?? asset.cashflow) * 0.18)) : 200;
+  const [candidates, setCandidates] = useState(() => Array.from({ length: 3 }, () => generateCandidate(refSalary)));
+  const regenerateCandidates = () => setCandidates(Array.from({ length: 3 }, () => generateCandidate(refSalary)));
 
   if (!asset) {
     return (
@@ -135,6 +188,33 @@ export default function AssetDetailScreen({ asset, cash, currency, day, onMainte
               )}
             </div>
           </div>
+        )}
+
+        {tab === "decisions" && !isRealestate && asset.employees && (
+          <>
+            <div style={{ ...styles.sectionTitle, marginTop: 18 }}>Employés ({asset.employees.length}/{MAX_EMPLOYEES})</div>
+            {asset.employees.length === 0 && <div style={{ fontSize: 12.5, color: C.inkSoft, fontStyle: "italic", marginBottom: 10 }}>Aucun employé pour l'instant.</div>}
+            {asset.employees.map((emp) => (
+              <EmployeeRow key={emp.id} employee={emp} cash={cash} currency={currency} onFire={onFire} onTrain={onTrain} C={C} styles={styles} />
+            ))}
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 18, marginBottom: 4 }}>
+              <div style={styles.sectionTitle}>Recruter</div>
+              <button style={{ ...styles.smallBtn, padding: "4px 10px", fontSize: 11 }} onClick={regenerateCandidates}>↻ Autres candidats</button>
+            </div>
+            {asset.employees.length >= MAX_EMPLOYEES ? (
+              <div style={{ fontSize: 12.5, color: C.inkSoft, fontStyle: "italic" }}>Effectif maximum atteint.</div>
+            ) : (
+              candidates.map((c) => (
+                <CandidateRow
+                  key={c.id} candidate={c} currency={currency}
+                  disabled={asset.employees.length >= MAX_EMPLOYEES}
+                  onHire={(candidate) => { onHire(candidate); setCandidates((list) => list.filter((x) => x.id !== candidate.id)); }}
+                  C={C} styles={styles}
+                />
+              ))
+            )}
+          </>
         )}
 
         {tab === "historique" && (

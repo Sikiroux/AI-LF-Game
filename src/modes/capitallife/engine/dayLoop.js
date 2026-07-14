@@ -3,7 +3,7 @@ import { MARKET_CARDS } from "../../../data/marketCards.js";
 import { calcExpenses, calcPassiveIncome } from "../../../engine/financing.js";
 import { tickMarketDays } from "../../../engine/bourse/market.js";
 import { advanceListings } from "./opportunitySite.js";
-import { driftAssetIndicators } from "./assetIndicators.js";
+import { driftAssetIndicators, totalSalaries } from "./assetIndicators.js";
 import { rollAssetEvent, applyAssetEvent } from "./assetEvents.js";
 import {
   SMALL_DOODAD_CARDS, BIG_DOODAD_CARDS, BIG_DOODAD_TERM_MONTHS,
@@ -17,7 +17,7 @@ function amortizeAssetsList(assetList) {
     let principalPortion = a.loanMonthly - interestPortion;
     if (principalPortion < 0) principalPortion = 0;
     const newBalance = Math.max(0, a.loanBalance - principalPortion);
-    if (newBalance <= 0) return { ...a, loanBalance: 0, loanAmount: 0, loanMonthly: 0, amortizing: false, cashflow: a.grossCashflow };
+    if (newBalance <= 0) return { ...a, loanBalance: 0, loanAmount: 0, loanMonthly: 0, amortizing: false, cashflow: a.grossCashflow - totalSalaries(a) };
     return { ...a, loanBalance: newBalance };
   });
 }
@@ -58,7 +58,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     // baisse de fréquentation) est arrivé à expiration.
     assets = assets.map((a) => {
       if (a.incomeEffectExpiresDay != null && nd >= a.incomeEffectExpiresDay && a.baseGrossCashflow != null) {
-        return { ...a, grossCashflow: a.baseGrossCashflow, incomeEffectExpiresDay: null, cashflow: a.baseGrossCashflow - (a.loanMonthly || 0) };
+        return { ...a, grossCashflow: a.baseGrossCashflow, incomeEffectExpiresDay: null, cashflow: a.baseGrossCashflow - (a.loanMonthly || 0) - totalSalaries(a) };
       }
       return a;
     });
@@ -111,7 +111,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
             // le revenu réduit affiché maintenant — il sera restauré vers cette
             // nouvelle base à l'expiration de l'effet temporaire.
             if (a.incomeEffectExpiresDay != null) return { ...a, baseGrossCashflow: newGross };
-            return { ...a, baseGrossCashflow: newGross, grossCashflow: newGross, cashflow: newGross - (a.loanMonthly || 0) };
+            return { ...a, baseGrossCashflow: newGross, grossCashflow: newGross, cashflow: newGross - (a.loanMonthly || 0) - totalSalaries(a) };
           });
           const pct = Math.round((card.mult - 1) * 100);
           events.push({ title: "Marché", detail: `${card.title} — revenu mensuel ${pct >= 0 ? "+" : ""}${pct}% sur vos actifs concernés.`, tone: card.mult >= 1 ? "good" : "bad" });

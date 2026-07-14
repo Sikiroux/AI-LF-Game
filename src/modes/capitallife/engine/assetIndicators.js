@@ -6,7 +6,66 @@
 // aléatoire plat. Les actions (immobilier / entreprises) uniquement — la
 // Bourse et les placements "stock" du site d'opportunités restent en dehors
 // de ce système, cf. discussion sur le moteur d'actifs unifié.
+import { uid } from "../../../utils/format.js";
+
 const clamp = (n, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n));
+
+const FIRST_NAMES = ["Léa", "Hugo", "Chloé", "Nathan", "Emma", "Louis", "Camille", "Lucas", "Manon", "Adam", "Sarah", "Enzo", "Inès", "Tom", "Jade", "Noah", "Zoé", "Rayan", "Lina", "Mathis"];
+const LAST_NAMES = ["Martin", "Bernard", "Dubois", "Thomas", "Robert", "Petit", "Durand", "Leroy", "Moreau", "Simon", "Laurent", "Lefebvre", "Michel", "Garcia", "David", "Bertrand", "Roux", "Vincent", "Fontaine", "Chevalier"];
+function randomName() {
+  return `${FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)]} ${LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)]}`;
+}
+
+export const MAX_EMPLOYEES = 5;
+
+// Un employé n'a que 4 champs — le reste (risque d'incident, performance) est
+// calculé, pas géré à la main (cf. discussion "pas 50 statistiques par employé").
+export function generateCandidate(refSalary) {
+  const competence = 35 + Math.round(Math.random() * 55);
+  const motivation = 45 + Math.round(Math.random() * 45);
+  const loyalty = 45 + Math.round(Math.random() * 40);
+  const salary = Math.max(150, Math.round(refSalary * (0.6 + (competence / 100) * 0.8)));
+  return { id: uid(), name: randomName(), competence, motivation, loyalty, salary };
+}
+
+export function totalSalaries(asset) {
+  return (asset.employees || []).reduce((s, e) => s + e.salary, 0);
+}
+
+export function computeStaffMorale(employees) {
+  if (!employees || employees.length === 0) return null;
+  const avgMotivation = employees.reduce((s, e) => s + e.motivation, 0) / employees.length;
+  const avgLoyalty = employees.reduce((s, e) => s + e.loyalty, 0) / employees.length;
+  return clamp(Math.round(0.6 * avgMotivation + 0.4 * avgLoyalty));
+}
+
+export function hireEmployee(asset, candidate) {
+  const employees = [...(asset.employees || []), candidate];
+  const next = { ...asset, employees, staffMorale: computeStaffMorale(employees) };
+  return { ...next, stability: computeStability(next) };
+}
+
+export function fireEmployee(asset, employeeId) {
+  const employees = (asset.employees || []).filter((e) => e.id !== employeeId);
+  const next = { ...asset, employees, staffMorale: computeStaffMorale(employees) };
+  return { ...next, stability: computeStability(next) };
+}
+
+export function fireSeverance(employee) {
+  return Math.round(employee.salary * 1);
+}
+
+export function trainingCost(employee) {
+  return Math.round(employee.salary * 2.5);
+}
+
+export function trainEmployee(asset, employeeId) {
+  const employees = (asset.employees || []).map((e) => (e.id === employeeId
+    ? { ...e, competence: clamp(e.competence + 12 + Math.round(Math.random() * 8)), motivation: clamp(e.motivation + 8) }
+    : e));
+  const next = { ...asset, employees, staffMorale: computeStaffMorale(employees) };
+  return { ...next, stability: computeStability(next) };
+}
 
 export function initAssetIndicators(card) {
   if (card.type === "realestate") {
@@ -20,10 +79,13 @@ export function initAssetIndicators(card) {
     };
   }
   if (card.type === "business") {
+    const refSalary = Math.max(200, Math.round(card.cashflow * 0.18));
+    const employees = Array.from({ length: 1 + Math.round(Math.random()) }, () => generateCandidate(refSalary));
     return {
       condition: 90 + Math.round(Math.random() * 10),
       reputation: 55 + Math.round(Math.random() * 30),
-      staffMorale: 60 + Math.round(Math.random() * 30),
+      employees,
+      staffMorale: computeStaffMorale(employees),
     };
   }
   return null;
@@ -90,8 +152,20 @@ export function driftAssetIndicators(asset) {
   if (asset.type === "business" && asset.condition != null && asset.reputation != null) {
     const condition = clamp(asset.condition - (1 + Math.round(Math.random() * 2)), 15, 100);
     const reputation = clamp(asset.reputation + Math.round((Math.random() - 0.5) * 6));
-    const staffMorale = clamp(asset.staffMorale + Math.round((Math.random() - 0.5) * 6));
-    return { ...asset, condition, reputation, staffMorale, stability: computeStability({ ...asset, condition, reputation, staffMorale }) };
+    let employees = asset.employees;
+    let staffMorale;
+    if (employees && employees.length > 0) {
+      employees = employees.map((e) => ({
+        ...e,
+        motivation: clamp(e.motivation + Math.round((Math.random() - 0.5) * 8)),
+        loyalty: clamp(e.loyalty + Math.round((Math.random() - 0.5) * 4)),
+      }));
+      staffMorale = computeStaffMorale(employees);
+    } else {
+      staffMorale = clamp((asset.staffMorale != null ? asset.staffMorale : 60) + Math.round((Math.random() - 0.5) * 6));
+    }
+    const next = { ...asset, condition, reputation, staffMorale, employees };
+    return { ...next, stability: computeStability(next) };
   }
   return asset;
 }

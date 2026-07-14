@@ -1,5 +1,6 @@
 import { fmt } from "../../../utils/format.js";
 import { rollDailyEvent } from "./dailyEvents.js";
+import { totalSalaries } from "./assetIndicators.js";
 
 // Événements aléatoires liés aux actifs possédés (immobilier / entreprises
 // rachetées), branchés sur les indicateurs cachés d'assetIndicators.js. La
@@ -88,7 +89,7 @@ export function applyAssetEvent(asset, type, day, currency) {
     const newGross = Math.round(canonicalGross * mult);
     return {
       asset: {
-        ...asset, grossCashflow: newGross, cashflow: newGross - (asset.loanMonthly || 0),
+        ...asset, grossCashflow: newGross, cashflow: newGross - (asset.loanMonthly || 0) - totalSalaries(asset),
         incomeEffectExpiresDay: day + days, reputation: clamp(asset.reputation - 8), lastProblemDay: day,
       },
       cashDelta: 0,
@@ -107,7 +108,7 @@ export function applyAssetEvent(asset, type, day, currency) {
     return {
       asset: {
         ...asset, ...patch, baseGrossCashflow: newGross, lastProblemDay: day,
-        ...(applyNow ? { grossCashflow: newGross, cashflow: newGross - (asset.loanMonthly || 0) } : {}),
+        ...(applyNow ? { grossCashflow: newGross, cashflow: newGross - (asset.loanMonthly || 0) - totalSalaries(asset) } : {}),
       },
       cashDelta: 0,
       event: { title: isRealestate ? "Renégociation de loyer" : "Hausse de la demande", detail: `${asset.name} : revenu +${pct}%/mois, durablement.`, tone: "good" },

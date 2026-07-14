@@ -27,6 +27,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     listings, pendingDecision, openListing, skipListing, buyListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     selectedAssetId, setSelectedAssetId, performAssetMaintenance,
+    hireAssetEmployee, fireAssetEmployee, trainAssetEmployee,
     casinoHandsPlayed, casinoNetResult, onCasinoCashDelta, onCasinoHandPlayed,
     currency, setCurrency,
   } = useCapitalLifeState();
@@ -95,6 +96,9 @@ export default function CapitalLifeApp({ onExitHome }) {
         asset={assets.find((a) => a.id === selectedAssetId)}
         cash={cash} currency={currency} day={day}
         onMaintenance={performAssetMaintenance}
+        onHire={(candidate) => hireAssetEmployee(selectedAssetId, candidate)}
+        onFire={(employeeId) => fireAssetEmployee(selectedAssetId, employeeId)}
+        onTrain={(employeeId) => trainAssetEmployee(selectedAssetId, employeeId)}
         onBack={() => setView("assets")}
       />
     );

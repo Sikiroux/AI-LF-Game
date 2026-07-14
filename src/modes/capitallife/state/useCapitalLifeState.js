@@ -6,7 +6,10 @@ import { BROKERAGE_FEE_RATE } from "../../../engine/bourse/market.js";
 import { fmt, uid } from "../../../utils/format.js";
 import { generateScenario } from "../data/scenarioGenerator.js";
 import { simulateDays } from "../engine/dayLoop.js";
-import { initAssetIndicators, canPerformMaintenance, performMaintenance } from "../engine/assetIndicators.js";
+import {
+  initAssetIndicators, canPerformMaintenance, performMaintenance,
+  totalSalaries, hireEmployee, fireEmployee, fireSeverance, trainEmployee, trainingCost, MAX_EMPLOYEES,
+} from "../engine/assetIndicators.js";
 
 const SAVE_KEY = "capitallife-save";
 const SETTINGS_KEY = "capitallife-settings";
@@ -239,7 +242,8 @@ export default function useCapitalLifeState() {
       loanMonthly = Math.round(amortizedPayment(fin.loanAmount, fin.annualRate, mode / 12));
       amortizing = true; amortMonths = mode;
     }
-    const netCashflow = fin.grossCashflow - loanMonthly;
+    const indicators = initAssetIndicators(card);
+    const netCashflow = fin.grossCashflow - loanMonthly - totalSalaries({ employees: indicators?.employees });
 
     if (useLoan) {
       const currentDebtPayments = debts.reduce((s, d) => s + d.monthlyPayment, 0) + assets.reduce((s, a) => s + (a.loanMonthly || 0), 0);
@@ -258,7 +262,7 @@ export default function useCapitalLifeState() {
       loanMonthly, annualRate: fin.annualRate || 0, amortizing, amortMonths,
       grossCashflow: fin.grossCashflow, baseGrossCashflow: fin.grossCashflow, incomeEffectExpiresTurn: null,
       cashflow: netCashflow,
-      ...initAssetIndicators(card),
+      ...indicators,
     }]);
     setListings((ls) => ls.filter((l) => l.id !== listingId));
     banner("Achat réalisé", fin.loanAmount > 0 ? `${card.title} : apport ${f(fin.downPayment)}, solde dû ${f(fin.loanAmount)}, net +${f(netCashflow)}/mois` : `${card.title} (comptant) : +${f(netCashflow)}/mois`, "good");
@@ -291,7 +295,7 @@ export default function useCapitalLifeState() {
     const a = assets.find((x) => x.id === assetId);
     if (!a || !(a.loanBalance > 0) || cash < a.loanBalance) return;
     setCash((c) => c - a.loanBalance);
-    setAssets((list) => list.map((x) => (x.id === assetId ? { ...x, loanBalance: 0, loanAmount: 0, loanMonthly: 0, amortizing: false, cashflow: x.grossCashflow } : x)));
+    setAssets((list) => list.map((x) => (x.id === assetId ? { ...x, loanBalance: 0, loanAmount: 0, loanMonthly: 0, amortizing: false, cashflow: x.grossCashflow - totalSalaries(x) } : x)));
     banner("Prêt soldé", `${a.name} : solde remboursé d'un coup.`, "good");
   }
   function startAmortization(assetId, months) {
@@ -323,7 +327,7 @@ export default function useCapitalLifeState() {
       return;
     }
     setCash(remaining);
-    setAssets((list) => list.map((x) => (paidIds.includes(x.id) ? { ...x, loanBalance: 0, loanAmount: 0, loanMonthly: 0, amortizing: false, cashflow: x.grossCashflow } : x)));
+    setAssets((list) => list.map((x) => (paidIds.includes(x.id) ? { ...x, loanBalance: 0, loanAmount: 0, loanMonthly: 0, amortizing: false, cashflow: x.grossCashflow - totalSalaries(x) } : x)));
     banner("Tout rembourser", `${paidIds.length} prêt${paidIds.length > 1 ? "s" : ""} soldé${paidIds.length > 1 ? "s" : ""}.`, "good");
   }
 
@@ -339,6 +343,43 @@ export default function useCapitalLifeState() {
     setCash((c) => c - cost);
     setAssets((list) => list.map((x) => (x.id === assetId ? { ...updated, history } : x)));
     banner("Entretien réalisé", `${a.name} : -${f(cost)}, état amélioré.`, "good");
+  }
+
+  // --- Employés (business rachetés uniquement) ---
+
+  function hireAssetEmployee(assetId, candidate) {
+    const a = assets.find((x) => x.id === assetId);
+    if (!a) return;
+    if ((a.employees || []).length >= MAX_EMPLOYEES) { banner("Recrutement impossible", "Effectif maximum atteint.", "info"); return; }
+    const updated = hireEmployee(a, candidate);
+    setAssets((list) => list.map((x) => (x.id === assetId ? { ...updated, cashflow: x.cashflow - candidate.salary } : x)));
+    banner("Recrutement", `${candidate.name} rejoint ${a.name} (${f(candidate.salary)}/mois).`, "good");
+  }
+
+  function fireAssetEmployee(assetId, employeeId) {
+    const a = assets.find((x) => x.id === assetId);
+    if (!a) return;
+    const emp = (a.employees || []).find((e) => e.id === employeeId);
+    if (!emp) return;
+    const severance = fireSeverance(emp);
+    if (cash < severance) { banner("Licenciement impossible", "Liquidités insuffisantes pour l'indemnité de départ.", "info"); return; }
+    const updated = fireEmployee(a, employeeId);
+    setCash((c) => c - severance);
+    setAssets((list) => list.map((x) => (x.id === assetId ? { ...updated, cashflow: x.cashflow + emp.salary } : x)));
+    banner("Licenciement", `${emp.name} quitte ${a.name}. Indemnité de départ : ${f(severance)}.`, "bad");
+  }
+
+  function trainAssetEmployee(assetId, employeeId) {
+    const a = assets.find((x) => x.id === assetId);
+    if (!a) return;
+    const emp = (a.employees || []).find((e) => e.id === employeeId);
+    if (!emp) return;
+    const cost = trainingCost(emp);
+    if (cash < cost) { banner("Formation impossible", "Liquidités insuffisantes.", "info"); return; }
+    const updated = trainEmployee(a, employeeId);
+    setCash((c) => c - cost);
+    setAssets((list) => list.map((x) => (x.id === assetId ? updated : x)));
+    banner("Formation", `${emp.name} monte en compétence chez ${a.name} (-${f(cost)}).`, "good");
   }
 
   // --- Avancée du temps : un jour, ou sauter jusqu'au prochain jour de paie ---
@@ -414,6 +455,7 @@ export default function useCapitalLifeState() {
     listings, pendingDecision, openListing, skipListing, buyListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     selectedAssetId, setSelectedAssetId, performAssetMaintenance,
+    hireAssetEmployee, fireAssetEmployee, trainAssetEmployee,
     casinoHandsPlayed, casinoNetResult,
     onCasinoCashDelta: (amount) => setCash((c) => Math.max(0, c + amount)),
     onCasinoHandPlayed: (netProfit) => { setCasinoHandsPlayed((n) => n + 1); setCasinoNetResult((n) => n + netProfit); },
