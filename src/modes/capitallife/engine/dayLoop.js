@@ -10,6 +10,29 @@ import {
   incomeRatio, scaleDoodadAmount, buildDailyEventTable, rollDailyEvent,
 } from "./dailyEvents.js";
 
+// Faillite : quand les liquidités ne suffisent pas à couvrir un paiement (loyer,
+// imprévu, jour de paie...), on liquide en urgence les actifs les moins
+// équitables d'abord (à moitié de leur équity, cost - solde du prêt) jusqu'à
+// couvrir le trou. Si même vendre tous les actifs ne suffit pas, faillite —
+// même principe que `payOrLiquidate` en mode classique (useGameState.js).
+function liquidateForShortfall(assets, shortfall) {
+  const equity = (a) => a.cost - (a.loanBalance || 0);
+  const sorted = [...assets].sort((a, b) => equity(a) - equity(b));
+  let remaining = shortfall;
+  const liquidated = [];
+  const soldIds = new Set();
+  for (const a of sorted) {
+    if (remaining <= 0) break;
+    const saleValue = Math.max(0, Math.round(equity(a) * 0.5));
+    liquidated.push({ name: a.name, saleValue });
+    soldIds.add(a.id);
+    remaining -= saleValue;
+  }
+  const kept = assets.filter((a) => !soldIds.has(a.id));
+  const totalRaised = liquidated.reduce((s, l) => s + l.saleValue, 0);
+  return { assets: kept, liquidated, totalRaised, covered: remaining <= 0 };
+}
+
 function amortizeAssetsList(assetList) {
   return assetList.map((a) => {
     if (!a.amortizing || !(a.loanBalance > 0)) return a;
@@ -42,6 +65,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
 
   const events = [];
   const journalEntries = [];
+  let bankrupt = false;
 
   for (let i = 0; i < numDays; i++) {
     const nd = day + 1;
@@ -151,7 +175,27 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
       events.push({ title: "Jour de paie", detail: `Salaire + revenus passifs - dépenses = ${payday >= 0 ? "+" : ""}${fmt(payday, currency)}`, tone: payday >= 0 ? "good" : "bad" });
     }
 
-    cash = Math.max(0, cash + cashDelta + payday);
+    const rawCash = cash + cashDelta + payday;
+    if (rawCash < 0) {
+      const { assets: keptAssets, liquidated, totalRaised, covered } = liquidateForShortfall(assets, -rawCash);
+      assets = keptAssets;
+      if (liquidated.length > 0) {
+        events.push({
+          title: "Liquidation forcée",
+          detail: `Liquidités insuffisantes : ${liquidated.map((l) => l.name).join(", ")} revendu${liquidated.length > 1 ? "s" : ""} en urgence (+${fmt(totalRaised, currency)}).`,
+          tone: "bad",
+        });
+      }
+      if (!covered) {
+        cash = 0;
+        day = nd;
+        bankrupt = true;
+        break;
+      }
+      cash = rawCash + totalRaised;
+    } else {
+      cash = rawCash;
+    }
     day = nd;
   }
 
@@ -160,6 +204,6 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
-    events, journalEntries,
+    events, journalEntries, bankrupt,
   };
 }

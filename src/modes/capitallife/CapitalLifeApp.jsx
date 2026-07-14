@@ -6,6 +6,7 @@ import CapitalLifeOptionsScreen from "./components/screens/CapitalLifeOptionsScr
 import ScenarioScreen from "./components/screens/ScenarioScreen.jsx";
 import OpportunitySiteScreen from "./components/screens/OpportunitySiteScreen.jsx";
 import CapitalLifeWonScreen from "./components/screens/CapitalLifeWonScreen.jsx";
+import BankruptScreen from "../../components/screens/BankruptScreen.jsx";
 import CapitalLifeHomeScreen from "./components/shell/CapitalLifeHomeScreen.jsx";
 import FinancesScreen from "./components/apps/FinancesScreen.jsx";
 import SkipReportScreen from "./components/screens/SkipReportScreen.jsx";
@@ -59,6 +60,10 @@ export default function CapitalLifeApp({ onExitHome }) {
   }
   if (phase === "won") {
     return <CapitalLifeWonScreen day={day} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} debts={debts} currency={currency} onReset={resetGame} />;
+  }
+  if (phase === "bankrupt") {
+    const bankLoanBalance = debts.reduce((s, d) => s + d.balance, 0);
+    return <BankruptScreen turnCount={day} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} bankLoanBalance={bankLoanBalance} currency={currency} onReset={resetGame} />;
   }
   if (view === "trading") {
     return (

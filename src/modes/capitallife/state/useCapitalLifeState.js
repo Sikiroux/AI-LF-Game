@@ -19,7 +19,7 @@ const SETTINGS_KEY = "capitallife-settings";
 export default function useCapitalLifeState() {
   const [loaded, setLoaded] = useState(false);
   const [view, setView] = useState("menu"); // menu | scenario | game | trading | opportunities | assets | casino
-  const [phase, setPhase] = useState("playing"); // playing | won
+  const [phase, setPhase] = useState("playing"); // playing | won | bankrupt
   const [scenarioDraft, setScenarioDraft] = useState(null);
   const [profession, setProfession] = useState(null);
   const [day, setDay] = useState(0);
@@ -129,7 +129,7 @@ export default function useCapitalLifeState() {
     storage.set(SETTINGS_KEY, JSON.stringify(st)).catch(() => {});
   }, [loaded, currency, babyEnabled, layoffEnabled, skipMonthMode, managementThresholdPct]);
 
-  const hasSave = loaded && day > 0 && phase !== "won";
+  const hasSave = loaded && day > 0 && phase !== "won" && phase !== "bankrupt";
   const passiveIncome = calcPassiveIncome(assets);
 
   useEffect(() => {
@@ -453,6 +453,7 @@ export default function useCapitalLifeState() {
     setLastLayoffDay(result.lastLayoffDay);
     setLuckyUntilDay(result.luckyUntilDay);
     setActionPoints(DAILY_ACTION_POINTS);
+    if (result.bankrupt) setPhase("bankrupt");
     if (result.journalEntries.length) setJournal((j) => [...result.journalEntries.slice().reverse(), ...j].slice(0, 60));
     if (result.events.length === 1) {
       const e = result.events[0];
