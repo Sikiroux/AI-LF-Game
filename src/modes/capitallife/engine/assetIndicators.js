@@ -46,6 +46,8 @@ export function generateCandidate(refSalary) {
   return { id: uid(), name: randomName(), role, competence, motivation, loyalty, trust, salary };
 }
 
+// Vendeur : revenu, technicien : pannes, comptable : fiscalité,
+// marketing : publicité, manager : déclenchement anticipé de l'autogestion.
 export function employeeRoleEffects(asset) {
   const employees = asset.employees || [];
   const count = (role) => employees.filter((employee) => employee.role === role).length;
