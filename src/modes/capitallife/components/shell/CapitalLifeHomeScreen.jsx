@@ -2,6 +2,7 @@ import { calcExpenses } from "../../../../engine/financing.js";
 import { fmt } from "../../../../utils/format.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
 import { rentCost } from "../../engine/lifestyle.js";
+import { calendarInfo } from "../../engine/seasonalEvents.js";
 import AppIcon from "./AppIcon.jsx";
 
 const APPS = [
@@ -24,14 +25,14 @@ export default function CapitalLifeHomeScreen({
   const styles = getStyles(C);
   const f = (n) => fmt(n, currency);
 
-  const month = Math.floor((day - 1) / 30) + 1;
-  const dayOfMonth = ((day - 1) % 30) + 1;
+  const { month, monthOfYear, year, dayOfMonth, monthName } = calendarInfo(day);
   const debtMonthly = debts.reduce((s, d) => s + d.monthlyPayment, 0);
   const expenses = profession ? calcExpenses(profession, kids, debtMonthly, liabilities) + rentCost(rentTier, profession.salary) : 0;
   const salary = layoffMonthsLeft > 0 ? 0 : (profession ? profession.salary : 0);
   const netCashflow = salary + passiveIncome - expenses;
   const objectifPct = Math.max(0, Math.min(100, Math.round((passiveIncome / Math.max(1, expenses)) * 100)));
   const niveau = 1 + Math.floor(month / 6);
+  const seasonalHint = monthOfYear === 9 ? "🎒 Rentrée" : monthOfYear === 12 && dayOfMonth >= 10 ? "🎄 Noël approche" : null;
 
   return (
     <div style={styles.app}>
@@ -50,9 +51,10 @@ export default function CapitalLifeHomeScreen({
                 <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "0.06em", opacity: 0.85 }}>Jour</div>
               </div>
               <div style={{ fontSize: 12, color: C.inkSoft }}>
-                <b style={{ color: C.ink, fontWeight: 600, display: "block", fontSize: 13 }}>Mois {month}</b>
+                <b style={{ color: C.ink, fontWeight: 600, display: "block", fontSize: 13 }}>{monthName} — Année {year}</b>
                 Jour {dayOfMonth}/30 · Niveau {niveau}
                 {actionPoints != null && <span> · <span style={{ color: actionPoints > 0 ? C.ink : C.bad, fontWeight: 600 }}>⚡ {actionPoints} PA</span></span>}
+                {seasonalHint && <span> · <span style={{ color: C.accent, fontWeight: 700 }}>{seasonalHint}</span></span>}
               </div>
             </div>
             <div style={{ textAlign: "right" }}>

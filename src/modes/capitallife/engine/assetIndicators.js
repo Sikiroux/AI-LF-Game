@@ -99,6 +99,8 @@ export function initAssetIndicators(card, managementThreshold = DEFAULT_MANAGEME
       condition: 90 + Math.round(Math.random() * 10),
       reputation: 55 + Math.round(Math.random() * 30),
       stakePct,
+      treasury: 0,
+      autoManage: false,
     };
     // Participation minoritaire (achat "(part)") : placement financier pur
     // tant que le seuil de gestion n'est pas atteint, pas de personnel.
@@ -212,6 +214,51 @@ export function runAd(asset, day) {
   const reputation = clamp(asset.reputation + 10 + Math.round(Math.random() * 10));
   const next = { ...asset, reputation, lastAdDay: day };
   return { asset: { ...next, stability: computeStability(next) }, cost };
+}
+
+// Trésorerie d'entreprise : au jour de paie, une part du cash-flow net d'une
+// entreprise reste dans les caisses de l'entreprise plutôt que de tomber
+// automatiquement dans les liquidités du joueur — celui-ci doit ensuite se
+// verser un dividende pour la rendre disponible (cf. "se verser des
+// dividendes"). L'entitlement compté pour l'indépendance financière
+// (calcPassiveIncome) reste lui inchangé : c'est un choix de gestion de la
+// trésorerie, pas une réduction du revenu passif au sens du jeu.
+export const BUSINESS_TREASURY_RETENTION_RATE = 0.4;
+
+export function businessTreasuryRetention(asset) {
+  if (asset.type !== "business" || !(asset.cashflow > 0)) return 0;
+  return Math.round(asset.cashflow * BUSINESS_TREASURY_RETENTION_RATE);
+}
+
+export function payDividend(asset, amount) {
+  const paid = Math.max(0, Math.min(amount, asset.treasury || 0));
+  return { asset: { ...asset, treasury: (asset.treasury || 0) - paid }, paid };
+}
+
+// Gestion automatique ("pilote automatique") : quand activée sur une
+// entreprise, l'entretien et la publicité se déclenchent tout seuls dès que
+// possible (cooldown écoulé, indicateur sous 60) et sont financés par la
+// trésorerie de l'entreprise elle-même — jamais par les liquidités
+// personnelles du joueur. Pensé pour "Sauter le mois", où le joueur ne
+// micro-gère pas sa boîte au jour le jour.
+const AUTO_MANAGE_THRESHOLD = 60;
+
+export function autoManageBusiness(asset, day) {
+  if (asset.type !== "business" || !asset.autoManage) return { asset, actions: [] };
+  let next = asset;
+  const actions = [];
+
+  if (next.condition < AUTO_MANAGE_THRESHOLD && canPerformMaintenance(next, day, next.treasury || 0).ok) {
+    const { asset: updated, cost } = performMaintenance(next, day);
+    next = { ...updated, treasury: (next.treasury || 0) - cost };
+    actions.push({ kind: "maintenance", cost });
+  }
+  if (next.reputation != null && next.reputation < AUTO_MANAGE_THRESHOLD && canRunAd(next, day, next.treasury || 0).ok) {
+    const { asset: updated, cost } = runAd(next, day);
+    next = { ...updated, treasury: (next.treasury || 0) - cost };
+    actions.push({ kind: "ad", cost });
+  }
+  return { asset: next, actions };
 }
 
 // Une entreprise bien gérée (stability élevée) devient plus rentable avec le

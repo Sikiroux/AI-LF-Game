@@ -10,7 +10,7 @@ import { advanceListings } from "../engine/opportunitySite.js";
 import {
   initAssetIndicators, canPerformMaintenance, performMaintenance,
   totalSalaries, hireEmployee, fireEmployee, fireSeverance, trainEmployee, trainingCost, MAX_EMPLOYEES,
-  applyStakePurchase, DEFAULT_MANAGEMENT_THRESHOLD_PCT, canRunAd, runAd,
+  applyStakePurchase, DEFAULT_MANAGEMENT_THRESHOLD_PCT, canRunAd, runAd, payDividend,
 } from "../engine/assetIndicators.js";
 import { DAILY_ACTION_POINTS, ACTION_COSTS } from "../engine/actionPoints.js";
 import {
@@ -68,6 +68,7 @@ export default function useCapitalLifeState() {
   const [lastBabyDay, setLastBabyDay] = useState(null);
   const [lastLayoffDay, setLastLayoffDay] = useState(null);
   const [luckyUntilDay, setLuckyUntilDay] = useState(0);
+  const [lastSeasonalDays, setLastSeasonalDays] = useState({});
 
   const [tokens, setTokens] = useState(() => generateTokens(16));
   const [portfolio, setPortfolio] = useState({});
@@ -107,6 +108,7 @@ export default function useCapitalLifeState() {
           if (s.lastBabyDay !== undefined) setLastBabyDay(s.lastBabyDay);
           if (s.lastLayoffDay !== undefined) setLastLayoffDay(s.lastLayoffDay);
           if (s.luckyUntilDay != null) setLuckyUntilDay(s.luckyUntilDay);
+          if (s.lastSeasonalDays) setLastSeasonalDays(s.lastSeasonalDays);
           if (Array.isArray(s.tokens) && s.tokens.length) setTokens(s.tokens);
           if (s.portfolio) setPortfolio(s.portfolio);
           if (Array.isArray(s.journal)) setJournal(s.journal);
@@ -144,13 +146,13 @@ export default function useCapitalLifeState() {
     if (!loaded || day === 0) return;
     const s = {
       day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft,
-      lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
+      lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays,
       casinoHandsPlayed, casinoNetResult, actionPoints,
       tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn,
       skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay, rentTier,
     };
     storage.set(SAVE_KEY, JSON.stringify(s)).catch(() => {});
-  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, casinoHandsPlayed, casinoNetResult, actionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay, rentTier]);
+  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays, casinoHandsPlayed, casinoNetResult, actionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay, rentTier]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -209,6 +211,7 @@ export default function useCapitalLifeState() {
     setLayoffMonthsLeft(0);
     setLastSmallDoodadDay(null); setLastBigDoodadDay(null); setLastBabyDay(null); setLastLayoffDay(null);
     setLuckyUntilDay(0);
+    setLastSeasonalDays({});
     lastSmallDoodadCardRef.current = null; lastBigDoodadCardRef.current = null; lastMarketCardRef.current = null;
     setDay(1);
 
@@ -504,6 +507,23 @@ export default function useCapitalLifeState() {
     banner("Parts rachetées", `${a.name} : participation portée à ${newPct}% (+${f(addedGross)}/mois).`, "good");
   }
 
+  // Verse tout ou partie de la trésorerie accumulée d'une entreprise dans les
+  // liquidités personnelles du joueur — gratuit en PA (c'est une simple
+  // décision financière, pas une action de gestion sur le terrain).
+  function payAssetDividend(assetId, amount) {
+    const a = assets.find((x) => x.id === assetId);
+    if (!a || !(a.treasury > 0)) return;
+    const { asset: updated, paid } = payDividend(a, amount);
+    if (paid <= 0) return;
+    setCash((c) => c + paid);
+    setAssets((list) => list.map((x) => (x.id === assetId ? updated : x)));
+    banner("Dividende versé", `${a.name} : +${f(paid)} depuis la trésorerie de l'entreprise.`, "good");
+  }
+
+  function toggleAssetAutoManage(assetId) {
+    setAssets((list) => list.map((x) => (x.id === assetId ? { ...x, autoManage: !x.autoManage } : x)));
+  }
+
   // --- Avancée du temps : un jour, ou sauter jusqu'au prochain jour de paie ---
 
   function applySimResult(result, report) {
@@ -525,6 +545,7 @@ export default function useCapitalLifeState() {
     setLastBabyDay(result.lastBabyDay);
     setLastLayoffDay(result.lastLayoffDay);
     setLuckyUntilDay(result.luckyUntilDay);
+    setLastSeasonalDays(result.lastSeasonalDays);
     setActionPoints(dailyActionPoints);
     if (result.bankrupt) setPhase("bankrupt");
     if (result.journalEntries.length) setJournal((j) => [...result.journalEntries.slice().reverse(), ...j].slice(0, 60));
@@ -543,6 +564,7 @@ export default function useCapitalLifeState() {
       tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
       babyEnabled, layoffEnabled, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
+      lastSeasonalDays,
       rentTier,
     };
   }
@@ -698,6 +720,7 @@ export default function useCapitalLifeState() {
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     selectedAssetId, setSelectedAssetId, performAssetMaintenance, performAssetAd,
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,
+    payAssetDividend, toggleAssetAutoManage,
     casinoHandsPlayed, casinoNetResult, actionPoints,
     onCasinoCashDelta: (amount) => setCash((c) => Math.max(0, c + amount)),
     onCasinoHandPlayed: (netProfit) => { setCasinoHandsPlayed((n) => n + 1); setCasinoNetResult((n) => n + netProfit); },

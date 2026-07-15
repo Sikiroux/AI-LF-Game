@@ -82,6 +82,43 @@ function CandidateRow({ candidate, currency, onHire, disabled, C, styles }) {
   );
 }
 
+function TreasurySection({ asset, currency, onPayDividend, onToggleAutoManage, C, styles }) {
+  const [amount, setAmount] = useState(asset.treasury || 0);
+  const f = (n) => fmt(n, currency);
+  const treasury = asset.treasury || 0;
+  const clamped = Math.max(0, Math.min(amount, treasury));
+
+  return (
+    <div style={{ ...styles.card, marginTop: 14 }}>
+      <div style={{ padding: 16 }}>
+        <div style={styles.sectionTitle}>Trésorerie d'entreprise</div>
+        <div style={{ fontSize: 11.5, color: C.inkSoft, marginBottom: 12, lineHeight: 1.5 }}>
+          Une partie du cash-flow de l'entreprise reste dans ses caisses au lieu de tomber automatiquement dans vos liquidités — versez-vous un dividende pour la récupérer.
+        </div>
+        <Row C={C} label="Trésorerie disponible" value={f(treasury)} tone={treasury > 0 ? "good" : undefined} />
+        {treasury > 0 && (
+          <>
+            <div style={{ display: "flex", gap: 6, margin: "10px 0" }}>
+              {[0.25, 0.5, 1].map((pct) => (
+                <button key={pct} style={{ ...styles.chip, ...(clamped === Math.round(treasury * pct) ? styles.chipActive : {}) }} onClick={() => setAmount(Math.round(treasury * pct))}>
+                  {pct === 1 ? "Tout" : `${Math.round(pct * 100)}%`}
+                </button>
+              ))}
+            </div>
+            <button style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box" }} onClick={() => onPayDividend(clamped)}>
+              Se verser {f(clamped)} de dividende
+            </button>
+          </>
+        )}
+        <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 14, fontSize: 12, color: C.ink, cursor: "pointer" }}>
+          <input type="checkbox" checked={!!asset.autoManage} onChange={onToggleAutoManage} />
+          Gestion automatique (entretien/pub financés par la trésorerie, sans PA)
+        </label>
+      </div>
+    </div>
+  );
+}
+
 function StakeSection({ asset, cash, actionPoints, currency, managementThreshold, onBuyStake, C, styles }) {
   const [deltaPct, setDeltaPct] = useState(10);
   const f = (n) => fmt(n, currency);
@@ -135,7 +172,7 @@ function StakeSection({ asset, cash, actionPoints, currency, managementThreshold
   );
 }
 
-export default function AssetDetailScreen({ asset, cash, currency, day, actionPoints, managementThreshold = DEFAULT_MANAGEMENT_THRESHOLD_PCT, onMaintenance, onAd, onHire, onFire, onTrain, onBuyStake, onBack }) {
+export default function AssetDetailScreen({ asset, cash, currency, day, actionPoints, managementThreshold = DEFAULT_MANAGEMENT_THRESHOLD_PCT, onMaintenance, onAd, onHire, onFire, onTrain, onBuyStake, onPayDividend, onToggleAutoManage, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const [tab, setTab] = useState("vue");
@@ -216,6 +253,8 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
                   {(asset.stakePct ?? 100) < 100 && <Row C={C} label="Participation" value={`${asset.stakePct}%`} />}
                   <Row C={C} label="Réputation" value={qualitativeLabel(asset.reputation)} />
                   {asset.staffMorale != null && <Row C={C} label="Moral du personnel" value={qualitativeLabel(asset.staffMorale)} />}
+                  <Row C={C} label="Trésorerie" value={f(asset.treasury || 0)} tone={asset.treasury > 0 ? "good" : undefined} />
+                  {asset.autoManage && <Row C={C} label="Gestion" value="Automatique" tone="good" />}
                 </div>
               </div>
             )}
@@ -276,6 +315,10 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
               {adCheck.ok && !adPaOk && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>Plus assez de points d'action aujourd'hui.</div>}
             </div>
           </div>
+        )}
+
+        {tab === "decisions" && !isRealestate && (
+          <TreasurySection asset={asset} currency={currency} onPayDividend={onPayDividend} onToggleAutoManage={onToggleAutoManage} C={C} styles={styles} />
         )}
 
         {tab === "decisions" && !isRealestate && (

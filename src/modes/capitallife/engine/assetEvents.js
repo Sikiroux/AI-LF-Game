@@ -30,6 +30,10 @@ export function buildAssetEventTable(asset, day) {
     table.push({ type: "repair", probability: 0.0005 + neglect(asset.condition) * 0.011 });
     table.push({ type: "footfallDrop", probability: 0.0004 + neglect(asset.reputation) * 0.009 });
     table.push({ type: "goodNews", probability: 0.0012 });
+    if (asset.treasury > 0) {
+      table.push({ type: "exceptionalDistribution", probability: 0.0008 });
+      table.push({ type: "taxAudit", probability: 0.0005 });
+    }
   }
   return table;
 }
@@ -94,6 +98,24 @@ export function applyAssetEvent(asset, type, day, currency) {
       },
       cashDelta: 0,
       event: { title: "Baisse de fréquentation", detail: `${asset.name} : revenu réduit pendant ${days} jours.`, tone: "bad" },
+    };
+  }
+  if (type === "exceptionalDistribution") {
+    const pct = 15 + Math.round(Math.random() * 25);
+    const bonus = Math.round(asset.treasury * (pct / 100));
+    return {
+      asset: { ...asset, treasury: asset.treasury + bonus, lastProblemDay: day },
+      cashDelta: 0,
+      event: { title: "Bon trimestre", detail: `${asset.name} : +${f(bonus)} versés à la trésorerie de l'entreprise.`, tone: "good" },
+    };
+  }
+  if (type === "taxAudit") {
+    const pct = 15 + Math.round(Math.random() * 20);
+    const seized = Math.round(asset.treasury * (pct / 100));
+    return {
+      asset: { ...asset, treasury: asset.treasury - seized, lastProblemDay: day },
+      cashDelta: 0,
+      event: { title: "Contrôle fiscal", detail: `${asset.name} : redressement de -${f(seized)} prélevés sur la trésorerie de l'entreprise.`, tone: "bad" },
     };
   }
   if (type === "goodNews") {
