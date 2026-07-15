@@ -6,7 +6,7 @@ export default function TokenListItem({ token, position, active, onSelect, C, st
   const shares = position ? position.shares : 0;
   const gainPct = shares > 0 && position.avgCost ? ((token.price - position.avgCost) / position.avgCost) * 100 : null;
   return (
-    <button
+    <button className="cl-tap"
       onClick={onSelect}
       style={{
         ...styles.card, textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit",

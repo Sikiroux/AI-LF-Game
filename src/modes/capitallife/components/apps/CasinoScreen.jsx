@@ -111,7 +111,7 @@ export default function CasinoScreen({ cash, currency, onCashDelta, onBack, hand
   return (
     <div style={styles.app}>
       <div style={styles.topBar}>
-        <button style={styles.backBtn} onClick={onBack}>←</button>
+        <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>🎰 Casino — Blackjack</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
@@ -150,30 +150,30 @@ export default function CasinoScreen({ cash, currency, onCashDelta, onBack, hand
               <div style={{ fontSize: 13, color: C.ink, marginTop: 14 }}>Mise : <b>{f(bet)}</b></div>
               <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginTop: 8 }}>
                 {CHIP_VALUES.map((v) => (
-                  <button key={v} style={{ ...styles.smallBtn, opacity: cash >= bet + v ? 1 : 0.4 }} disabled={cash < bet + v} onClick={() => addChip(v)}>+{f(v)}</button>
+                  <button className="cl-tap" key={v} style={{ ...styles.smallBtn, opacity: cash >= bet + v ? 1 : 0.4 }} disabled={cash < bet + v} onClick={() => addChip(v)}>+{f(v)}</button>
                 ))}
               </div>
               <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center", justifyContent: "center" }}>
                 <input type="number" min="0" placeholder="Montant exact" value={customBetInput} onChange={(e) => setCustomBetInput(e.target.value)} style={{ ...styles.formInput, width: 110 }} />
-                <button style={styles.smallBtn} onClick={setCustomBet}>Miser ce montant</button>
+                <button className="cl-tap" style={styles.smallBtn} onClick={setCustomBet}>Miser ce montant</button>
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                <button style={{ ...styles.smallBtn, flex: 1 }} onClick={clearBet}>Effacer</button>
-                <button style={{ ...styles.primaryBtn, flex: 1, opacity: bet > 0 ? 1 : 0.4 }} disabled={bet <= 0} onClick={deal}>Distribuer</button>
+                <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1 }} onClick={clearBet}>Effacer</button>
+                <button className="cl-tap" style={{ ...styles.primaryBtn, flex: 1, opacity: bet > 0 ? 1 : 0.4 }} disabled={bet <= 0} onClick={deal}>Distribuer</button>
               </div>
             </>
           )}
 
           {phase === "playing" && (
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-              <button style={{ ...styles.primaryBtn, flex: 1 }} onClick={hit}>Tirer</button>
-              <button style={{ ...styles.smallBtn, flex: 1 }} onClick={stand}>Rester</button>
-              <button style={{ ...styles.smallBtn, flex: 1, opacity: (playerCards.length === 2 && bet <= cash) ? 1 : 0.4 }} disabled={!(playerCards.length === 2 && bet <= cash)} onClick={doubleDown}>Doubler</button>
+              <button className="cl-tap" style={{ ...styles.primaryBtn, flex: 1 }} onClick={hit}>Tirer</button>
+              <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1 }} onClick={stand}>Rester</button>
+              <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1, opacity: (playerCards.length === 2 && bet <= cash) ? 1 : 0.4 }} disabled={!(playerCards.length === 2 && bet <= cash)} onClick={doubleDown}>Doubler</button>
             </div>
           )}
 
           {phase === "settled" && (
-            <button style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", marginTop: 14 }} onClick={nextHand}>Nouvelle main</button>
+            <button className="cl-tap" style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", marginTop: 14 }} onClick={nextHand}>Nouvelle main</button>
           )}
         </div>
 

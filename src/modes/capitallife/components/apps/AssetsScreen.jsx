@@ -13,7 +13,7 @@ export default function AssetsScreen({ assets, cash, currency, onPayOff, onPayOf
   return (
     <div style={styles.app}>
       <div style={styles.topBar}>
-        <button style={styles.backBtn} onClick={onBack}>←</button>
+        <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>📁 Mes actifs</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
@@ -25,7 +25,7 @@ export default function AssetsScreen({ assets, cash, currency, onPayOff, onPayOf
       <div style={{ ...styles.content, padding: 16 }}>
         {loanedAssets.length > 1 && (
           <div style={{ marginBottom: 14 }}>
-            <button
+            <button className="cl-tap"
               style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", opacity: payableCount > 0 ? 1 : 0.4 }}
               disabled={payableCount === 0}
               onClick={onPayOffAll}

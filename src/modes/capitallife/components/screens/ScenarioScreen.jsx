@@ -26,7 +26,7 @@ export default function ScenarioScreen({ scenario, currency, difficulty, onChang
   return (
     <div style={styles.app}>
       <div style={styles.topBar}>
-        <button style={styles.backBtn} onClick={onBack}>←</button>
+        <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>Votre mise en situation</div>
       </div>
 
@@ -36,7 +36,7 @@ export default function ScenarioScreen({ scenario, currency, difficulty, onChang
             <div style={styles.sectionTitle}>Profil de départ</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
               {SCENARIO_PRESETS.map((preset) => (
-                <button key={preset.key} style={{ ...styles.chip, ...(presetKey === preset.key ? styles.chipActive : {}) }} onClick={() => onChangePreset?.(preset.key)}>
+                <button className="cl-tap" key={preset.key} style={{ ...styles.chip, ...(presetKey === preset.key ? styles.chipActive : {}) }} onClick={() => onChangePreset?.(preset.key)}>
                   {preset.label}
                 </button>
               ))}
@@ -91,7 +91,7 @@ export default function ScenarioScreen({ scenario, currency, difficulty, onChang
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {Object.entries(DIFFICULTY_PRESETS).map(([key, preset]) => (
-                <button key={key} style={{ ...styles.chip, ...(difficulty === key ? styles.chipActive : {}) }} onClick={() => onChangeDifficulty(key)}>
+                <button className="cl-tap" key={key} style={{ ...styles.chip, ...(difficulty === key ? styles.chipActive : {}) }} onClick={() => onChangeDifficulty(key)}>
                   {preset.label} · ⚡{preset.dailyActionPoints}
                 </button>
               ))}
@@ -100,8 +100,8 @@ export default function ScenarioScreen({ scenario, currency, difficulty, onChang
         </div>
 
         <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
-          <button style={{ ...styles.primaryBtn, flex: 1 }} onClick={onStart}>Commencer</button>
-          <button style={styles.smallBtn} onClick={onReroll}>🎲 Régénérer</button>
+          <button className="cl-tap" style={{ ...styles.primaryBtn, flex: 1 }} onClick={onStart}>Commencer</button>
+          <button className="cl-tap" style={styles.smallBtn} onClick={onReroll}>🎲 Régénérer</button>
         </div>
       </div>
     </div>

@@ -35,7 +35,7 @@ export default function ForecastScreen({ day, cash, profession, debts, liabiliti
   return (
     <div style={styles.app}>
       <div style={styles.topBar}>
-        <button style={styles.backBtn} onClick={onBack}>←</button>
+        <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>Prévisions</div>
         <div style={{ width: 30 }} />
       </div>

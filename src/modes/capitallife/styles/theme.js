@@ -51,6 +51,39 @@ export function useCapitalLifeColors() {
 // est déjà plus étroite que ce seuil.
 export const CONTENT_MAX_WIDTH = 560;
 
+// Échelle d'espacement (base 4pt) et de radius — nommées plutôt que des px
+// éparpillés au fil des fichiers, pour que padding/radius se répondent d'un
+// composant à l'autre au lieu de dériver légèrement partout.
+export const SPACE = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
+export const RADIUS = { xs: 6, sm: 8, md: 12, lg: 16, pill: 999 };
+
+// Retour tactile universel : tout élément cliquable de Capital Life porte
+// cette classe (en plus de son style inline) pour un vrai feedback de
+// pression — sans elle, les boutons en style inline n'avaient aucune
+// animation au tap, contrairement au mode classique qui a déjà `.btn-primary
+// :active` etc. via CSS_EXTRA. Injectée une seule fois au niveau racine
+// (App.jsx) pour couvrir tous les écrans sans dupliquer une balise <style>
+// partout.
+export const CL_CSS_EXTRA = `
+  .cl-tap {
+    transition: transform 0.12s ease-out, opacity 0.12s ease-out, filter 0.12s ease-out;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cl-tap:active { transform: scale(0.96); opacity: 0.82; }
+  @media (hover: hover) {
+    .cl-tap:hover { filter: brightness(1.06); }
+  }
+  .cl-tap:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+  /* DecisionModal.jsx (partagé avec le mode classique) est utilisé tel quel
+     pour le flux d'achat OppMarket — mêmes classes que le mode classique,
+     pour que le retour tactile marche là aussi sans dupliquer le composant. */
+  .btn-primary, .btn-small {
+    transition: transform 0.12s ease-out, opacity 0.12s ease-out;
+  }
+  .btn-primary:active, .btn-small:active { transform: scale(0.96); opacity: 0.85; }
+`;
+
 export function getStyles(C) {
   return {
     app: {
@@ -76,29 +109,29 @@ export function getStyles(C) {
     // écrans l'utilisent directement (pas de fond distinct à préserver).
     content: { flex: 1, overflowY: "auto", width: "100%", maxWidth: CONTENT_MAX_WIDTH, margin: "0 auto", boxSizing: "border-box" },
     backBtn: {
-      width: 30, height: 30, borderRadius: 9, background: C.surface, border: `1px solid ${C.line}`,
+      width: 30, height: 30, borderRadius: RADIUS.sm, background: C.surface, border: `1px solid ${C.line}`,
       display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: C.ink, cursor: "pointer", flexShrink: 0,
     },
-    card: { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" },
+    card: { background: C.surface, border: `1px solid ${C.line}`, borderRadius: RADIUS.lg, overflow: "hidden" },
     sectionTitle: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: C.inkSoft, fontWeight: 700, margin: "0 0 12px" },
     primaryBtn: {
-      background: C.accent, color: C.accentInk, border: "none", borderRadius: 12, padding: "13px 22px",
+      background: C.accent, color: C.accentInk, border: "none", borderRadius: RADIUS.md, padding: `${SPACE.md}px ${SPACE.xl}px`,
       fontWeight: 700, fontSize: 14, cursor: "pointer",
     },
     smallBtn: {
-      background: C.surface, color: C.ink, border: `1px solid ${C.line}`, borderRadius: 10, padding: "9px 14px",
+      background: C.surface, color: C.ink, border: `1px solid ${C.line}`, borderRadius: RADIUS.md, padding: `${SPACE.sm}px ${SPACE.lg}px`,
       fontSize: 12.5, cursor: "pointer",
     },
     dangerBtn: {
-      background: "transparent", color: C.bad, border: `1px solid ${C.bad}`, borderRadius: 10, padding: "9px 14px",
+      background: "transparent", color: C.bad, border: `1px solid ${C.bad}`, borderRadius: RADIUS.md, padding: `${SPACE.sm}px ${SPACE.lg}px`,
       fontSize: 12.5, cursor: "pointer",
     },
     formInput: {
-      background: C.surface, color: C.ink, border: `1px solid ${C.line}`, borderRadius: 8, padding: "8px 10px",
+      background: C.surface, color: C.ink, border: `1px solid ${C.line}`, borderRadius: RADIUS.sm, padding: `${SPACE.sm}px ${SPACE.md}px`,
       fontSize: 13, fontFamily: "inherit",
     },
     chip: {
-      fontSize: 11.5, padding: "6px 12px", borderRadius: 999, border: `1px solid ${C.line}`, color: C.inkSoft,
+      fontSize: 11.5, padding: `${SPACE.xs + 2}px ${SPACE.md}px`, borderRadius: RADIUS.pill, border: `1px solid ${C.line}`, color: C.inkSoft,
       whiteSpace: "nowrap", cursor: "pointer", background: "transparent",
     },
     chipActive: { background: C.accent, color: C.accentInk, border: `1px solid ${C.accent}`, fontWeight: 600 },
@@ -108,7 +141,7 @@ export function getStyles(C) {
     },
     placeholderFile: {
       fontFamily: "ui-monospace, monospace", fontSize: 10, color: C.inkSoft, background: C.surface,
-      padding: "3px 8px", borderRadius: 6, border: `1px solid ${C.line}`,
+      padding: `${SPACE.xs}px ${SPACE.sm}px`, borderRadius: RADIUS.xs, border: `1px solid ${C.line}`,
     },
   };
 }

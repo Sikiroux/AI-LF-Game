@@ -13,7 +13,7 @@ export default function AssetIncidentModal({ decision, actionPoints, onChoose })
         {decision.options.map((option) => {
           const disabled = actionPoints != null && actionPoints < option.paCost;
           return (
-            <button key={option.key} style={{ ...styles.card, padding: 12, textAlign: "left", cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.45 : 1 }} disabled={disabled} onClick={() => onChoose(option.key)}>
+            <button className="cl-tap" key={option.key} style={{ ...styles.card, padding: 12, textAlign: "left", cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.45 : 1 }} disabled={disabled} onClick={() => onChoose(option.key)}>
               <div style={{ color: C.ink, fontWeight: 700, fontSize: 13 }}>{option.label}{option.paCost > 0 ? ` · ⚡${option.paCost}` : ""}</div>
               <div style={{ color: C.inkSoft, fontSize: 11.5, lineHeight: 1.45, marginTop: 3 }}>{option.detail}</div>
             </button>

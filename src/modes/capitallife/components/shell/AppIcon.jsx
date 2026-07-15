@@ -9,7 +9,7 @@ export default function AppIcon({ emoji, label, file, size = 56, onClick, badge 
   const styles = getStyles(C);
   const hasImage = file && AVAILABLE_ICONS.has(file);
   return (
-    <button
+    <button className="cl-tap"
       onClick={onClick}
       style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, background: "transparent", border: "none", cursor: onClick ? "pointer" : "default", padding: 0, font: "inherit", color: "inherit" }}
     >

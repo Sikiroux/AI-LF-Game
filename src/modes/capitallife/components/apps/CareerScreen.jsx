@@ -41,7 +41,7 @@ export default function CareerScreen({
   return (
     <div style={styles.app}>
       <div style={styles.topBar}>
-        <button style={styles.backBtn} onClick={onBack}>←</button>
+        <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>💼 Carrière</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
@@ -54,7 +54,7 @@ export default function CareerScreen({
       <div style={{ flexShrink: 0, display: "flex", padding: "10px 16px", borderBottom: `1px solid ${C.line}` }}>
         <div style={{ ...styles.centerCol, display: "flex", gap: 8 }}>
           {TABS.map((t) => (
-            <button key={t.key} style={{ ...styles.chip, ...(tab === t.key ? styles.chipActive : {}) }} onClick={() => setTab(t.key)}>{t.label}</button>
+            <button className="cl-tap" key={t.key} style={{ ...styles.chip, ...(tab === t.key ? styles.chipActive : {}) }} onClick={() => setTab(t.key)}>{t.label}</button>
           ))}
         </div>
       </div>
@@ -98,7 +98,7 @@ export default function CareerScreen({
                     <div style={{ fontSize: 11.5, color: C.inkSoft, marginBottom: 10 }}>Choisissez la compétence à développer, puis une formation.</div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
                       {SKILLS.map((s) => (
-                        <button key={s.key} style={{ ...styles.chip, ...(selectedSkill === s.key ? styles.chipActive : {}) }} onClick={() => setSelectedSkill(s.key)}>
+                        <button className="cl-tap" key={s.key} style={{ ...styles.chip, ...(selectedSkill === s.key ? styles.chipActive : {}) }} onClick={() => setSelectedSkill(s.key)}>
                           {s.label}
                         </button>
                       ))}
@@ -112,7 +112,7 @@ export default function CareerScreen({
                             <div style={{ fontSize: 11, color: C.inkSoft }}>{t.days} jours</div>
                           </div>
                           <div style={{ fontSize: 11.5, color: C.inkSoft, marginTop: 4 }}>-{t.paCost} PA/jour · +{t.skillGain} en {SKILL_LABELS[selectedSkill]}</div>
-                          <button
+                          <button className="cl-tap"
                             style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", marginTop: 8, opacity: afford ? 1 : 0.4 }}
                             disabled={!afford}
                             onClick={() => onBeginTraining(selectedSkill, t.key)}
@@ -167,7 +167,7 @@ export default function CareerScreen({
                     })}
                   </div>
                   {qualified && <div style={{ fontSize: 10.5, color: C.inkSoft, marginTop: 6 }}>Chance d'acceptation estimée : ~{Math.round(chance * 100)}%</div>}
-                  <button
+                  <button className="cl-tap"
                     style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8, opacity: canApply ? 1 : 0.4 }}
                     disabled={!canApply}
                     onClick={() => onApplyToJob(p.id)}
@@ -195,7 +195,7 @@ export default function CareerScreen({
                     <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, color: C.good }}>+{f(m.pay)}</div>
                   </div>
                   <div style={{ fontSize: 10.5, color: C.inkSoft, marginTop: 4 }}>Compétence liée : {SKILL_LABELS[m.skill]}</div>
-                  <button
+                  <button className="cl-tap"
                     style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", marginTop: 8, opacity: canDo ? 1 : 0.4 }}
                     disabled={!canDo}
                     onClick={() => onDoMission(m.id)}
@@ -228,7 +228,7 @@ export default function CareerScreen({
                     Train de vie : {t.moodLabel} · {t.paModifier > 0 ? `+${t.paModifier}` : t.paModifier} PA/jour
                   </div>
                   {!isCurrent && (
-                    <button
+                    <button className="cl-tap"
                       style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8, opacity: afford ? 1 : 0.4 }}
                       disabled={!afford}
                       onClick={() => onChangeRentTier(t.key)}

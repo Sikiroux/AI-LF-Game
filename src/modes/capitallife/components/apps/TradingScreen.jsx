@@ -34,7 +34,7 @@ export default function TradingScreen({ tokens, portfolio, journal, cash, curren
   return (
     <div style={styles.app}>
       <div style={styles.topBar}>
-        <button style={styles.backBtn} onClick={onBack}>←</button>
+        <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>📈 Bourse</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>Liquidités {f(cash)} · Portefeuille {f(portfolioValue)}</div>
@@ -79,8 +79,8 @@ export default function TradingScreen({ tokens, portfolio, journal, cash, curren
             )}
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
               <input type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)} style={{ ...styles.formInput, width: 56 }} />
-              <button style={{ ...styles.primaryBtn, flex: 1, padding: "9px 10px", opacity: maxAfford <= 0 ? 0.4 : 1 }} disabled={maxAfford <= 0} onClick={() => onBuy(selected.symbol, qty)}>Acheter</button>
-              <button style={{ ...styles.smallBtn, flex: 1, opacity: owned > 0 ? 1 : 0.4 }} disabled={owned <= 0} onClick={() => onSell(selected.symbol, qty)}>Vendre</button>
+              <button className="cl-tap" style={{ ...styles.primaryBtn, flex: 1, padding: "9px 10px", opacity: maxAfford <= 0 ? 0.4 : 1 }} disabled={maxAfford <= 0} onClick={() => onBuy(selected.symbol, qty)}>Acheter</button>
+              <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1, opacity: owned > 0 ? 1 : 0.4 }} disabled={owned <= 0} onClick={() => onSell(selected.symbol, qty)}>Vendre</button>
             </div>
           </div>
         )}
@@ -97,7 +97,7 @@ export default function TradingScreen({ tokens, portfolio, journal, cash, curren
           <div style={{ fontSize: 12, color: C.inkSoft, marginBottom: 8 }}>
             Abonnement payant : gros titres sur ce que pensent les traders du moment — souvent juste, parfois faux.
           </div>
-          <button
+          <button className="cl-tap"
             style={traderJournalActive ? { ...styles.dangerBtn, width: "100%", boxSizing: "border-box" } : { ...styles.primaryBtn, width: "100%", boxSizing: "border-box" }}
             onClick={onToggleTraderJournal}
           >
@@ -109,7 +109,7 @@ export default function TradingScreen({ tokens, portfolio, journal, cash, curren
         {journal.length === 0 && <div style={{ fontSize: 12, color: C.inkSoft, fontStyle: "italic" }}>Rien à signaler pour l'instant.</div>}
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {journal.map((n) => (
-            <button
+            <button className="cl-tap"
               key={n.id}
               onClick={() => setExpandedNews(expandedNews === n.id ? null : n.id)}
               style={{ ...styles.card, textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit", padding: "8px 10px", ...(n.sentiment ? { borderColor: C.catEncheres } : {}) }}
