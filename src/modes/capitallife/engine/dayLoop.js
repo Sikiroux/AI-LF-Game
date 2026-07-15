@@ -12,6 +12,7 @@ import {
 } from "./dailyEvents.js";
 import { rollSeasonalEvent } from "./seasonalEvents.js";
 import { rentCost } from "./lifestyle.js";
+import { nextCycle, cycleModifiers, randomCycleDuration, CYCLE_LABELS } from "./economy.js";
 
 // Victoire durable : atteindre le seuil d'indépendance financière une seule
 // fois peut être un effet de bord temporaire (bonne nouvelle sur un actif,
@@ -116,9 +117,12 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
     lastSeasonalDays, consecutiveWinningPaydays,
+    economicCycle, economicCycleUntilDay,
   } = state;
   lastSeasonalDays = { ...(lastSeasonalDays || {}) };
   consecutiveWinningPaydays = consecutiveWinningPaydays || 0;
+  economicCycle = economicCycle || "growth";
+  economicCycleUntilDay = economicCycleUntilDay || (day + randomCycleDuration());
 
   const events = [];
   const journalEntries = [];
@@ -129,13 +133,24 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
   for (let i = 0; i < numDays; i++) {
     const nd = day + 1;
 
+    // Cycle économique global : expansion → croissance → inflation →
+    // ralentissement → récession → reprise → expansion, en boucle. Diffusé
+    // au marché de l'emploi, aux entreprises et au site d'opportunités —
+    // pour que ces systèmes évoluent ensemble plutôt que chacun dans son coin.
+    if (nd >= economicCycleUntilDay) {
+      economicCycle = nextCycle(economicCycle);
+      economicCycleUntilDay = nd + randomCycleDuration();
+      events.push({ title: "Conjoncture économique", detail: `L'économie entre en phase de "${CYCLE_LABELS[economicCycle]}".`, tone: economicCycle === "recession" || economicCycle === "slowdown" ? "bad" : "good" });
+    }
+    const cycleMods = cycleModifiers(economicCycle);
+
     const tick = tickMarketDays({ tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive, economicEffectDuration: 10, economicEffectPermanent: false, assets, currency }, 1);
     tokens = tick.tokens; pendingArcs = tick.pendingArcs; sectorConditions = tick.sectorConditions;
     economicModifier = tick.economicModifier; marketTurn = tick.marketTurn;
     let cashDelta = tick.cashDelta;
     if (tick.journalEntries.length) journalEntries.push(...tick.journalEntries);
 
-    listings = advanceListings(listings, nd, cash);
+    listings = advanceListings(listings, nd, cash, cycleMods.urgentListingBonus);
 
     // Restaure le revenu des actifs dont l'effet temporaire (vacance locative,
     // baisse de fréquentation) est arrivé à expiration.
@@ -184,7 +199,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
 
     if (!quiet || Math.random() < PRUDENT_EVENT_CHANCE) {
       const lucky = nd < luckyUntilDay;
-      const table = buildDailyEventTable({ profession, day: nd, kids, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, lucky });
+      const table = buildDailyEventTable({ profession, day: nd, kids, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, lucky, layoffMult: cycleMods.layoffMult });
       const eventType = rollDailyEvent(table);
 
       if (eventType === "doodad_small") {
@@ -309,7 +324,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
         return { ...deb, monthsRemaining, balance: deb.monthlyPayment * monthsRemaining };
       }).filter(Boolean);
       if (layoffMonthsLeft > 0) layoffMonthsLeft = Math.max(0, layoffMonthsLeft - 1);
-      assets = amortizeAssetsList(assets).map(driftAssetIndicators);
+      assets = amortizeAssetsList(assets).map((a) => driftAssetIndicators(a, cycleMods.businessGrowthMult));
       const paydayNotes = [];
       if (treasuryRetained > 0) paydayNotes.push(`${fmt(treasuryRetained, currency)} conservés en trésorerie d'entreprise`);
       if (autoManageFeesFromCash > 0) paydayNotes.push(`${fmt(autoManageFeesFromCash, currency)} de frais de gestion automatique`);
@@ -377,6 +392,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
     lastSeasonalDays, consecutiveWinningPaydays,
+    economicCycle, economicCycleUntilDay,
     events, journalEntries, bankrupt, won, pendingAssetDecision,
   };
 }

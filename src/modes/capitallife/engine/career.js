@@ -61,17 +61,19 @@ export const JOB_REJECTION_COOLDOWN_DAYS = 5;
 // Chance d'acceptation : de base 55%, +2%/point de compétence au-dessus du
 // seuil minimum requis (moyenne sur les compétences demandées) — être
 // qualifié ne suffit pas, être largement au-dessus des seuils aide.
-export function applicationChance(skills, professionId) {
+export function applicationChance(skills, professionId, jobOfferMult = 1) {
   const prof = PROFESSIONS.find((p) => p.id === professionId);
-  if (!prof || !prof.jobRequirements) return 0.9;
-  const entries = Object.entries(prof.jobRequirements);
-  const avgExcess = entries.reduce((s, [key, min]) => s + Math.max(0, (skills[key] || 0) - min), 0) / entries.length;
-  return Math.min(0.9, 0.55 + avgExcess * 0.02);
+  const base = !prof || !prof.jobRequirements ? 0.9 : (() => {
+    const entries = Object.entries(prof.jobRequirements);
+    const avgExcess = entries.reduce((s, [key, min]) => s + Math.max(0, (skills[key] || 0) - min), 0) / entries.length;
+    return 0.55 + avgExcess * 0.02;
+  })();
+  return Math.max(0.05, Math.min(0.9, base * jobOfferMult));
 }
 
-export function rollApplication(skills, professionId) {
+export function rollApplication(skills, professionId, jobOfferMult = 1) {
   if (!jobRequirementsMet(skills, professionId)) return { accepted: false, qualified: false, chance: 0 };
-  const chance = applicationChance(skills, professionId);
+  const chance = applicationChance(skills, professionId, jobOfferMult);
   return { accepted: Math.random() < chance, qualified: true, chance };
 }
 
@@ -87,13 +89,13 @@ const MISSION_TEMPLATES = [
   { title: "Traduction / rédaction", paCost: 2, base: 15, skill: "communication" },
 ];
 
-export function generateMissions(skills, count = 3) {
+export function generateMissions(skills, count = 3, payMult = 1) {
   const pool = [...MISSION_TEMPLATES].sort(() => Math.random() - 0.5).slice(0, count);
   return pool.map((m) => {
     const level = skills[m.skill] || 0;
     return {
       id: uid(), title: m.title, paCost: m.paCost, skill: m.skill,
-      pay: Math.round((m.base + level * 1.6) * (0.85 + Math.random() * 0.3)),
+      pay: Math.round((m.base + level * 1.6) * (0.85 + Math.random() * 0.3) * payMult),
     };
   });
 }
