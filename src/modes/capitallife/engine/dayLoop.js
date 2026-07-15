@@ -150,7 +150,9 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     let cashDelta = tick.cashDelta;
     if (tick.journalEntries.length) journalEntries.push(...tick.journalEntries);
 
-    listings = advanceListings(listings, nd, cash, cycleMods.urgentListingBonus);
+    const listingResult = advanceListings(listings, nd, cash, cycleMods.urgentListingBonus);
+    listings = listingResult.listings;
+    if (listingResult.sniped) events.push({ title: "Occasion manquée", detail: `« ${listingResult.sniped} » vient d'être raflée par un autre acheteur.`, tone: "bad" });
 
     // Restaure le revenu des actifs dont l'effet temporaire (vacance locative,
     // baisse de fréquentation) est arrivé à expiration.

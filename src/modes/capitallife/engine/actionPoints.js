@@ -25,4 +25,6 @@ export const ACTION_COSTS = {
   fire: 1,
   buyAsset: 2,
   ad: 2,
+  inspectListing: 1,
+  negotiateListing: 2,
 };

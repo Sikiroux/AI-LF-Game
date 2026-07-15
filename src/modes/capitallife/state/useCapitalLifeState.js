@@ -252,7 +252,7 @@ export default function useCapitalLifeState() {
     // Pré-remplit le site d'annonces et le journal des marchés avant le premier
     // geste du joueur — sinon les deux sont vides à l'arrivée sur l'accueil.
     let seedListings = [];
-    for (let i = 0; i < 3; i++) seedListings = advanceListings(seedListings, 1, scenarioDraft.startingCash);
+    for (let i = 0; i < 3; i++) seedListings = advanceListings(seedListings, 1, scenarioDraft.startingCash).listings;
     setListings(seedListings);
 
     const warmup = tickMarketDays({
@@ -341,6 +341,45 @@ export default function useCapitalLifeState() {
   function skipListing() {
     setPendingDecision(null);
   }
+
+  // Information imparfaite : révèle si l'annonce cache un vice (état dégradé
+  // à l'achat) — coûte 1 PA, ne change rien au prix, juste à ce qu'on sait
+  // avant de signer.
+  function inspectListing(listingId) {
+    const listing = listings.find((l) => l.id === listingId);
+    if (!listing || listing.inspected) return;
+    if (!spendActionPoints(ACTION_COSTS.inspectListing)) return;
+    setListings((ls) => ls.map((l) => (l.id === listingId ? { ...l, inspected: true } : l)));
+    banner("Inspection", listing.flawed ? "Vice caché détecté : ce bien est en moins bon état que le prix ne le laisse penser." : "Rien à signaler : l'affaire est conforme à ce qui est annoncé.", listing.flawed ? "bad" : "good");
+  }
+
+  // Négociation : tente de faire baisser l'apport, avec une chance de succès
+  // liée à la compétence Vente — un vrai levier plutôt qu'un simple clic
+  // gratuit, et un risque que le vendeur se braque et retire l'annonce.
+  const NEGOTIATION_DISCOUNT_RANGE = [0.1, 0.18];
+  const NEGOTIATION_WALKOUT_CHANCE = 0.15;
+  function negotiateListing(listingId) {
+    const listing = listings.find((l) => l.id === listingId);
+    if (!listing || listing.negotiated || listing.card.type === "stock") return;
+    if (!spendActionPoints(ACTION_COSTS.negotiateListing)) return;
+    const chance = Math.max(0.25, Math.min(0.75, 0.4 + (skills.vente || 0) * 0.005));
+    if (Math.random() < chance) {
+      const [lo, hi] = NEGOTIATION_DISCOUNT_RANGE;
+      const cut = 1 - (lo + Math.random() * (hi - lo));
+      setListings((ls) => ls.map((l) => (l.id === listingId ? {
+        ...l, negotiated: true,
+        card: { ...l.card, cost: Math.round(l.card.cost * cut), downPayment: l.card.downPayment != null ? Math.round(l.card.downPayment * cut) : undefined },
+      } : l)));
+      banner("Négociation réussie", `${listing.card.title} : apport réduit d'environ ${Math.round((1 - cut) * 100)}%.`, "good");
+    } else if (Math.random() < NEGOTIATION_WALKOUT_CHANCE) {
+      setListings((ls) => ls.filter((l) => l.id !== listingId));
+      if (pendingDecision?.listingId === listingId) setPendingDecision(null);
+      banner("Négociation ratée", `${listing.card.title} : le vendeur se retire de la table.`, "bad");
+    } else {
+      banner("Négociation refusée", "Le vendeur ne bouge pas sur le prix.", "info");
+    }
+  }
+
   function buyListing(card, mode, listingId) {
     const useLoan = mode !== false;
     const loanRateMult = marketTurn < economicModifier.expiresTurn ? economicModifier.loanRateMult : 1;
@@ -355,7 +394,11 @@ export default function useCapitalLifeState() {
       loanMonthly = Math.round(amortizedPayment(fin.loanAmount, fin.annualRate, mode / 12));
       amortizing = true; amortMonths = mode;
     }
-    const indicators = initAssetIndicators(card, managementThresholdPct);
+    const boughtListing = listings.find((l) => l.id === listingId);
+    let indicators = initAssetIndicators(card, managementThresholdPct);
+    if (boughtListing?.flawed && indicators?.condition != null) {
+      indicators = { ...indicators, condition: Math.max(20, indicators.condition - 35) };
+    }
     const netCashflow = fin.grossCashflow - loanMonthly - totalSalaries({ employees: indicators?.employees });
 
     if (useLoan) {
@@ -858,7 +901,7 @@ export default function useCapitalLifeState() {
     tokens, portfolio, journal, marketTurn, traderJournalActive,
     onToggleTraderJournal: () => setTraderJournalActive((v) => !v),
     buyStock, sellStock,
-    listings, pendingDecision, openListing, skipListing, buyListing,
+    listings, pendingDecision, openListing, skipListing, buyListing, inspectListing, negotiateListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     selectedAssetId, setSelectedAssetId, performAssetMaintenance, performAssetAd,
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,
