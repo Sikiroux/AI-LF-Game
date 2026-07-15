@@ -55,11 +55,12 @@ export function rollAssetDecision(asset, day) {
     candidates.push({ type: "vacancy", probability: 0.0003 + neglect(asset.tenant.happiness) * 0.007 });
   }
   if (asset.type === "business" && asset.reputation != null) {
+    const locationFactor = asset.incidentRiskMultiplier || 1;
     const technicianFactor = hasRole(asset, "technicien") ? 0.7 : 1;
     const accountantFactor = hasRole(asset, "comptable") ? 0.65 : 1;
-    candidates.push({ type: "machineBreakdown", probability: (0.0005 + neglect(asset.condition) * 0.011) * technicianFactor });
-    candidates.push({ type: "footfallDrop", probability: 0.0004 + neglect(asset.reputation) * 0.009 });
-    if ((asset.treasury || 0) > 0) candidates.push({ type: "taxAudit", probability: 0.0005 * accountantFactor });
+    candidates.push({ type: "machineBreakdown", probability: (0.0005 + neglect(asset.condition) * 0.011) * technicianFactor * locationFactor });
+    candidates.push({ type: "footfallDrop", probability: (0.0004 + neglect(asset.reputation) * 0.009) * locationFactor });
+    if ((asset.treasury || 0) > 0) candidates.push({ type: "taxAudit", probability: 0.0005 * accountantFactor * locationFactor });
   }
   for (const candidate of candidates) {
     if (Math.random() < candidate.probability) {
