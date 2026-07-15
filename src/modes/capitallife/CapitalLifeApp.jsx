@@ -31,6 +31,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     selectedAssetId, setSelectedAssetId, performAssetMaintenance, performAssetAd,
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,
+    payAssetDividend, toggleAssetAutoManage,
     casinoHandsPlayed, casinoNetResult, actionPoints, onCasinoCashDelta, onCasinoHandPlayed,
     currency, setCurrency,
     dailyActionPoints, setDailyActionPoints,
@@ -117,6 +118,8 @@ export default function CapitalLifeApp({ onExitHome }) {
         onFire={(employeeId) => fireAssetEmployee(selectedAssetId, employeeId)}
         onTrain={(employeeId) => trainAssetEmployee(selectedAssetId, employeeId)}
         onBuyStake={(assetId, delta, useLoan) => buyAssetStake(assetId, delta, useLoan)}
+        onPayDividend={(amount) => payAssetDividend(selectedAssetId, amount)}
+        onToggleAutoManage={() => toggleAssetAutoManage(selectedAssetId)}
         onBack={() => setView("assets")}
       />
     );

@@ -3,12 +3,13 @@ import { MARKET_CARDS } from "../../../data/marketCards.js";
 import { calcExpenses, calcPassiveIncome } from "../../../engine/financing.js";
 import { tickMarketDays } from "../../../engine/bourse/market.js";
 import { advanceListings } from "./opportunitySite.js";
-import { driftAssetIndicators, totalSalaries } from "./assetIndicators.js";
+import { driftAssetIndicators, totalSalaries, businessTreasuryRetention, autoManageBusiness } from "./assetIndicators.js";
 import { rollAssetEvent, applyAssetEvent } from "./assetEvents.js";
 import {
   SMALL_DOODAD_CARDS, BIG_DOODAD_CARDS, BIG_DOODAD_TERM_MONTHS,
   incomeRatio, scaleDoodadAmount, buildDailyEventTable, rollDailyEvent,
 } from "./dailyEvents.js";
+import { rollSeasonalEvent } from "./seasonalEvents.js";
 import { rentCost } from "./lifestyle.js";
 
 // Faillite : quand les liquidités ne suffisent pas à couvrir un paiement (loyer,
@@ -62,7 +63,9 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
+    lastSeasonalDays,
   } = state;
+  lastSeasonalDays = { ...(lastSeasonalDays || {}) };
 
   const events = [];
   const journalEntries = [];
@@ -157,7 +160,30 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
         lastLayoffDay = nd;
         events.push({ title: "Licencié", detail: "Vous perdez votre emploi. Pas de salaire pendant 2 mois.", tone: "bad" });
       }
+
+      const seasonal = rollSeasonalEvent({ day: nd, profession, kids, lastSeasonalDays, currency, fmt });
+      if (seasonal) {
+        cashDelta -= seasonal.amount;
+        lastSeasonalDays[seasonal.id] = nd;
+        events.push(seasonal.event);
+      }
     }
+
+    // Pilote automatique des entreprises : entretien/publicité déclenchés tout
+    // seuls et financés par la trésorerie de l'entreprise, indépendamment du
+    // mode "mois calme" (ce n'est pas un événement de vie du joueur, c'est la
+    // boîte qui se gère elle-même).
+    assets = assets.map((a) => {
+      const { asset: managed, actions } = autoManageBusiness(a, nd);
+      if (actions.length === 0) return managed;
+      const history = actions.map((act) => ({
+        day: nd,
+        title: act.kind === "maintenance" ? "Entretien automatique" : "Publicité automatique",
+        detail: `-${fmt(act.cost, currency)} (trésorerie), ${act.kind === "maintenance" ? "état" : "réputation"} améliorée.`,
+        tone: "good",
+      }));
+      return { ...managed, history: [...history.reverse(), ...(managed.history || [])].slice(0, 8) };
+    });
 
     let payday = 0;
     if ((nd - 1) % 30 === 0) {
@@ -166,7 +192,18 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
       const expenses = calcExpenses(profession, kids, debtMonthly, liabilities) + rent;
       const salary = layoffMonthsLeft > 0 ? 0 : profession.salary;
       const passiveIncome = calcPassiveIncome(assets);
-      payday = salary + passiveIncome - expenses;
+      // Une part du cash-flow des entreprises reste dans leur trésorerie plutôt
+      // que de tomber directement dans les liquidités du joueur (cf. dividendes) —
+      // n'affecte que ce qui arrive réellement en cash ce mois-ci, pas le revenu
+      // passif compté pour l'indépendance financière (calcPassiveIncome ci-dessus).
+      const treasuryRetained = assets.reduce((s, a) => s + businessTreasuryRetention(a), 0);
+      if (treasuryRetained > 0) {
+        assets = assets.map((a) => {
+          const retained = businessTreasuryRetention(a);
+          return retained > 0 ? { ...a, treasury: (a.treasury || 0) + retained } : a;
+        });
+      }
+      payday = salary + passiveIncome - expenses - treasuryRetained;
       debts = debts.map((deb) => {
         const monthsRemaining = deb.monthsRemaining - 1;
         if (monthsRemaining <= 0) return null;
@@ -174,7 +211,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
       }).filter(Boolean);
       if (layoffMonthsLeft > 0) layoffMonthsLeft = Math.max(0, layoffMonthsLeft - 1);
       assets = amortizeAssetsList(assets).map(driftAssetIndicators);
-      events.push({ title: "Jour de paie", detail: `Salaire + revenus passifs - dépenses = ${payday >= 0 ? "+" : ""}${fmt(payday, currency)}`, tone: payday >= 0 ? "good" : "bad" });
+      events.push({ title: "Jour de paie", detail: `Salaire + revenus passifs - dépenses = ${payday >= 0 ? "+" : ""}${fmt(payday, currency)}${treasuryRetained > 0 ? ` (dont ${fmt(treasuryRetained, currency)} conservés en trésorerie d'entreprise)` : ""}`, tone: payday >= 0 ? "good" : "bad" });
     }
 
     const rawCash = cash + cashDelta + payday;
@@ -206,6 +243,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
+    lastSeasonalDays,
     events, journalEntries, bankrupt,
   };
 }

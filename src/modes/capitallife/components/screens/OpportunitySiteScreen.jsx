@@ -95,6 +95,14 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
                     🌟 Exceptionnelle
                   </span>
                 )}
+                <span style={{
+                  position: "absolute", bottom: 8, right: 8, fontSize: 10.5, fontWeight: 800,
+                  color: "#fff", padding: "4px 9px", borderRadius: 999,
+                  background: expiryTone === "urgent" ? C.bad : expiryTone === "soon" ? C.warn : "rgba(0,0,0,0.55)",
+                  display: "flex", alignItems: "center", gap: 4,
+                }}>
+                  ⏳ {daysLeft}j
+                </span>
                 <span style={{ ...styles.placeholderFile, position: "absolute", bottom: 8 }}>{photoFile(l)}</span>
               </div>
 
