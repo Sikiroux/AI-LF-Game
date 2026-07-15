@@ -23,6 +23,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     loaded, view, setView, phase,
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
     profession, day, cash, debts, liabilities, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
+    skipWeek, skipToTrainingEnd,
     payOffLiability, payOffDebt,
     skipMonthMode, setSkipMonthMode,
     managementThresholdPct, setManagementThresholdPct,
@@ -238,6 +239,8 @@ export default function CapitalLifeApp({ onExitHome }) {
       onChangeSkipMonthMode={setSkipMonthMode}
       onNextDay={nextDay}
       onSkipMonth={skipMonth}
+      onSkipWeek={skipWeek}
+      onSkipToTrainingEnd={training ? skipToTrainingEnd : null}
       onOpenApp={(key) => setView(key)}
       onOpenSkipReport={() => setView("skipReport")}
       onMenu={() => setView("menu")}

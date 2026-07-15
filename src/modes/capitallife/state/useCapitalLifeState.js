@@ -725,23 +725,43 @@ export default function useCapitalLifeState() {
     setActionPoints(effectivePA(trainingPaCost));
   }
 
-  // Avance jusqu'au premier jour du mois suivant (jamais moins d'un jour).
-  // Le surmenage ne s'accumule pas pendant un saut (pas de décisions de PA
-  // prises jour par jour) — le compteur repart à zéro.
-  function skipMonth() {
-    const daysToSkip = 30 - ((day - 1) % 30);
+  // Avance de `numDays` jours d'un coup — brique commune à "Sauter le mois",
+  // "Sauter 7 jours" et "Jusqu'à la fin de la formation". S'arrête plus tôt
+  // que prévu si une décision d'incident survient en cours de route (cf.
+  // pendingAssetDecision dans dayLoop.js) : le rapport reflète alors les
+  // jours réellement simulés, pas la demande initiale. Le surmenage ne
+  // s'accumule pas pendant un saut (pas de décisions de PA prises jour par
+  // jour) — le compteur repart à zéro.
+  function performSkip(numDays) {
     const fromDay = day;
     const cashBefore = cash;
-    const trainingPaCost = tickCareer(daysToSkip);
+    const trainingPaCost = tickCareer(numDays);
     setFatigue(0);
-    const result = simulateDays(snapshot(), daysToSkip, { quiet: skipMonthMode === "calm", currency, refs: refs() });
+    const result = simulateDays(snapshot(), numDays, { quiet: skipMonthMode === "calm", currency, refs: refs() });
     applySimResult(result, {
       mode: skipMonthMode,
-      fromDay, toDay: result.day, daysSkipped: daysToSkip,
+      fromDay, toDay: result.day, daysSkipped: result.day - fromDay,
       cashBefore, cashAfter: result.cash,
       events: result.events, journalEntries: result.journalEntries,
+      interrupted: !!result.pendingAssetDecision && result.day - fromDay < numDays,
     });
     setActionPoints(effectivePA(trainingPaCost));
+  }
+
+  // Avance jusqu'au premier jour du mois suivant (jamais moins d'un jour).
+  function skipMonth() {
+    performSkip(30 - ((day - 1) % 30));
+  }
+
+  function skipWeek() {
+    performSkip(7);
+  }
+
+  // Avance jusqu'à la fin de la formation en cours (rien si aucune formation
+  // active).
+  function skipToTrainingEnd() {
+    if (!training || !(training.daysRemaining > 0)) { banner("Rien à sauter", "Aucune formation en cours.", "info"); return; }
+    performSkip(training.daysRemaining);
   }
 
   // --- Carrière : formation, job board, missions freelance ---
@@ -806,6 +826,7 @@ export default function useCapitalLifeState() {
     loaded, view, setView, phase,
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
     profession, day, cash, debts, liabilities, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
+    skipWeek, skipToTrainingEnd,
     payOffLiability, payOffDebt, consolidateDebts,
     skipMonthMode, setSkipMonthMode,
     managementThresholdPct, setManagementThresholdPct,

@@ -20,7 +20,7 @@ export default function CapitalLifeHomeScreen({
   day, cash, profession, debts, liabilities, kids, assets, passiveIncome, layoffMonthsLeft, currency,
   lastEvent, hasSkipReport, skipMonthMode, onChangeSkipMonthMode, assetsNeedingAttention, actionPoints,
   rentTier, skills, consecutiveWinningPaydays, winStreakTarget,
-  onNextDay, onSkipMonth, onOpenApp, onOpenSkipReport, onMenu,
+  onNextDay, onSkipMonth, onSkipWeek, onSkipToTrainingEnd, onOpenApp, onOpenSkipReport, onMenu,
 }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
@@ -123,9 +123,21 @@ export default function CapitalLifeHomeScreen({
       <div style={{ flexShrink: 0, padding: "12px 16px 18px", background: C.surfaceRaised, borderTop: `1px solid ${C.line}` }}>
         <div style={styles.centerCol}>
           <button style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box" }} onClick={onNextDay}>Jour suivant ▶</button>
-          <button style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8, background: "transparent", border: "none", color: C.inkSoft }} onClick={onSkipMonth}>
-            ⏭ Sauter jusqu'au mois prochain
-          </button>
+          <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+            {onSkipWeek && (
+              <button style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={onSkipWeek}>
+                ⏭ 7 jours
+              </button>
+            )}
+            <button style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={onSkipMonth}>
+              ⏭ Mois prochain
+            </button>
+            {onSkipToTrainingEnd && (
+              <button style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={onSkipToTrainingEnd}>
+                ⏭ Fin formation
+              </button>
+            )}
+          </div>
           {skipMonthMode && onChangeSkipMonthMode && (
             <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 8 }}>
               <button
