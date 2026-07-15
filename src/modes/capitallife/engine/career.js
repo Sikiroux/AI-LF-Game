@@ -111,21 +111,36 @@ export function completeMission(mission, skills) {
   return { skills: nextSkills, gained };
 }
 
-// --- Surmenage : un compteur de jours consécutifs où le joueur a dépensé la
-// totalité de son budget quotidien de PA (formation, missions, gestion —
-// jamais rien gardé pour souffler). Au-delà du seuil, risque croissant de
-// burnout (perte d'emploi + frais) et, si en couple, de divorce.
-export const REST_THRESHOLD_DAYS = 5;
+// --- Fatigue : une jauge continue (0-100) plutôt qu'un compteur binaire de
+// jours "tout dépensé / rien dépensé". Avant, garder volontairement 1 PA de
+// côté suffisait à ne jamais risquer de surmenage — désormais chaque jour
+// fait monter ou descendre la jauge selon le % du budget réellement dépensé,
+// et la redescente prend plusieurs jours au lieu d'un reset instantané.
+export const FATIGUE_RECOVER_RATIO = 0.6; // en dessous : la jauge redescend
+export const FATIGUE_STABLE_RATIO = 0.85; // entre les deux : légère hausse
+export const FATIGUE_RECOVERY_STEP = 12;
+export const FATIGUE_STABLE_STEP = 3;
+export const FATIGUE_RISE_STEP = 10;
+export const FATIGUE_RISK_THRESHOLD = 70;
+
+// `usageRatio` = PA dépensés ce jour / budget du jour (0 à 1).
+export function nextFatigue(fatigue, usageRatio) {
+  let delta;
+  if (usageRatio >= FATIGUE_STABLE_RATIO) delta = FATIGUE_RISE_STEP;
+  else if (usageRatio >= FATIGUE_RECOVER_RATIO) delta = FATIGUE_STABLE_STEP;
+  else delta = -FATIGUE_RECOVERY_STEP;
+  return Math.max(0, Math.min(100, fatigue + delta));
+}
 
 export const BURNOUT_BASE_CHANCE = 0.08;
-export const BURNOUT_CHANCE_STEP = 0.05;
+export const BURNOUT_CHANCE_STEP = 0.02;
 export const BURNOUT_CHANCE_CAP = 0.6;
 export const BURNOUT_LAYOFF_MONTHS = 2;
 export const BURNOUT_COST_RANGE = [500, 1500];
 
-export function rollBurnout(daysWithoutRest) {
-  if (daysWithoutRest <= REST_THRESHOLD_DAYS) return false;
-  const excess = daysWithoutRest - REST_THRESHOLD_DAYS;
+export function rollBurnout(fatigue) {
+  if (fatigue <= FATIGUE_RISK_THRESHOLD) return false;
+  const excess = fatigue - FATIGUE_RISK_THRESHOLD;
   const chance = Math.min(BURNOUT_CHANCE_CAP, BURNOUT_BASE_CHANCE + excess * BURNOUT_CHANCE_STEP);
   return Math.random() < chance;
 }
@@ -136,14 +151,14 @@ export function burnoutCost() {
 }
 
 export const DIVORCE_BASE_CHANCE = 0.03;
-export const DIVORCE_CHANCE_STEP = 0.02;
+export const DIVORCE_CHANCE_STEP = 0.008;
 export const DIVORCE_CHANCE_CAP = 0.35;
 export const DIVORCE_CASH_PCT = 0.2;
 export const DIVORCE_FLAT_COST = 400;
 
-export function rollDivorce(daysWithoutRest) {
-  if (daysWithoutRest <= REST_THRESHOLD_DAYS) return false;
-  const excess = daysWithoutRest - REST_THRESHOLD_DAYS;
+export function rollDivorce(fatigue) {
+  if (fatigue <= FATIGUE_RISK_THRESHOLD) return false;
+  const excess = fatigue - FATIGUE_RISK_THRESHOLD;
   const chance = Math.min(DIVORCE_CHANCE_CAP, DIVORCE_BASE_CHANCE + excess * DIVORCE_CHANCE_STEP);
   return Math.random() < chance;
 }

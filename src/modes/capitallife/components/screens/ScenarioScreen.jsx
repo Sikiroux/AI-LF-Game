@@ -1,6 +1,7 @@
 import { calcExpenses, LIABILITY_KEYS, LIABILITY_LABELS } from "../../../../engine/financing.js";
 import { fmt } from "../../../../utils/format.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { DIFFICULTY_PRESETS } from "../../engine/actionPoints.js";
 
 function Row({ label, value, bold, tone, C }) {
   return (
@@ -11,7 +12,7 @@ function Row({ label, value, bold, tone, C }) {
   );
 }
 
-export default function ScenarioScreen({ scenario, currency, onStart, onReroll, onBack }) {
+export default function ScenarioScreen({ scenario, currency, difficulty, onChangeDifficulty, onStart, onReroll, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const { profession, startingCash, liabilities, debt } = scenario;
@@ -62,6 +63,22 @@ export default function ScenarioScreen({ scenario, currency, onStart, onReroll, 
             <div style={styles.sectionTitle}>Bilan de départ</div>
             <Row C={C} label="Liquidités de départ" value={f(startingCash)} bold />
             <Row C={C} label="Cash-flow mensuel net" value={`${netCashflow >= 0 ? "+" : ""}${f(netCashflow)}/mois`} bold tone={netCashflow >= 0 ? "good" : "bad"} />
+          </div>
+        </div>
+
+        <div style={{ ...styles.card, marginTop: 14 }}>
+          <div style={{ padding: 16 }}>
+            <div style={styles.sectionTitle}>Difficulté</div>
+            <div style={{ fontSize: 11, color: C.inkSoft, marginBottom: 10 }}>
+              Fixe le budget quotidien de points d'action pour toute la partie — verrouillé une fois commencé.
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {Object.entries(DIFFICULTY_PRESETS).map(([key, preset]) => (
+                <button key={key} style={{ ...styles.chip, ...(difficulty === key ? styles.chipActive : {}) }} onClick={() => onChangeDifficulty(key)}>
+                  {preset.label} · ⚡{preset.dailyActionPoints}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

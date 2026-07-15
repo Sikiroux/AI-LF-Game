@@ -27,7 +27,7 @@ function Row({ label, value, tone, C }) {
 
 export default function CareerScreen({
   profession, skills, training, missions, cash, currency, day, actionPoints, dailyActionPoints,
-  daysWithoutRest, enCouple, lastJobRejectionDay, rentTier,
+  fatigue, enCouple, lastJobRejectionDay, rentTier,
   onBeginTraining, onApplyToJob, onDoMission, onChangeRentTier, onBack,
 }) {
   const C = useCapitalLifeColors();
@@ -46,7 +46,7 @@ export default function CareerScreen({
           <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>💼 Carrière</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
             {profession.name} · {f(profession.salary)}/mois
-            {daysWithoutRest > 0 && <> · <span style={{ color: daysWithoutRest > 3 ? C.bad : C.inkSoft, fontWeight: 600 }}>{daysWithoutRest}j sans repos</span></>}
+            {fatigue > 0 && <> · <span style={{ color: fatigue > 70 ? C.bad : fatigue > 40 ? C.warn : C.inkSoft, fontWeight: 600 }}>Fatigue {fatigue}%</span></>}
           </div>
         </div>
       </div>

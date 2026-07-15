@@ -37,8 +37,8 @@ export default function CapitalLifeApp({ onExitHome }) {
     economicModifier, sectorConditions,
     casinoHandsPlayed, casinoNetResult, actionPoints, onCasinoCashDelta, onCasinoHandPlayed,
     currency, setCurrency,
-    dailyActionPoints, setDailyActionPoints,
-    skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay,
+    dailyActionPoints, difficulty, setDifficulty,
+    skills, training, missions, fatigue, enCouple, lastJobRejectionDay,
     beginTraining, applyToJob, doMission,
     rentTier, changeRentTier,
     consecutiveWinningPaydays, winStreakTarget,
@@ -63,13 +63,12 @@ export default function CapitalLifeApp({ onExitHome }) {
         managementThresholdPct={managementThresholdPct}
         onChangeManagementThreshold={setManagementThresholdPct}
         dailyActionPoints={dailyActionPoints}
-        onChangeDailyActionPoints={setDailyActionPoints}
         onBack={() => setView("menu")}
       />
     );
   }
   if (view === "scenario") {
-    return <ScenarioScreen scenario={scenarioDraft} currency={currency} onStart={startGame} onReroll={rerollScenario} onBack={() => setView("menu")} />;
+    return <ScenarioScreen scenario={scenarioDraft} currency={currency} difficulty={difficulty} onChangeDifficulty={setDifficulty} onStart={startGame} onReroll={rerollScenario} onBack={() => setView("menu")} />;
   }
   if (phase === "won") {
     return <CapitalLifeWonScreen day={day} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} debts={debts} currency={currency} onReset={resetGame} />;
@@ -139,7 +138,7 @@ export default function CapitalLifeApp({ onExitHome }) {
       <CareerScreen
         profession={profession} skills={skills} training={training} missions={missions}
         cash={cash} currency={currency} day={day} actionPoints={actionPoints} dailyActionPoints={dailyActionPoints}
-        daysWithoutRest={daysWithoutRest} enCouple={enCouple} lastJobRejectionDay={lastJobRejectionDay}
+        fatigue={fatigue} enCouple={enCouple} lastJobRejectionDay={lastJobRejectionDay}
         rentTier={rentTier}
         onBeginTraining={beginTraining} onApplyToJob={applyToJob} onDoMission={doMission} onChangeRentTier={changeRentTier}
         onBack={() => setView("game")}

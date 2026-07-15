@@ -138,7 +138,7 @@ export default function CapitalLifeHomeScreen({
                 style={{ ...styles.chip, padding: "4px 10px", fontSize: 10.5, ...(skipMonthMode === "calm" ? styles.chipActive : {}) }}
                 onClick={() => onChangeSkipMonthMode("calm")}
               >
-                Mois calme
+                Gestion prudente
               </button>
             </div>
           )}

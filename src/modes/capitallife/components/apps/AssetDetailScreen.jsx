@@ -116,7 +116,7 @@ function TreasurySection({ asset, currency, onPayDividend, onToggleAutoManage, C
         )}
         <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 14, fontSize: 12, color: C.ink, cursor: "pointer" }}>
           <input type="checkbox" checked={!!asset.autoManage} onChange={onToggleAutoManage} />
-          Gestion automatique (entretien/pub financés par la trésorerie, sans PA)
+          Gestion automatique (entretien/pub financés par la trésorerie, sans PA — coûte ~5% du chiffre d'affaires/mois en frais de gestionnaire)
         </label>
       </div>
     </div>

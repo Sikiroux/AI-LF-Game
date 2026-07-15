@@ -50,7 +50,7 @@ export default function SkipReportScreen({ report, currency, onBack }) {
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>📋 Rapport du mois</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
-            Jour {report.fromDay} → {report.toDay} · {report.daysSkipped} jour{report.daysSkipped > 1 ? "s" : ""} · {report.mode === "calm" ? "Mois calme" : "Auto-résolution"}
+            Jour {report.fromDay} → {report.toDay} · {report.daysSkipped} jour{report.daysSkipped > 1 ? "s" : ""} · {report.mode === "calm" ? "Gestion prudente" : "Auto-résolution"}
           </div>
         </div>
       </div>
@@ -76,7 +76,7 @@ export default function SkipReportScreen({ report, currency, onBack }) {
 
         {report.mode === "calm" && (
           <div style={{ fontSize: 11.5, color: C.inkSoft, fontStyle: "italic", padding: "10px 4px 0" }}>
-            Mode mois calme : les événements de vie quotidienne ont été mis en pause, mais la Bourse et le site d'opportunités ont continué d'évoluer.
+            Gestion prudente : événements moins fréquents (bons comme mauvais), incidents résolus automatiquement avec l'option la plus sûre — la Bourse et le site d'opportunités ont continué d'évoluer normalement.
           </div>
         )}
 
