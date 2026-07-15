@@ -5,6 +5,7 @@ import {
   qualitativeLabel, canPerformMaintenance, MAINTENANCE_COST_RATE,
   generateCandidate, trainingCost, fireSeverance, MAX_EMPLOYEES,
   canManage, DEFAULT_MANAGEMENT_THRESHOLD_PCT, canRunAd, AD_COST_RATE,
+  canRenovate, RENOVATION_COST_RATE, canOpenSecondLocation, sellAsset,
 } from "../../engine/assetIndicators.js";
 import { computeFinancing } from "../../../../engine/financing.js";
 import { ACTION_COSTS } from "../../engine/actionPoints.js";
@@ -46,10 +47,12 @@ function EmployeeRow({ employee, cash, actionPoints, currency, onFire, onTrain, 
         <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, color: C.bad }}>-{f(employee.salary)}/mois</div>
       </div>
       <div style={{ display: "flex", gap: 14, marginTop: 6, fontSize: 11 }}>
+        <span style={{ color: C.inkSoft }}>Rôle <b style={{ color: C.ink }}>{employee.role || "non défini"}</b></span>
         <span style={{ color: C.inkSoft }}>Compétence <b style={{ color: C.ink }}>{qualitativeLabel(employee.competence)}</b></span>
         <span style={{ color: C.inkSoft }}>Motivation <b style={{ color: C.ink }}>{qualitativeLabel(employee.motivation)}</b></span>
         <span style={{ color: C.inkSoft }}>Loyauté <b style={{ color: C.ink }}>{qualitativeLabel(employee.loyalty)}</b></span>
       </div>
+      <div style={{ color: C.inkSoft, fontSize: 11, marginTop: 5 }}>Confiance <b style={{ color: C.ink }}>{qualitativeLabel(employee.trust)}</b></div>
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
         <button style={{ ...styles.smallBtn, flex: 1, opacity: canTrain ? 1 : 0.4 }} disabled={!canTrain} onClick={() => onTrain(employee.id)}>
           Former ({f(trainCost)} · ⚡{ACTION_COSTS.train})
@@ -71,6 +74,7 @@ function CandidateRow({ candidate, currency, onHire, disabled, C, styles }) {
         <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, color: C.inkSoft }}>{f(candidate.salary)}/mois</div>
       </div>
       <div style={{ display: "flex", gap: 14, marginTop: 6, fontSize: 11 }}>
+        <span style={{ color: C.inkSoft }}>Rôle <b style={{ color: C.ink }}>{candidate.role}</b></span>
         <span style={{ color: C.inkSoft }}>Compétence <b style={{ color: C.ink }}>{qualitativeLabel(candidate.competence)}</b></span>
         <span style={{ color: C.inkSoft }}>Motivation <b style={{ color: C.ink }}>{qualitativeLabel(candidate.motivation)}</b></span>
         <span style={{ color: C.inkSoft }}>Loyauté <b style={{ color: C.ink }}>{qualitativeLabel(candidate.loyalty)}</b></span>
@@ -172,7 +176,7 @@ function StakeSection({ asset, cash, actionPoints, currency, managementThreshold
   );
 }
 
-export default function AssetDetailScreen({ asset, cash, currency, day, actionPoints, managementThreshold = DEFAULT_MANAGEMENT_THRESHOLD_PCT, onMaintenance, onAd, onHire, onFire, onTrain, onBuyStake, onPayDividend, onToggleAutoManage, onBack }) {
+export default function AssetDetailScreen({ asset, cash, currency, day, actionPoints, marketConditions, managementThreshold = DEFAULT_MANAGEMENT_THRESHOLD_PCT, onMaintenance, onAd, onHire, onFire, onTrain, onBuyStake, onPayDividend, onToggleAutoManage, onRenovate, onSell, onOpenSecondLocation, onPickTenant, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const [tab, setTab] = useState("vue");
@@ -203,6 +207,10 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
   const adCost = Math.round(asset.cost * AD_COST_RATE);
   const adPaOk = actionPoints == null || actionPoints >= ACTION_COSTS.ad;
   const canAd = adCheck.ok && adPaOk;
+  const renovationCheck = canRenovate(asset, day, cash);
+  const renovationCost = Math.round(asset.cost * RENOVATION_COST_RATE);
+  const locationCheck = canOpenSecondLocation(asset, cash);
+  const sale = sellAsset(asset, marketConditions);
 
   return (
     <div style={styles.app}>
@@ -313,6 +321,41 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
               </button>
               {!adCheck.ok && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>{adCheck.reason}</div>}
               {adCheck.ok && !adPaOk && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>Plus assez de points d'action aujourd'hui.</div>}
+            </div>
+          </div>
+        )}
+
+        {tab === "decisions" && isRealestate && (
+          <div style={{ ...styles.card, marginTop: 14 }}>
+            <div style={{ padding: 16 }}>
+              <div style={styles.sectionTitle}>Cycle de vie du bien</div>
+              <button style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", opacity: renovationCheck.ok ? 1 : 0.4 }} disabled={!renovationCheck.ok} onClick={() => onRenovate?.(asset.id)}>
+                Rénover ({f(renovationCost)} · ⚡{ACTION_COSTS.maintenance})
+              </button>
+              {!renovationCheck.ok && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>{renovationCheck.reason}</div>}
+              {!asset.tenant && <button style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8 }} onClick={() => onPickTenant?.(asset.id)}>Choisir un locataire</button>}
+            </div>
+          </div>
+        )}
+
+        {tab === "decisions" && !isRealestate && asset.type === "business" && (
+          <div style={{ ...styles.card, marginTop: 14 }}>
+            <div style={{ padding: 16 }}>
+              <div style={styles.sectionTitle}>Développement</div>
+              <button style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", opacity: locationCheck.ok ? 1 : 0.4 }} disabled={!locationCheck.ok} onClick={() => onOpenSecondLocation?.(asset.id)}>
+                Ouvrir un second établissement ({f(locationCheck.cost || Math.round(asset.cost * 0.6))} · ⚡{ACTION_COSTS.buyAsset})
+              </button>
+              {!locationCheck.ok && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>{locationCheck.reason}</div>}
+            </div>
+          </div>
+        )}
+
+        {tab === "decisions" && (isRealestate || asset.type === "business") && (
+          <div style={{ ...styles.card, marginTop: 14 }}>
+            <div style={{ padding: 16 }}>
+              <div style={styles.sectionTitle}>Vente</div>
+              <Row C={C} label="Produit net estimé" value={f(sale.proceeds)} tone="good" />
+              <button style={{ ...styles.dangerBtn, width: "100%", boxSizing: "border-box", marginTop: 10 }} onClick={() => onSell?.(asset.id, sale)}>Vendre l'actif</button>
             </div>
           </div>
         )}
