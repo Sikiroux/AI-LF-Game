@@ -6,6 +6,8 @@ import MenuScreen from "./components/screens/MenuScreen.jsx";
 import OptionsScreen from "./components/screens/OptionsScreen.jsx";
 import CustomJobScreen from "./components/screens/CustomJobScreen.jsx";
 import SetupScreen from "./components/screens/SetupScreen.jsx";
+import MultiplayerSetupScreen from "./components/screens/MultiplayerSetupScreen.jsx";
+import MultiplayerEndScreen from "./components/screens/MultiplayerEndScreen.jsx";
 import WonScreen from "./components/screens/WonScreen.jsx";
 import BankruptScreen from "./components/screens/BankruptScreen.jsx";
 import RulesScreen from "./components/screens/RulesScreen.jsx";
@@ -19,6 +21,7 @@ import Header from "./components/Header.jsx";
 import FastBoard from "./components/board/FastBoard.jsx";
 import RatBoard from "./components/board/RatBoard.jsx";
 import EventBanner from "./components/board/EventBanner.jsx";
+import PlayersPanel from "./components/board/PlayersPanel.jsx";
 import FastLedger from "./components/ledger/FastLedger.jsx";
 import Ledger from "./components/ledger/Ledger.jsx";
 import DecisionModal from "./components/modals/DecisionModal.jsx";
@@ -79,12 +82,19 @@ export default function ClassicApp({ onExitHome }) {
     portfolio, setPortfolio,
     journal, setJournal,
 
+    multiplayer, players, currentPlayerIndex, hasRolled,
+    mpConfigs, mpResults, mpGameOver, mpWinnerId, mpEndReason,
+
     passiveIncome, totalExpenses, totalIncome, netCashflow, currentDebtPayments, hasSave,
 
     cycleCurrency,
     startGame,
     enterFastTrack,
     resetGame,
+    goMultiplayerSetup,
+    beginMultiplayerGame,
+    submitMpHumanSetup,
+    finishTurn,
     banner,
     takeBankLoan,
     repayBankLoan,
@@ -114,11 +124,24 @@ export default function ClassicApp({ onExitHome }) {
   } = useGameState();
 
   if (!loaded) return <LoadingScreen />;
-  if (view === "menu") return <MenuScreen hasSave={hasSave} profession={profession} phase={phase} cash={cash} currency={currency} onResume={() => setView("game")} onNew={resetGame} onOptions={() => setView("options")} onRules={() => setView("rules")} onExitHome={onExitHome} />;
+  if (view === "menu") return <MenuScreen hasSave={hasSave} profession={profession} phase={phase} cash={cash} currency={currency} multiplayer={multiplayer} players={players} currentPlayerIndex={currentPlayerIndex} onResume={() => setView("game")} onNew={resetGame} onMultiplayer={goMultiplayerSetup} onOptions={() => setView("options")} onRules={() => setView("rules")} onExitHome={onExitHome} />;
   if (view === "rules") return <RulesScreen onBack={() => setView(hasSave ? "game" : "menu")} />;
   if (view === "options") return <OptionsScreen currency={currency} onSelectCurrency={setCurrency} downPaymentPct={downPaymentPct} onChangeDownPayment={setDownPaymentPct} financingMode={financingMode} onChangeFinancingMode={setFinancingMode} yieldMode={yieldMode} onChangeYieldMode={setYieldMode} customYieldMultiplier={customYieldMultiplier} onChangeCustomYield={setCustomYieldMultiplier} proceduralCards={proceduralCards} onToggleProceduralCards={() => setProceduralCards((v) => !v)} marketIncomeCardsEnabled={marketIncomeCardsEnabled} onToggleMarketIncomeCards={() => setMarketIncomeCardsEnabled((v) => !v)} marketIncomeDurationMode={marketIncomeDurationMode} onChangeMarketIncomeDurationMode={setMarketIncomeDurationMode} marketIncomeDurationTurns={marketIncomeDurationTurns} onChangeMarketIncomeDurationTurns={setMarketIncomeDurationTurns} debtRatioEnabled={debtRatioEnabled} onToggleDebtRatio={() => setDebtRatioEnabled((v) => !v)} economicEffectDuration={economicEffectDuration} onChangeEconomicDuration={setEconomicEffectDuration} economicEffectPermanent={economicEffectPermanent} onTogglePermanent={() => setEconomicEffectPermanent((v) => !v)} bourseEnabled={bourseEnabled} onToggleBourse={() => setBourseEnabled((v) => !v)} casinoEnabled={casinoEnabled} onToggleCasino={() => setCasinoEnabled((v) => !v)} onBack={() => setView("menu")} onClearSave={() => { resetGame(); setView("menu"); }} hasSave={hasSave} onManageJobs={() => setView("customjobs")} />;
   if (view === "customjobs") return <CustomJobScreen customJobs={customJobs} currency={currency} onCreate={(job) => setCustomJobs((j) => [...j, job])} onDelete={(id) => setCustomJobs((j) => j.filter((x) => x.id !== id))} onBack={() => setView("menu")} />;
-  if (view === "setup") return <SetupScreen onStart={startGame} currency={currency} onSelectCurrency={setCurrency} onBack={() => setView("menu")} customJobs={customJobs} onCreateJob={() => setView("customjobs")} onDeleteJob={(id) => setCustomJobs((j) => j.filter((x) => x.id !== id))} />;
+  if (view === "mpsetup") return <MultiplayerSetupScreen onBack={() => setView("menu")} onStart={beginMultiplayerGame} />;
+  if (view === "setup") return (
+    <SetupScreen
+      key={multiplayer && mpConfigs ? `mp-${mpResults.length}` : "solo"}
+      onStart={multiplayer && mpConfigs ? submitMpHumanSetup : startGame}
+      currency={currency}
+      onSelectCurrency={setCurrency}
+      onBack={() => setView("menu")}
+      customJobs={customJobs}
+      onCreateJob={() => setView("customjobs")}
+      onDeleteJob={(id) => setCustomJobs((j) => j.filter((x) => x.id !== id))}
+      mpSetupLabel={multiplayer && mpConfigs ? `Configuration — ${mpConfigs[mpResults.length]?.name} (joueur ${mpResults.length + 1}/${mpConfigs.length})` : null}
+    />
+  );
   if (view === "trading") return (
     <TradingScreen
       tokens={tokens}
@@ -137,20 +160,28 @@ export default function ClassicApp({ onExitHome }) {
   if (view === "casino") return <CasinoScreen cash={cash} currency={currency} onCashDelta={(amount) => setCash((c) => Math.max(0, c + amount))} handsPlayed={casinoHandsPlayed} netResult={casinoNetResult} onHandPlayed={(netProfit) => { setCasinoHandsPlayed((n) => n + 1); setCasinoNetResult((n) => n + netProfit); }} onBack={() => setView("game")} />;
   if (view === "assets") return <AssetsScreen assets={assets} cash={cash} currency={currency} onPayOff={payOffLoan} onPayOffAll={payOffAllLoans} onStartAmortization={startAmortization} onCancelAmortization={cancelAmortization} onBack={() => setView("game")} />;
   if (view === "debts") return <DebtsScreen variant="classic" profession={profession} liabilities={liabilities} cash={cash} currency={currency} onPayOffLiability={payOffLiability} onPayOffDebt={() => {}} onBack={() => setView("game")} />;
-  if (phase === "won") return <WonScreen fastTrack={fastTrack} winReason={winReason} turnCount={turnCount} onReset={resetGame} currency={currency} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} bankLoanBalance={bankLoanBalance} />;
-  if (phase === "bankrupt") return <BankruptScreen turnCount={turnCount} onReset={resetGame} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} bankLoanBalance={bankLoanBalance} currency={currency} />;
+  if (multiplayer && mpGameOver) return <MultiplayerEndScreen players={players} winnerId={mpWinnerId} endReason={mpEndReason} turnCount={turnCount} currency={currency} onReset={resetGame} />;
+  if (!multiplayer && phase === "won") return <WonScreen fastTrack={fastTrack} winReason={winReason} turnCount={turnCount} onReset={resetGame} currency={currency} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} bankLoanBalance={bankLoanBalance} />;
+  if (!multiplayer && phase === "bankrupt") return <BankruptScreen turnCount={turnCount} onReset={resetGame} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} bankLoanBalance={bankLoanBalance} currency={currency} />;
+
+  const currentPlayer = multiplayer ? players[currentPlayerIndex] : null;
+  const isAiTurn = !!(currentPlayer && currentPlayer.isAI);
+  const boardLocked = multiplayer && (isAiTurn || (hasRolled && !pendingDecision));
+  const boardLockedLabel = isAiTurn ? "Tour de l'IA…" : "Tour terminé";
+  const endTurnReady = multiplayer && !isAiTurn && hasRolled && !pendingDecision && !diceRolling && !moving && phase !== "won" && phase !== "bankrupt";
 
   return (
     <div style={styles.app}>
       <style>{CSS_EXTRA}</style>
       <Header profession={profession} phase={phase} onMenu={() => setView("menu")} onTrading={() => setView("trading")} onCasino={() => setView("casino")} onRules={() => setView("rules")} bourseEnabled={bourseEnabled} casinoEnabled={casinoEnabled} isDesktop={isDesktop} currency={currency} onCycleCurrency={cycleCurrency} />
+      {multiplayer && <PlayersPanel players={players} currentPlayerIndex={currentPlayerIndex} currency={currency} />}
 
       <div style={{ ...styles.main, flexDirection: isDesktop ? "row" : "column" }}>
         <div style={{ ...styles.boardCol, minWidth: 0 }}>
           {phase === "fasttrack" ? (
-            <FastBoard fastTrack={fastTrack} displayPosition={fastDisplayPosition} dice={dice} diceRolling={diceRolling} onRoll={rollDice} skipTurns={skipTurns} charityTurnsLeft={charityTurnsLeft} isDesktop={isDesktop} pending={!!pendingDecision} moving={moving} />
+            <FastBoard fastTrack={fastTrack} displayPosition={fastDisplayPosition} dice={dice} diceRolling={diceRolling} onRoll={rollDice} skipTurns={skipTurns} charityTurnsLeft={charityTurnsLeft} isDesktop={isDesktop} pending={!!pendingDecision} moving={moving} locked={boardLocked} lockedLabel={boardLockedLabel} onEndTurn={() => finishTurn()} endTurnReady={endTurnReady} />
           ) : (
-            <RatBoard position={displayPosition} dice={dice} diceRolling={diceRolling} onRoll={rollDice} skipTurns={skipTurns} charityTurnsLeft={charityTurnsLeft} isDesktop={isDesktop} pending={!!pendingDecision} moving={moving} />
+            <RatBoard position={displayPosition} dice={dice} diceRolling={diceRolling} onRoll={rollDice} skipTurns={skipTurns} charityTurnsLeft={charityTurnsLeft} isDesktop={isDesktop} pending={!!pendingDecision} moving={moving} locked={boardLocked} lockedLabel={boardLockedLabel} onEndTurn={() => finishTurn()} endTurnReady={endTurnReady} />
           )}
           {lastEvent && <EventBanner event={lastEvent} />}
         </div>
@@ -164,6 +195,7 @@ export default function ClassicApp({ onExitHome }) {
         </div>
       </div>
       {pendingDecision && (
+        <div style={isAiTurn ? { pointerEvents: "none" } : undefined}>
         <DecisionModal
           decision={pendingDecision}
           cash={cash}
@@ -187,6 +219,7 @@ export default function ClassicApp({ onExitHome }) {
           onSkipFast={skipFastBusiness}
           onCharityFast={resolveFastCharity}
         />
+        </div>
       )}
     </div>
   );

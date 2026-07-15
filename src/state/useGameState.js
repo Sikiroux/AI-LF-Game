@@ -8,11 +8,14 @@ import { JACKPOT_DEALS } from "../data/jackpotDeals.js";
 import { MARKET_CARDS } from "../data/marketCards.js";
 import { DOODAD_CARDS } from "../data/doodadCards.js";
 import { generateDealDeck } from "../data/proceduralDeals.js";
+import { PROFESSIONS } from "../data/professions.js";
+import { DREAMS } from "../data/dreams.js";
 import { RAT_RACE_SEQUENCE } from "../engine/ratRace.js";
 import { FAST_TRACK_SEQUENCE, drawFastDeal } from "../engine/fastTrack.js";
 import { generateTokens } from "../engine/bourse/tokenGenerator.js";
 import { BROKERAGE_FEE_RATE, tickMarketDays } from "../engine/bourse/market.js";
 import { computeFinancing, getYieldMultiplier, amortizedPayment, calcExpenses, calcPassiveIncome, calcDebtPayments, randomizeLiabilities, LIABILITY_LABELS, MAX_DEBT_RATIO, BANK_LOAN_RATE, BANK_LOAN_UNIT } from "../engine/financing.js";
+import { aiDecideOpportunity, aiDecideDoodad, aiDecideMarketSell, aiDecideCharity, aiDecideFastBusiness, aiDecideFastCharity, aiRepayBankLoanUnits } from "../engine/aiPlayer.js";
 
 export default function useGameState() {
   const [isDesktop, setIsDesktop] = useState(typeof window !== "undefined" ? window.innerWidth >= 900 : false);
@@ -69,6 +72,16 @@ export default function useGameState() {
   const [portfolio, setPortfolio] = useState({});
   const [journal, setJournal] = useState([]);
 
+  const [multiplayer, setMultiplayer] = useState(false);
+  const [players, setPlayers] = useState([]);
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
+  const [hasRolled, setHasRolled] = useState(false);
+  const [mpConfigs, setMpConfigs] = useState(null);
+  const [mpResults, setMpResults] = useState([]);
+  const [mpGameOver, setMpGameOver] = useState(false);
+  const [mpWinnerId, setMpWinnerId] = useState(null);
+  const [mpEndReason, setMpEndReason] = useState(null); // dream | income | lastStanding | allBankrupt
+
   const rollTimer = useRef(null);
   const lastSmall = useRef(null);
   const lastBig = useRef(null);
@@ -112,6 +125,14 @@ export default function useGameState() {
           if (s.sectorConditions) setSectorConditions(s.sectorConditions);
           if (s.economicModifier) setEconomicModifier(s.economicModifier);
           if (s.traderJournalActive !== undefined) setTraderJournalActive(s.traderJournalActive);
+          if (s.multiplayer) {
+            setMultiplayer(true);
+            setPlayers(Array.isArray(s.players) ? s.players : []);
+            setCurrentPlayerIndex(s.currentPlayerIndex || 0);
+            setMpGameOver(!!s.mpGameOver);
+            setMpWinnerId(s.mpWinnerId || null);
+            setMpEndReason(s.mpEndReason || null);
+          }
         }
       } catch (e) { /* pas de sauvegarde existante */ }
       try {
@@ -141,9 +162,9 @@ export default function useGameState() {
 
   useEffect(() => {
     if (!loaded) return;
-    const s = { phase, profession, dream, winReason, position, cash, kids, assets, liabilities, extraMonthly, extraDebtBalance, bankLoanBalance, charityTurnsLeft, skipTurns, fastTrack, turnCount, marketTurn, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, activeSmallDeals, activeBigDeals, casinoHandsPlayed, casinoNetResult };
+    const s = { phase, profession, dream, winReason, position, cash, kids, assets, liabilities, extraMonthly, extraDebtBalance, bankLoanBalance, charityTurnsLeft, skipTurns, fastTrack, turnCount, marketTurn, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, activeSmallDeals, activeBigDeals, casinoHandsPlayed, casinoNetResult, multiplayer, players, currentPlayerIndex, mpGameOver, mpWinnerId, mpEndReason };
     storage.set("cashflow-save", JSON.stringify(s)).catch(() => {});
-  }, [loaded, phase, profession, dream, winReason, position, cash, kids, assets, liabilities, extraMonthly, extraDebtBalance, bankLoanBalance, charityTurnsLeft, skipTurns, fastTrack, turnCount, marketTurn, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, activeSmallDeals, activeBigDeals, casinoHandsPlayed, casinoNetResult]);
+  }, [loaded, phase, profession, dream, winReason, position, cash, kids, assets, liabilities, extraMonthly, extraDebtBalance, bankLoanBalance, charityTurnsLeft, skipTurns, fastTrack, turnCount, marketTurn, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, activeSmallDeals, activeBigDeals, casinoHandsPlayed, casinoNetResult, multiplayer, players, currentPlayerIndex, mpGameOver, mpWinnerId, mpEndReason]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -157,7 +178,7 @@ export default function useGameState() {
   const totalIncome = profession ? profession.salary + passiveIncome : 0;
   const netCashflow = totalIncome - totalExpenses;
   const currentDebtPayments = profession ? calcDebtPayments(profession, extraMonthly, assets, liabilities) + bankLoanMonthly : 0;
-  const hasSave = loaded && !!profession && phase !== "won" && phase !== "bankrupt";
+  const hasSave = loaded && !!profession && (multiplayer ? !mpGameOver : (phase !== "won" && phase !== "bankrupt"));
 
   useEffect(() => {
     if (phase === "ratrace" && profession && totalExpenses > 0 && passiveIncome >= totalExpenses) {
@@ -173,6 +194,15 @@ export default function useGameState() {
   }
 
   function startGame(prof, initialKids, chosenDream) {
+    setMultiplayer(false);
+    setPlayers([]);
+    setCurrentPlayerIndex(0);
+    setHasRolled(false);
+    setMpConfigs(null);
+    setMpResults([]);
+    setMpGameOver(false);
+    setMpWinnerId(null);
+    setMpEndReason(null);
     setProfession(prof);
     setDream(chosenDream);
     setWinReason(null);
@@ -220,7 +250,7 @@ export default function useGameState() {
     banner("Voie rapide !", `Rachat initial : ${f(buyout)}/tour. But : acheter "${dream.title}" ou atteindre ${f(buyout + 50000)}/tour.`, "good");
   }
 
-  function resetGame() {
+  function clearActiveGameState() {
     storage.delete("cashflow-save").catch(() => {});
     setProfession(null); setDream(null); setWinReason(null); setAssets([]); setLiabilities({}); setFastTrack(null);
     setSkipTurns(0); setCharityTurnsLeft(0); setMarketTurn(0); setBankLoanBalance(0);
@@ -230,6 +260,8 @@ export default function useGameState() {
     setPendingArcs([]); setSectorConditions({}); setEconomicModifier({ loanRateMult: 1, expiresTurn: 0 });
     setTraderJournalActive(false);
     setPortfolio({}); setJournal([]);
+    setMultiplayer(false); setPlayers([]); setCurrentPlayerIndex(0); setHasRolled(false);
+    setMpConfigs(null); setMpResults([]); setMpGameOver(false); setMpWinnerId(null); setMpEndReason(null);
     if (proceduralCards) {
       setActiveSmallDeals(generateDealDeck(56, false));
       setActiveBigDeals(generateDealDeck(42, true));
@@ -237,7 +269,17 @@ export default function useGameState() {
       setActiveSmallDeals(SMALL_DEALS);
       setActiveBigDeals(BIG_DEALS);
     }
+  }
+
+  function resetGame() {
+    clearActiveGameState();
     setView("setup");
+  }
+
+  function goMultiplayerSetup() {
+    clearActiveGameState();
+    setMultiplayer(true);
+    setView("mpsetup");
   }
 
   function banner(title, detail, tone) {
@@ -557,13 +599,16 @@ export default function useGameState() {
 
   function rollDice() {
     if (diceRolling || pendingDecision || moving) return;
+    if (multiplayer && hasRolled) return;
     if (skipTurns > 0) {
       setSkipTurns((s) => s - 1);
+      setHasRolled(true);
       banner("Tour passé", `Conséquence du licenciement (${skipTurns - 1} restant(s)).`, "info");
       return;
     }
     const baseDice = phase === "fasttrack" ? 2 : 1;
     const diceCount = baseDice + (charityTurnsLeft > 0 ? 1 : 0);
+    setHasRolled(true);
     setDiceRolling(true);
     let ticks = 0;
     rollTimer.current = setInterval(() => {
@@ -764,6 +809,220 @@ export default function useGameState() {
     setPendingDecision(null);
   }
 
+  function buildMpPlayer(cfg, prof, kidsCount, chosenDream) {
+    return {
+      id: uid(), name: cfg.name, isAI: cfg.isAI, eliminated: false,
+      profession: prof, dream: chosenDream, winReason: null,
+      position: 0, displayPosition: 0, phase: "ratrace",
+      cash: prof.cash, kids: kidsCount || 0, assets: [], liabilities: randomizeLiabilities(prof),
+      extraMonthly: 0, extraDebtBalance: 0, bankLoanBalance: 0,
+      casinoHandsPlayed: 0, casinoNetResult: 0, charityTurnsLeft: 0, skipTurns: 0,
+      fastTrack: null, fastDisplayPosition: 0, portfolio: {}, hasRolled: false,
+    };
+  }
+
+  function processMpSetup(configs, results) {
+    if (results.length >= configs.length) { finalizeMultiplayerGame(results); return; }
+    const cfg = configs[results.length];
+    if (cfg.isAI) {
+      const pool = [...PROFESSIONS, ...customJobs];
+      const prof = rand(pool);
+      const chosenDream = rand(DREAMS);
+      processMpSetup(configs, [...results, buildMpPlayer(cfg, prof, 0, chosenDream)]);
+    } else {
+      setMpConfigs(configs);
+      setMpResults(results);
+      setView("setup");
+    }
+  }
+
+  function beginMultiplayerGame(configs) {
+    processMpSetup(configs, []);
+  }
+
+  function submitMpHumanSetup(prof, kidsCount, chosenDream) {
+    if (!mpConfigs) return;
+    const cfg = mpConfigs[mpResults.length];
+    processMpSetup(mpConfigs, [...mpResults, buildMpPlayer(cfg, prof, kidsCount, chosenDream)]);
+  }
+
+  function loadPlayerIntoActive(p) {
+    setProfession(p.profession); setDream(p.dream); setWinReason(p.winReason);
+    setPosition(p.position); setDisplayPosition(p.position);
+    setCash(p.cash); setKids(p.kids); setAssets(p.assets); setLiabilities(p.liabilities);
+    setExtraMonthly(p.extraMonthly); setExtraDebtBalance(p.extraDebtBalance); setBankLoanBalance(p.bankLoanBalance);
+    setCasinoHandsPlayed(p.casinoHandsPlayed); setCasinoNetResult(p.casinoNetResult);
+    setCharityTurnsLeft(p.charityTurnsLeft); setSkipTurns(p.skipTurns);
+    setPhase(p.phase); setFastTrack(p.fastTrack); setFastDisplayPosition(p.fastTrack ? p.fastTrack.position : 0);
+    setPortfolio(p.portfolio || {});
+    setHasRolled(false);
+    setPendingDecision(null); setMoving(false); setDiceRolling(false); setDice([1]);
+  }
+
+  function finalizeMultiplayerGame(results) {
+    setPlayers(results);
+    setCurrentPlayerIndex(0);
+    setMpConfigs(null); setMpResults([]);
+    loadPlayerIntoActive(results[0]);
+    setTurnCount(0); setMarketTurn(0); setTokens(generateTokens(16));
+    setPendingArcs([]); setSectorConditions({}); setEconomicModifier({ loanRateMult: 1, expiresTurn: 0 });
+    setTraderJournalActive(false); setJournal([]);
+    if (proceduralCards) {
+      setActiveSmallDeals(generateDealDeck(56, false));
+      setActiveBigDeals(generateDealDeck(42, true));
+    } else {
+      setActiveSmallDeals(SMALL_DEALS);
+      setActiveBigDeals(BIG_DEALS);
+    }
+    setMpGameOver(false); setMpWinnerId(null); setMpEndReason(null);
+    setLastEvent({ title: "Bienvenue !", detail: `Partie à ${results.length} joueurs. Premier tour : ${results[0].name}.`, tone: "info" });
+    setView("game");
+  }
+
+  function computeCurrentSnapshot() {
+    const base = players[currentPlayerIndex] || {};
+    return {
+      ...base, cash, kids, assets, liabilities, extraMonthly, extraDebtBalance, bankLoanBalance,
+      casinoHandsPlayed, casinoNetResult, charityTurnsLeft, skipTurns, position, displayPosition,
+      phase, fastTrack, fastDisplayPosition, profession, dream, winReason, portfolio, hasRolled,
+    };
+  }
+
+  // Termine le tour du joueur actif : détecte victoire/faillite, met à jour la liste des
+  // joueurs et passe la main au prochain joueur encore en lice (ou déclare la partie finie).
+  function finishTurn(overrides) {
+    if (!multiplayer || mpGameOver || players.length === 0) return;
+    const snapshot = { ...computeCurrentSnapshot(), ...(overrides || {}) };
+    const eliminated = snapshot.eliminated || snapshot.phase === "bankrupt";
+    const finalSnapshot = { ...snapshot, eliminated };
+    const merged = players.map((p, i) => (i === currentPlayerIndex ? finalSnapshot : p));
+
+    if (snapshot.phase === "won") {
+      setPlayers(merged);
+      setMpGameOver(true);
+      setMpWinnerId(finalSnapshot.id);
+      setMpEndReason(finalSnapshot.winReason || "income");
+      banner("Partie terminée", `${finalSnapshot.name} a gagné !`, "good");
+      return;
+    }
+
+    const alive = merged.filter((p) => !p.eliminated);
+    if (alive.length <= 1) {
+      setPlayers(merged);
+      setMpGameOver(true);
+      setMpWinnerId(alive.length === 1 ? alive[0].id : null);
+      setMpEndReason(alive.length === 1 ? "lastStanding" : "allBankrupt");
+      banner("Partie terminée", alive.length === 1 ? `${alive[0].name} est le dernier joueur en lice !` : "Tous les joueurs ont fait faillite.", alive.length === 1 ? "good" : "bad");
+      return;
+    }
+
+    let next = currentPlayerIndex;
+    for (let step = 0; step < merged.length; step++) {
+      next = (next + 1) % merged.length;
+      if (!merged[next].eliminated) break;
+    }
+    setPlayers(merged);
+    setCurrentPlayerIndex(next);
+    loadPlayerIntoActive(merged[next]);
+    banner(`Au tour de ${merged[next].name}`, merged[next].isAI ? "L'IA va jouer automatiquement." : "À vous de jouer.", "info");
+  }
+
+  // Garde la liste des joueurs synchronisée avec l'état "actif" pendant le tour en cours
+  // (pour un panneau de statut toujours à jour), sans dupliquer la logique métier.
+  useEffect(() => {
+    if (!multiplayer || players.length === 0) return;
+    setPlayers((ps) => ps.map((p, i) => (i !== currentPlayerIndex ? p : {
+      ...p, cash, kids, assets, liabilities, extraMonthly, extraDebtBalance, bankLoanBalance,
+      casinoHandsPlayed, casinoNetResult, charityTurnsLeft, skipTurns, position, displayPosition,
+      phase, fastTrack, fastDisplayPosition, profession, dream, winReason, portfolio, hasRolled,
+    })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [multiplayer, currentPlayerIndex, cash, kids, assets, liabilities, extraMonthly, extraDebtBalance, bankLoanBalance, casinoHandsPlayed, casinoNetResult, charityTurnsLeft, skipTurns, position, displayPosition, phase, fastTrack, fastDisplayPosition, profession, dream, winReason, portfolio, hasRolled]);
+
+  useEffect(() => {
+    if (!multiplayer || mpGameOver) return;
+    if (phase === "won" || phase === "bankrupt") {
+      const t = setTimeout(() => finishTurn(), 1100);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [multiplayer, phase, mpGameOver]);
+
+  function resolveAiDecision(decision) {
+    const ctx = {
+      cash, totalExpenses, totalIncome, currentDebtPayments, financingMode, downPaymentPct, yieldMode, customYieldMultiplier,
+      loanRateMult: marketTurn < economicModifier.expiresTurn ? economicModifier.loanRateMult : 1,
+      debtRatioEnabled, fastCash: fastTrack ? fastTrack.fastCash : 0, fastIncome: fastTrack ? fastTrack.fastIncome : 0, bankLoanBalance,
+    };
+    switch (decision.kind) {
+      case "opportunity": {
+        const d = aiDecideOpportunity(decision.card, ctx);
+        if (d.buy) buyAsset(decision.card, d.mode); else skipAsset(decision.card);
+        break;
+      }
+      case "doodad": {
+        const d = aiDecideDoodad(decision.card, ctx);
+        if (d.finance) financeDoodad(decision.card); else payDoodadCash(decision.card);
+        break;
+      }
+      case "market": {
+        const d = aiDecideMarketSell(decision.card);
+        resolveMarketSell(decision.card, decision.matching, d.sell);
+        break;
+      }
+      case "charity": {
+        const d = aiDecideCharity(ctx);
+        resolveCharity(d.give);
+        break;
+      }
+      case "fastbusiness": {
+        const d = aiDecideFastBusiness(decision.card, ctx);
+        if (d.buy) buyFastBusiness(decision.card); else skipFastBusiness(decision.card);
+        break;
+      }
+      case "fastcharity": {
+        const d = aiDecideFastCharity(ctx);
+        resolveFastCharity(d.give);
+        break;
+      }
+      default: setPendingDecision(null);
+    }
+  }
+
+  // Petite gestion de trésorerie de l'IA en fin de tour : elle rembourse le prêt bancaire
+  // si elle a du cash qui dort au-delà de sa réserve de sécurité.
+  function computeAiIdleOverrides() {
+    const units = aiRepayBankLoanUnits({ cash, totalExpenses, bankLoanBalance });
+    if (units <= 0) return {};
+    const amount = units * BANK_LOAN_UNIT;
+    banner("Prêt remboursé (IA)", `-${f(amount)} remboursés automatiquement.`, "good");
+    return { cash: cash - amount, bankLoanBalance: bankLoanBalance - amount };
+  }
+
+  // Automatise le tour du joueur actif quand c'est une IA : lance le dé, tranche les
+  // décisions selon l'heuristique, puis termine son tour, avec un léger délai entre
+  // chaque étape pour que ce soit lisible à l'écran.
+  useEffect(() => {
+    if (!multiplayer || mpGameOver || view !== "game") return;
+    const p = players[currentPlayerIndex];
+    if (!p || !p.isAI) return;
+    if (diceRolling || moving) return;
+    if (phase === "won" || phase === "bankrupt") return;
+
+    const delay = pendingDecision ? 1100 : 900;
+    const t = setTimeout(() => {
+      if (pendingDecision) {
+        resolveAiDecision(pendingDecision);
+      } else if (!hasRolled) {
+        rollDice();
+      } else {
+        finishTurn(computeAiIdleOverrides());
+      }
+    }, delay);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [multiplayer, mpGameOver, view, currentPlayerIndex, phase, pendingDecision, diceRolling, moving, hasRolled]);
+
   return {
     isDesktop, setIsDesktop,
     loaded,
@@ -819,12 +1078,19 @@ export default function useGameState() {
     portfolio, setPortfolio,
     journal, setJournal,
 
+    multiplayer, players, currentPlayerIndex, hasRolled,
+    mpConfigs, mpResults, mpGameOver, mpWinnerId, mpEndReason,
+
     passiveIncome, totalExpenses, totalIncome, netCashflow, currentDebtPayments, hasSave,
 
     cycleCurrency,
     startGame,
     enterFastTrack,
     resetGame,
+    goMultiplayerSetup,
+    beginMultiplayerGame,
+    submitMpHumanSetup,
+    finishTurn,
     banner,
     takeBankLoan,
     repayBankLoan,
