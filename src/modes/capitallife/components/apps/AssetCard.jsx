@@ -2,6 +2,7 @@ import { useState } from "react";
 import { fmt } from "../../../../utils/format.js";
 import { amortizedPayment, maxAmortMonths } from "../../../../engine/financing.js";
 import { SECTOR_LABELS } from "../../../../data/sectors.js";
+import { sectorBadge } from "../../styles/theme.js";
 
 function Row({ label, value, tone, C }) {
   return (
@@ -30,9 +31,12 @@ export default function AssetCard({ asset, currency, cash, onPayOff, onStartAmor
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <div style={{ fontWeight: 700, color: C.ink, fontSize: 14 }}>{asset.name}</div>
-          <div style={{ fontSize: 10, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-            {SECTOR_LABELS[asset.sector] || ""} · {TYPE_LABELS[asset.type] || asset.type}
-            {(asset.stakePct ?? 100) < 100 && <> · {asset.stakePct}% détenu</>}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+            <span style={sectorBadge(asset.sector, C)}>{SECTOR_LABELS[asset.sector] || ""}</span>
+            <span style={{ fontSize: 10, color: C.inkSoft }}>
+              {TYPE_LABELS[asset.type] || asset.type}
+              {(asset.stakePct ?? 100) < 100 && <> · {asset.stakePct}% détenu</>}
+            </span>
           </div>
         </div>
         <div style={{ textAlign: "right" }}>

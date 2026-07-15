@@ -71,8 +71,10 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
 
       <div style={{ ...styles.content, padding: "14px 14px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
         {filtered.length === 0 && (
-          <div style={{ fontSize: 13, color: C.inkSoft, fontStyle: "italic", textAlign: "center", marginTop: 24 }}>
-            Aucune annonce pour l'instant, revenez demain.
+          <div style={{ ...styles.card, textAlign: "center", padding: "36px 20px", marginTop: 12 }}>
+            <div style={{ fontSize: 32, marginBottom: 10 }}>🔍</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>Rien à afficher ici</div>
+            <div style={{ fontSize: 12, color: C.inkSoft, marginTop: 4 }}>Aucune annonce dans cette catégorie pour l'instant — revenez demain.</div>
           </div>
         )}
         {filtered.map((l) => {

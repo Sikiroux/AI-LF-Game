@@ -9,7 +9,7 @@ import {
 } from "../../engine/assetIndicators.js";
 import { computeFinancing } from "../../../../engine/financing.js";
 import { ACTION_COSTS } from "../../engine/actionPoints.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, sectorBadge, qualityTone } from "../../styles/theme.js";
 
 const TYPE_LABELS = { stock: "Actions", realestate: "Immobilier", business: "Business" };
 const TABS = [
@@ -27,13 +27,6 @@ function Row({ label, value, tone, C }) {
   );
 }
 
-function labelTone(label, C) {
-  if (label === "Excellent" || label === "Bon") return C.good;
-  if (label === "Moyen") return C.warn;
-  if (label === "Fragile" || label === "Critique") return C.bad;
-  return C.ink;
-}
-
 function EmployeeRow({ employee, cash, actionPoints, currency, onFire, onTrain, C, styles }) {
   const f = (n) => fmt(n, currency);
   const trainCost = trainingCost(employee);
@@ -46,13 +39,13 @@ function EmployeeRow({ employee, cash, actionPoints, currency, onFire, onTrain, 
         <div style={{ fontWeight: 700, fontSize: 13, color: C.ink }}>{employee.name}</div>
         <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, color: C.bad }}>-{f(employee.salary)}/mois</div>
       </div>
-      <div style={{ display: "flex", gap: 14, marginTop: 6, fontSize: 11 }}>
+      <div style={{ display: "flex", gap: 14, marginTop: 6, fontSize: 11, flexWrap: "wrap" }}>
         <span style={{ color: C.inkSoft }}>Rôle <b style={{ color: C.ink }}>{employee.role || "non défini"}</b></span>
-        <span style={{ color: C.inkSoft }}>Compétence <b style={{ color: C.ink }}>{qualitativeLabel(employee.competence)}</b></span>
-        <span style={{ color: C.inkSoft }}>Motivation <b style={{ color: C.ink }}>{qualitativeLabel(employee.motivation)}</b></span>
-        <span style={{ color: C.inkSoft }}>Loyauté <b style={{ color: C.ink }}>{qualitativeLabel(employee.loyalty)}</b></span>
+        <span style={{ color: C.inkSoft }}>Compétence <b style={{ color: qualityTone(qualitativeLabel(employee.competence), C) }}>{qualitativeLabel(employee.competence)}</b></span>
+        <span style={{ color: C.inkSoft }}>Motivation <b style={{ color: qualityTone(qualitativeLabel(employee.motivation), C) }}>{qualitativeLabel(employee.motivation)}</b></span>
+        <span style={{ color: C.inkSoft }}>Loyauté <b style={{ color: qualityTone(qualitativeLabel(employee.loyalty), C) }}>{qualitativeLabel(employee.loyalty)}</b></span>
       </div>
-      <div style={{ color: C.inkSoft, fontSize: 11, marginTop: 5 }}>Confiance <b style={{ color: C.ink }}>{qualitativeLabel(employee.trust)}</b></div>
+      <div style={{ color: C.inkSoft, fontSize: 11, marginTop: 5 }}>Confiance <b style={{ color: qualityTone(qualitativeLabel(employee.trust), C) }}>{qualitativeLabel(employee.trust)}</b></div>
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
         <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1, opacity: canTrain ? 1 : 0.4 }} disabled={!canTrain} onClick={() => onTrain(employee.id)}>
           Former ({f(trainCost)} · ⚡{ACTION_COSTS.train})
@@ -218,7 +211,10 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>{asset.name}</div>
-          <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>{SECTOR_LABELS[asset.sector] || ""} · {TYPE_LABELS[asset.type] || asset.type}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+            <span style={sectorBadge(asset.sector, C)}>{SECTOR_LABELS[asset.sector] || ""}</span>
+            <span style={{ fontSize: 10, color: C.inkSoft }}>{TYPE_LABELS[asset.type] || asset.type}</span>
+          </div>
         </div>
       </div>
 
@@ -238,8 +234,8 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
                 <div style={styles.sectionTitle}>Aperçu</div>
                 <Row C={C} label="Cash-flow" value={`${asset.cashflow >= 0 ? "+" : ""}${f(asset.cashflow)}/mois`} tone={asset.cashflow >= 0 ? "good" : "bad"} />
                 <Row C={C} label="Valeur d'acquisition" value={f(asset.cost)} />
-                {conditionLabel && <Row C={C} label="État" value={conditionLabel} />}
-                {stabilityLabel && <Row C={C} label="Santé globale" value={stabilityLabel} />}
+                {conditionLabel && <Row C={C} label="État" value={<span style={{ color: qualityTone(conditionLabel, C) }}>{conditionLabel}</span>} />}
+                {stabilityLabel && <Row C={C} label="Santé globale" value={<span style={{ color: qualityTone(stabilityLabel, C) }}>{stabilityLabel}</span>} />}
               </div>
             </div>
 
@@ -247,8 +243,8 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
               <div style={{ ...styles.card, marginTop: 14 }}>
                 <div style={{ padding: 16 }}>
                   <div style={styles.sectionTitle}>Locataire</div>
-                  <Row C={C} label="Fiabilité" value={qualitativeLabel(asset.tenant.reliability)} />
-                  <Row C={C} label="Satisfaction" value={qualitativeLabel(asset.tenant.happiness)} />
+                  <Row C={C} label="Fiabilité" value={<span style={{ color: qualityTone(qualitativeLabel(asset.tenant.reliability), C) }}>{qualitativeLabel(asset.tenant.reliability)}</span>} />
+                  <Row C={C} label="Satisfaction" value={<span style={{ color: qualityTone(qualitativeLabel(asset.tenant.happiness), C) }}>{qualitativeLabel(asset.tenant.happiness)}</span>} />
                   <Row C={C} label="Ancienneté" value={`${asset.tenant.tenureMonths} mois`} />
                 </div>
               </div>
@@ -417,7 +413,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
               )}
               {(asset.history || []).map((h, i) => (
                 <div key={i} style={{ display: "flex", gap: 10, padding: "10px 0", borderBottom: `1px solid ${C.line}` }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 4, background: labelTone(h.tone === "good" ? "Bon" : h.tone === "bad" ? "Fragile" : "Moyen", C), marginTop: 5, flexShrink: 0 }} />
+                  <div style={{ width: 8, height: 8, borderRadius: 4, background: qualityTone(h.tone === "good" ? "Bon" : h.tone === "bad" ? "Fragile" : "Moyen", C), marginTop: 5, flexShrink: 0 }} />
                   <div>
                     <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink }}>{h.title} <span style={{ fontWeight: 400, color: C.inkSoft }}>· jour {h.day}</span></div>
                     <div style={{ fontSize: 11.5, color: C.inkSoft, marginTop: 2 }}>{h.detail}</div>
