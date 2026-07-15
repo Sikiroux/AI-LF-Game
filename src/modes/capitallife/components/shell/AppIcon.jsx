@@ -11,9 +11,9 @@ export default function AppIcon({ emoji, label, file, size = 56, onClick, badge 
   return (
     <button
       onClick={onClick}
-      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: "transparent", border: "none", cursor: onClick ? "pointer" : "default", padding: 0, font: "inherit", color: "inherit" }}
+      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, background: "transparent", border: "none", cursor: onClick ? "pointer" : "default", padding: 0, font: "inherit", color: "inherit" }}
     >
-      <div style={{ ...styles.placeholderImg, width: size, height: size, borderRadius: size * 0.27, fontSize: size * 0.42, position: "relative", overflow: "hidden" }}>
+      <div style={{ ...styles.placeholderImg, width: size, height: size, borderRadius: Math.round(size * 0.25), fontSize: size * 0.42, position: "relative", overflow: "hidden" }}>
         {hasImage ? (
           <img src={`${ICON_BASE}${file}`} alt={label || ""} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
