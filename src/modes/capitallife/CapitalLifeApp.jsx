@@ -38,6 +38,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay,
     beginTraining, applyToJob, doMission,
     rentTier, changeRentTier,
+    consecutiveWinningPaydays, winStreakTarget,
   } = useCapitalLifeState();
 
   if (!loaded) return <LoadingScreen />;
@@ -218,6 +219,9 @@ export default function CapitalLifeApp({ onExitHome }) {
       hasSkipReport={!!lastSkipReport}
       actionPoints={actionPoints}
       rentTier={rentTier}
+      skills={skills}
+      consecutiveWinningPaydays={consecutiveWinningPaydays}
+      winStreakTarget={winStreakTarget}
       assetsNeedingAttention={assets.filter((a) => a.condition != null && a.condition < 50).length}
       skipMonthMode={skipMonthMode}
       onChangeSkipMonthMode={setSkipMonthMode}

@@ -12,6 +12,14 @@ import {
 import { rollSeasonalEvent } from "./seasonalEvents.js";
 import { rentCost } from "./lifestyle.js";
 
+// Victoire durable : atteindre le seuil d'indépendance financière une seule
+// fois peut être un effet de bord temporaire (bonne nouvelle sur un actif,
+// mois exceptionnel...). On exige plusieurs jours de paie consécutifs où le
+// revenu passif couvre les dépenses ET où le joueur garde une vraie réserve
+// de liquidités (pas juste "sur le papier") avant de déclarer la victoire.
+export const WIN_STREAK_TARGET = 3;
+const WIN_RESERVE_MONTHS = 2;
+
 // Faillite : quand les liquidités ne suffisent pas à couvrir un paiement (loyer,
 // imprévu, jour de paie...), on liquide en urgence les actifs les moins
 // équitables d'abord (à moitié de leur équity, cost - solde du prêt) jusqu'à
@@ -63,12 +71,14 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
-    lastSeasonalDays,
+    lastSeasonalDays, consecutiveWinningPaydays,
   } = state;
   lastSeasonalDays = { ...(lastSeasonalDays || {}) };
+  consecutiveWinningPaydays = consecutiveWinningPaydays || 0;
 
   const events = [];
   const journalEntries = [];
+  let won = false;
   let bankrupt = false;
 
   for (let i = 0; i < numDays; i++) {
@@ -186,12 +196,17 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     });
 
     let payday = 0;
-    if ((nd - 1) % 30 === 0) {
+    const isPayday = (nd - 1) % 30 === 0;
+    let paydayExpenses = 0;
+    let paydayPassiveIncome = 0;
+    if (isPayday) {
       const debtMonthly = debts.reduce((s, deb) => s + deb.monthlyPayment, 0);
       const rent = state.rentTier ? rentCost(state.rentTier, profession.salary) : 0;
       const expenses = calcExpenses(profession, kids, debtMonthly, liabilities) + rent;
       const salary = layoffMonthsLeft > 0 ? 0 : profession.salary;
       const passiveIncome = calcPassiveIncome(assets);
+      paydayExpenses = expenses;
+      paydayPassiveIncome = passiveIncome;
       // Une part du cash-flow des entreprises reste dans leur trésorerie plutôt
       // que de tomber directement dans les liquidités du joueur (cf. dividendes) —
       // n'affecte que ce qui arrive réellement en cash ce mois-ci, pas le revenu
@@ -236,6 +251,16 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
       cash = rawCash;
     }
     day = nd;
+
+    if (isPayday) {
+      const reserveOk = cash >= paydayExpenses * WIN_RESERVE_MONTHS;
+      const incomeOk = paydayExpenses > 0 && paydayPassiveIncome >= paydayExpenses;
+      consecutiveWinningPaydays = incomeOk && reserveOk ? consecutiveWinningPaydays + 1 : 0;
+      if (consecutiveWinningPaydays >= WIN_STREAK_TARGET) {
+        won = true;
+        break;
+      }
+    }
   }
 
   return {
@@ -243,7 +268,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
-    lastSeasonalDays,
-    events, journalEntries, bankrupt,
+    lastSeasonalDays, consecutiveWinningPaydays,
+    events, journalEntries, bankrupt, won,
   };
 }

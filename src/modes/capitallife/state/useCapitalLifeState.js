@@ -5,7 +5,7 @@ import { generateTokens } from "../../../engine/bourse/tokenGenerator.js";
 import { BROKERAGE_FEE_RATE, tickMarketDays } from "../../../engine/bourse/market.js";
 import { fmt, uid } from "../../../utils/format.js";
 import { generateScenario } from "../data/scenarioGenerator.js";
-import { simulateDays } from "../engine/dayLoop.js";
+import { simulateDays, WIN_STREAK_TARGET } from "../engine/dayLoop.js";
 import { advanceListings } from "../engine/opportunitySite.js";
 import {
   initAssetIndicators, canPerformMaintenance, performMaintenance,
@@ -69,6 +69,7 @@ export default function useCapitalLifeState() {
   const [lastLayoffDay, setLastLayoffDay] = useState(null);
   const [luckyUntilDay, setLuckyUntilDay] = useState(0);
   const [lastSeasonalDays, setLastSeasonalDays] = useState({});
+  const [consecutiveWinningPaydays, setConsecutiveWinningPaydays] = useState(0);
 
   const [tokens, setTokens] = useState(() => generateTokens(16));
   const [portfolio, setPortfolio] = useState({});
@@ -109,6 +110,7 @@ export default function useCapitalLifeState() {
           if (s.lastLayoffDay !== undefined) setLastLayoffDay(s.lastLayoffDay);
           if (s.luckyUntilDay != null) setLuckyUntilDay(s.luckyUntilDay);
           if (s.lastSeasonalDays) setLastSeasonalDays(s.lastSeasonalDays);
+          if (s.consecutiveWinningPaydays != null) setConsecutiveWinningPaydays(s.consecutiveWinningPaydays);
           if (Array.isArray(s.tokens) && s.tokens.length) setTokens(s.tokens);
           if (s.portfolio) setPortfolio(s.portfolio);
           if (Array.isArray(s.journal)) setJournal(s.journal);
@@ -147,12 +149,13 @@ export default function useCapitalLifeState() {
     const s = {
       day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays,
+      consecutiveWinningPaydays,
       casinoHandsPlayed, casinoNetResult, actionPoints,
       tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn,
       skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay, rentTier,
     };
     storage.set(SAVE_KEY, JSON.stringify(s)).catch(() => {});
-  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays, casinoHandsPlayed, casinoNetResult, actionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay, rentTier]);
+  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays, consecutiveWinningPaydays, casinoHandsPlayed, casinoNetResult, actionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay, rentTier]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -163,14 +166,11 @@ export default function useCapitalLifeState() {
   const hasSave = loaded && day > 0 && phase !== "won" && phase !== "bankrupt";
   const passiveIncome = calcPassiveIncome(assets);
 
-  useEffect(() => {
-    if (phase !== "playing" || !profession) return;
-    const debtMonthly = debts.reduce((s, d) => s + d.monthlyPayment, 0);
-    const totalExpenses = calcExpenses(profession, kids, debtMonthly, liabilities) + rentCost(rentTier, profession.salary);
-    if (totalExpenses > 0 && passiveIncome >= totalExpenses) {
-      setPhase("won");
-    }
-  }, [phase, profession, debts, liabilities, kids, passiveIncome, rentTier]);
+  // La victoire n'est plus instantanée (cf. WIN_STREAK_TARGET dans dayLoop.js) :
+  // elle se décide dans simulateDays/applySimResult, jamais dans un effet
+  // réactif sur chaque rendu — sinon un simple achat qui fait dépasser le
+  // seuil un instant déclencherait la victoire sans repasser par un vrai jour
+  // de paie.
 
   function banner(title, detail, tone) {
     setLastEvent({ title, detail, tone });
@@ -212,6 +212,7 @@ export default function useCapitalLifeState() {
     setLastSmallDoodadDay(null); setLastBigDoodadDay(null); setLastBabyDay(null); setLastLayoffDay(null);
     setLuckyUntilDay(0);
     setLastSeasonalDays({});
+    setConsecutiveWinningPaydays(0);
     lastSmallDoodadCardRef.current = null; lastBigDoodadCardRef.current = null; lastMarketCardRef.current = null;
     setDay(1);
 
@@ -546,8 +547,10 @@ export default function useCapitalLifeState() {
     setLastLayoffDay(result.lastLayoffDay);
     setLuckyUntilDay(result.luckyUntilDay);
     setLastSeasonalDays(result.lastSeasonalDays);
+    setConsecutiveWinningPaydays(result.consecutiveWinningPaydays);
     setActionPoints(dailyActionPoints);
     if (result.bankrupt) setPhase("bankrupt");
+    if (result.won) setPhase("won");
     if (result.journalEntries.length) setJournal((j) => [...result.journalEntries.slice().reverse(), ...j].slice(0, 60));
     if (result.events.length === 1) {
       const e = result.events[0];
@@ -564,7 +567,7 @@ export default function useCapitalLifeState() {
       tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
       babyEnabled, layoffEnabled, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
-      lastSeasonalDays,
+      lastSeasonalDays, consecutiveWinningPaydays,
       rentTier,
     };
   }
@@ -729,5 +732,6 @@ export default function useCapitalLifeState() {
     skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay,
     beginTraining, applyToJob, doMission,
     rentTier, changeRentTier,
+    consecutiveWinningPaydays, winStreakTarget: WIN_STREAK_TARGET,
   };
 }
