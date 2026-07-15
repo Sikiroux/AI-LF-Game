@@ -371,7 +371,7 @@ export function performanceGrowthRate(stability) {
 }
 
 // Dérive lente une fois par mois (appelé au jour de paie).
-export function driftAssetIndicators(asset) {
+export function driftAssetIndicators(asset, cycleGrowthMult = 1) {
   if (asset.type === "realestate" && asset.condition != null && asset.tenant) {
     const condition = clamp(asset.condition - (1 + Math.round(Math.random() * 2)), 15, 100);
     const reliability = clamp(asset.tenant.reliability + Math.round((Math.random() - 0.5) * 6));
@@ -397,7 +397,7 @@ export function driftAssetIndicators(asset) {
     }
     let next = { ...asset, condition, reputation, staffMorale, employees };
     const stability = computeStability(next);
-    const growthRate = performanceGrowthRate(stability);
+    const growthRate = performanceGrowthRate(stability) * cycleGrowthMult;
     let baseGrossCashflow = asset.baseGrossCashflow ?? asset.grossCashflow ?? 0;
     if (growthRate !== 0) baseGrossCashflow = Math.max(0, Math.round(baseGrossCashflow * (1 + growthRate)));
     const hasTempEffect = asset.incomeEffectExpiresDay != null;

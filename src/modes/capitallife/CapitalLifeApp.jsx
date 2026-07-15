@@ -17,12 +17,14 @@ import AssetDetailScreen from "./components/apps/AssetDetailScreen.jsx";
 import CareerScreen from "./components/apps/CareerScreen.jsx";
 import DebtsScreen from "../../components/ledger/DebtsScreen.jsx";
 import AssetIncidentModal from "./components/modals/AssetIncidentModal.jsx";
+import ForecastScreen from "./components/apps/ForecastScreen.jsx";
 
 export default function CapitalLifeApp({ onExitHome }) {
   const {
     loaded, view, setView, phase,
-    scenarioDraft, goToNewScenario, rerollScenario, startGame,
+    scenarioDraft, scenarioPresetKey, changeScenarioPreset, goToNewScenario, rerollScenario, startGame,
     profession, day, cash, debts, liabilities, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
+    skipWeek, skipToTrainingEnd,
     payOffLiability, payOffDebt,
     skipMonthMode, setSkipMonthMode,
     managementThresholdPct, setManagementThresholdPct,
@@ -69,7 +71,14 @@ export default function CapitalLifeApp({ onExitHome }) {
     );
   }
   if (view === "scenario") {
-    return <ScenarioScreen scenario={scenarioDraft} currency={currency} difficulty={difficulty} onChangeDifficulty={setDifficulty} onStart={startGame} onReroll={rerollScenario} onBack={() => setView("menu")} />;
+    return (
+      <ScenarioScreen
+        scenario={scenarioDraft} currency={currency}
+        difficulty={difficulty} onChangeDifficulty={setDifficulty}
+        presetKey={scenarioPresetKey} onChangePreset={changeScenarioPreset}
+        onStart={startGame} onReroll={rerollScenario} onBack={() => setView("menu")}
+      />
+    );
   }
   if (phase === "won") {
     return <CapitalLifeWonScreen day={day} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} debts={debts} currency={currency} onReset={resetGame} />;
@@ -181,6 +190,15 @@ export default function CapitalLifeApp({ onExitHome }) {
   if (view === "skipReport") {
     return <SkipReportScreen report={lastSkipReport} currency={currency} onBack={() => setView("game")} />;
   }
+  if (view === "forecast") {
+    return (
+      <ForecastScreen
+        day={day} cash={cash} profession={profession} debts={debts} liabilities={liabilities}
+        kids={kids} assets={assets} rentTier={rentTier} currency={currency}
+        onBack={() => setView("game")}
+      />
+    );
+  }
   if (view === "opportunities") {
     return (
       <>
@@ -238,6 +256,8 @@ export default function CapitalLifeApp({ onExitHome }) {
       onChangeSkipMonthMode={setSkipMonthMode}
       onNextDay={nextDay}
       onSkipMonth={skipMonth}
+      onSkipWeek={skipWeek}
+      onSkipToTrainingEnd={training ? skipToTrainingEnd : null}
       onOpenApp={(key) => setView(key)}
       onOpenSkipReport={() => setView("skipReport")}
       onMenu={() => setView("menu")}

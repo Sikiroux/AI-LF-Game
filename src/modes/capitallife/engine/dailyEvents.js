@@ -31,7 +31,7 @@ export function scaleDoodadAmount(amount, ratio) {
 // Construit la table de probabilités du jour, en excluant les catégories en
 // cooldown ou désactivées dans les options. La chance appliquée est cumulative :
 // rollDailyEvent tire un seul nombre et parcourt la table dans l'ordre.
-export function buildDailyEventTable({ profession, day, kids, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, lucky }) {
+export function buildDailyEventTable({ profession, day, kids, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, lucky, layoffMult = 1 }) {
   const ratio = incomeRatio(profession);
   const table = [];
 
@@ -48,7 +48,7 @@ export function buildDailyEventTable({ profession, day, kids, babyEnabled, layof
     table.push({ type: "baby", probability: 0.01 });
   }
   if (layoffEnabled && layoffMonthsLeft === 0 && (lastLayoffDay == null || day - lastLayoffDay >= LAYOFF_COOLDOWN_DAYS)) {
-    table.push({ type: "layoff", probability: 0.003 });
+    table.push({ type: "layoff", probability: 0.003 * layoffMult });
   }
   return table;
 }

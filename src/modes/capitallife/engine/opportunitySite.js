@@ -27,10 +27,13 @@ function affordableCost(card) {
 // accessibles tout de suite, 30% qui demandent un effort d'épargne, le reste
 // trop cher pour l'instant ou une occasion exceptionnelle rare — pour que le
 // joueur voie aussi des objectifs à viser, pas seulement ce qu'il peut déjà payer.
-function pickListingSource(cash) {
+// `urgentBonus` (0-~0.2) : plus il y a de vendeurs pressés (récession), plus
+// la part d'annonces déjà abordables augmente — reflète des vendeurs prêts à
+// brader plutôt qu'attendre, sans changer les prix des cartes elles-mêmes.
+function pickListingSource(cash, urgentBonus = 0) {
   const r = Math.random();
   if (r < 0.05) return { card: rand(JACKPOT_DEALS), kind: "jackpot" };
-  if (r < 0.50) {
+  if (r < 0.50 + urgentBonus) {
     const affordable = NORMAL_DEALS.filter((d) => affordableCost(d.card) <= cash);
     if (affordable.length) return rand(affordable);
   } else if (r < 0.80) {
@@ -43,8 +46,8 @@ function pickListingSource(cash) {
   return rand(NORMAL_DEALS);
 }
 
-function draftListing(day, cash) {
-  const { card, kind } = pickListingSource(cash);
+function draftListing(day, cash, urgentBonus = 0) {
+  const { card, kind } = pickListingSource(cash, urgentBonus);
   const [lo, hi] = DURATION_RANGES[kind];
   return { id: uid(), card, kind, postedDay: day, expiresDay: day + randInt(lo, hi) };
 }
@@ -52,13 +55,13 @@ function draftListing(day, cash) {
 // Fait avancer le site d'un jour : les annonces caduques disparaissent, de
 // nouvelles peuvent apparaître pour se rapprocher de TARGET_LISTINGS (jamais
 // moins de MIN_LISTINGS, jamais plus de MAX_LISTINGS).
-export function advanceListings(listings, day, cash) {
+export function advanceListings(listings, day, cash, urgentBonus = 0) {
   let next = listings.filter((l) => l.expiresDay > day);
   const emptySlots = Math.max(0, TARGET_LISTINGS - next.length);
   for (let i = 0; i < emptySlots; i++) {
-    if (Math.random() < NEW_LISTING_FILL_CHANCE) next.push(draftListing(day, cash));
+    if (Math.random() < NEW_LISTING_FILL_CHANCE) next.push(draftListing(day, cash, urgentBonus));
   }
-  while (next.length < MIN_LISTINGS) next.push(draftListing(day, cash));
+  while (next.length < MIN_LISTINGS) next.push(draftListing(day, cash, urgentBonus));
   if (next.length > MAX_LISTINGS) next = next.slice(0, MAX_LISTINGS);
   return next;
 }

@@ -6,6 +6,7 @@ import { BROKERAGE_FEE_RATE, tickMarketDays } from "../../../engine/bourse/marke
 import { fmt, uid } from "../../../utils/format.js";
 import { generateScenario } from "../data/scenarioGenerator.js";
 import { simulateDays, WIN_STREAK_TARGET } from "../engine/dayLoop.js";
+import { randomCycleDuration, cycleModifiers } from "../engine/economy.js";
 import { advanceListings } from "../engine/opportunitySite.js";
 import { applyAssetDecisionOption } from "../engine/assetDecisions.js";
 import {
@@ -33,6 +34,7 @@ export default function useCapitalLifeState() {
   const [view, setView] = useState("menu"); // menu | scenario | game | trading | opportunities | assets | casino
   const [phase, setPhase] = useState("playing"); // playing | won | bankrupt
   const [scenarioDraft, setScenarioDraft] = useState(null);
+  const [scenarioPresetKey, setScenarioPresetKey] = useState("random");
   const [profession, setProfession] = useState(null);
   const [day, setDay] = useState(0);
   const [cash, setCash] = useState(0);
@@ -76,6 +78,8 @@ export default function useCapitalLifeState() {
   const [luckyUntilDay, setLuckyUntilDay] = useState(0);
   const [lastSeasonalDays, setLastSeasonalDays] = useState({});
   const [consecutiveWinningPaydays, setConsecutiveWinningPaydays] = useState(0);
+  const [economicCycle, setEconomicCycle] = useState("growth");
+  const [economicCycleUntilDay, setEconomicCycleUntilDay] = useState(0);
 
   const [tokens, setTokens] = useState(() => generateTokens(16));
   const [portfolio, setPortfolio] = useState({});
@@ -118,6 +122,8 @@ export default function useCapitalLifeState() {
           if (s.luckyUntilDay != null) setLuckyUntilDay(s.luckyUntilDay);
           if (s.lastSeasonalDays) setLastSeasonalDays(s.lastSeasonalDays);
           if (s.consecutiveWinningPaydays != null) setConsecutiveWinningPaydays(s.consecutiveWinningPaydays);
+          if (s.economicCycle) setEconomicCycle(s.economicCycle);
+          if (s.economicCycleUntilDay != null) setEconomicCycleUntilDay(s.economicCycleUntilDay);
           if (Array.isArray(s.tokens) && s.tokens.length) setTokens(s.tokens);
           if (s.portfolio) setPortfolio(s.portfolio);
           if (Array.isArray(s.journal)) setJournal(s.journal);
@@ -157,13 +163,13 @@ export default function useCapitalLifeState() {
     const s = {
       day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays,
-      consecutiveWinningPaydays,
+      consecutiveWinningPaydays, economicCycle, economicCycleUntilDay,
       casinoHandsPlayed, casinoNetResult, lastCasinoPlayDay, actionPoints, dailyActionPoints,
       tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn,
       skills, training, missions, fatigue, enCouple, lastJobRejectionDay, rentTier,
     };
     storage.set(SAVE_KEY, JSON.stringify(s)).catch(() => {});
-  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays, consecutiveWinningPaydays, casinoHandsPlayed, casinoNetResult, lastCasinoPlayDay, actionPoints, dailyActionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, missions, fatigue, enCouple, lastJobRejectionDay, rentTier]);
+  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays, consecutiveWinningPaydays, economicCycle, economicCycleUntilDay, casinoHandsPlayed, casinoNetResult, lastCasinoPlayDay, actionPoints, dailyActionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, missions, fatigue, enCouple, lastJobRejectionDay, rentTier]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -196,12 +202,18 @@ export default function useCapitalLifeState() {
   }
 
   function goToNewScenario() {
-    setScenarioDraft(generateScenario());
+    setScenarioPresetKey("random");
+    setScenarioDraft(generateScenario("random"));
     setView("scenario");
   }
 
   function rerollScenario() {
-    setScenarioDraft(generateScenario());
+    setScenarioDraft(generateScenario(scenarioPresetKey));
+  }
+
+  function changeScenarioPreset(presetKey) {
+    setScenarioPresetKey(presetKey);
+    setScenarioDraft(generateScenario(presetKey));
   }
 
   function startGame() {
@@ -210,8 +222,14 @@ export default function useCapitalLifeState() {
     setPhase("playing");
     setDebts([scenarioDraft.debt]);
     setLiabilities(scenarioDraft.liabilities);
-    setKids(0);
-    setAssets([]);
+    setKids(scenarioDraft.startingKids || 0);
+    setAssets(scenarioDraft.startingAssetHint === "degraded_realestate" ? [{
+      id: uid(), name: "Bien hérité (à retaper)", type: "realestate", sector: "immobilier",
+      cost: 40000, downPayment: 40000, loanAmount: 0, loanBalance: 0, loanMonthly: 0, annualRate: 0,
+      amortizing: false, amortMonths: null,
+      grossCashflow: 0, baseGrossCashflow: 0, incomeEffectExpiresTurn: null, cashflow: 0,
+      condition: 25 + Math.round(Math.random() * 10), tenant: null,
+    }] : []);
     setPendingDecision(null);
     setLastEvent(null);
     setCasinoHandsPlayed(0); setCasinoNetResult(0); setLastCasinoPlayDay(null);
@@ -226,6 +244,8 @@ export default function useCapitalLifeState() {
     setLuckyUntilDay(0);
     setLastSeasonalDays({});
     setConsecutiveWinningPaydays(0);
+    setEconomicCycle(scenarioDraft.startingEconomy === "recession" ? "recession" : "growth");
+    setEconomicCycleUntilDay(1 + randomCycleDuration());
     lastSmallDoodadCardRef.current = null; lastBigDoodadCardRef.current = null; lastMarketCardRef.current = null;
     setDay(1);
 
@@ -625,6 +645,8 @@ export default function useCapitalLifeState() {
     setLuckyUntilDay(result.luckyUntilDay);
     setLastSeasonalDays(result.lastSeasonalDays);
     setConsecutiveWinningPaydays(result.consecutiveWinningPaydays);
+    setEconomicCycle(result.economicCycle);
+    setEconomicCycleUntilDay(result.economicCycleUntilDay);
     setActionPoints(dailyActionPoints);
     setAssetDecision(result.pendingAssetDecision || null);
     if (result.bankrupt) setPhase("bankrupt");
@@ -664,6 +686,7 @@ export default function useCapitalLifeState() {
       babyEnabled, layoffEnabled, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
       lastSeasonalDays, consecutiveWinningPaydays,
+      economicCycle, economicCycleUntilDay,
       rentTier,
     };
   }
@@ -684,7 +707,7 @@ export default function useCapitalLifeState() {
     const result = tickTraining(training, skills, numDays);
     setTraining(result.training);
     setSkills(result.skills);
-    setMissions(generateMissions(result.skills));
+    setMissions(generateMissions(result.skills, 3, cycleModifiers(economicCycle).missionPayMult));
     if (result.completed) banner("Formation terminée", "Votre compétence a progressé.", "good");
     return result.training ? result.training.paCost : 0;
   }
@@ -725,23 +748,43 @@ export default function useCapitalLifeState() {
     setActionPoints(effectivePA(trainingPaCost));
   }
 
-  // Avance jusqu'au premier jour du mois suivant (jamais moins d'un jour).
-  // Le surmenage ne s'accumule pas pendant un saut (pas de décisions de PA
-  // prises jour par jour) — le compteur repart à zéro.
-  function skipMonth() {
-    const daysToSkip = 30 - ((day - 1) % 30);
+  // Avance de `numDays` jours d'un coup — brique commune à "Sauter le mois",
+  // "Sauter 7 jours" et "Jusqu'à la fin de la formation". S'arrête plus tôt
+  // que prévu si une décision d'incident survient en cours de route (cf.
+  // pendingAssetDecision dans dayLoop.js) : le rapport reflète alors les
+  // jours réellement simulés, pas la demande initiale. Le surmenage ne
+  // s'accumule pas pendant un saut (pas de décisions de PA prises jour par
+  // jour) — le compteur repart à zéro.
+  function performSkip(numDays) {
     const fromDay = day;
     const cashBefore = cash;
-    const trainingPaCost = tickCareer(daysToSkip);
+    const trainingPaCost = tickCareer(numDays);
     setFatigue(0);
-    const result = simulateDays(snapshot(), daysToSkip, { quiet: skipMonthMode === "calm", currency, refs: refs() });
+    const result = simulateDays(snapshot(), numDays, { quiet: skipMonthMode === "calm", currency, refs: refs() });
     applySimResult(result, {
       mode: skipMonthMode,
-      fromDay, toDay: result.day, daysSkipped: daysToSkip,
+      fromDay, toDay: result.day, daysSkipped: result.day - fromDay,
       cashBefore, cashAfter: result.cash,
       events: result.events, journalEntries: result.journalEntries,
+      interrupted: !!result.pendingAssetDecision && result.day - fromDay < numDays,
     });
     setActionPoints(effectivePA(trainingPaCost));
+  }
+
+  // Avance jusqu'au premier jour du mois suivant (jamais moins d'un jour).
+  function skipMonth() {
+    performSkip(30 - ((day - 1) % 30));
+  }
+
+  function skipWeek() {
+    performSkip(7);
+  }
+
+  // Avance jusqu'à la fin de la formation en cours (rien si aucune formation
+  // active).
+  function skipToTrainingEnd() {
+    if (!training || !(training.daysRemaining > 0)) { banner("Rien à sauter", "Aucune formation en cours.", "info"); return; }
+    performSkip(training.daysRemaining);
   }
 
   // --- Carrière : formation, job board, missions freelance ---
@@ -767,7 +810,7 @@ export default function useCapitalLifeState() {
     }
     if (!spendActionPoints(JOB_APPLY_PA_COST)) return;
     const prof = PROFESSIONS.find((p) => p.id === professionId);
-    const result = rollApplication(skills, professionId);
+    const result = rollApplication(skills, professionId, cycleModifiers(economicCycle).jobOfferMult);
     if (result.accepted) {
       setProfession(prof);
       setLastJobRejectionDay(null);
@@ -804,8 +847,9 @@ export default function useCapitalLifeState() {
 
   return {
     loaded, view, setView, phase,
-    scenarioDraft, goToNewScenario, rerollScenario, startGame,
+    scenarioDraft, scenarioPresetKey, changeScenarioPreset, goToNewScenario, rerollScenario, startGame,
     profession, day, cash, debts, liabilities, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
+    skipWeek, skipToTrainingEnd,
     payOffLiability, payOffDebt, consolidateDebts,
     skipMonthMode, setSkipMonthMode,
     managementThresholdPct, setManagementThresholdPct,

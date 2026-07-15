@@ -74,6 +74,12 @@ export default function SkipReportScreen({ report, currency, onBack }) {
           </div>
         </div>
 
+        {report.interrupted && (
+          <div style={{ fontSize: 11.5, color: C.warn, fontWeight: 700, padding: "10px 4px 0" }}>
+            ⏸ Le saut s'est arrêté avant la fin prévue : une décision importante vous attend sur l'un de vos actifs.
+          </div>
+        )}
+
         {report.mode === "calm" && (
           <div style={{ fontSize: 11.5, color: C.inkSoft, fontStyle: "italic", padding: "10px 4px 0" }}>
             Gestion prudente : événements moins fréquents (bons comme mauvais), incidents résolus automatiquement avec l'option la plus sûre — la Bourse et le site d'opportunités ont continué d'évoluer normalement.
