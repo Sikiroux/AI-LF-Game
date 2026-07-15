@@ -8,7 +8,7 @@ export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, b
   return (
     <div style={styles.app}>
       <div style={styles.topBar}>
-        <button style={styles.backBtn} onClick={onBack}>←</button>
+        <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>⚙️ Options — Capital Life</div>
       </div>
 
@@ -17,7 +17,7 @@ export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, b
           <div style={styles.sectionTitle}>Devise</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {CURRENCY_ORDER.map((code) => (
-              <button key={code} style={{ ...styles.chip, ...(currency === code ? styles.chipActive : {}) }} onClick={() => onSelectCurrency(code)}>
+              <button className="cl-tap" key={code} style={{ ...styles.chip, ...(currency === code ? styles.chipActive : {}) }} onClick={() => onSelectCurrency(code)}>
                 <span style={{ fontWeight: 700 }}>{CURRENCIES[code].symbol}</span> {CURRENCIES[code].label}
               </button>
             ))}
@@ -50,7 +50,7 @@ export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, b
           <div style={styles.sectionTitle}>Seuil de contrôle des entreprises</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
             {MANAGEMENT_THRESHOLD_OPTIONS.map((pct) => (
-              <button key={pct} style={{ ...styles.chip, ...(managementThresholdPct === pct ? styles.chipActive : {}) }} onClick={() => onChangeManagementThreshold(pct)}>
+              <button className="cl-tap" key={pct} style={{ ...styles.chip, ...(managementThresholdPct === pct ? styles.chipActive : {}) }} onClick={() => onChangeManagementThreshold(pct)}>
                 {pct}% {pct === 50 ? "(majorité)" : "(contrôle total)"}
               </button>
             ))}
@@ -63,8 +63,8 @@ export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, b
         <div style={{ ...styles.card, padding: 16 }}>
           <div style={styles.sectionTitle}>Sauter le mois</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-            <button style={{ ...styles.chip, ...(skipMonthMode === "auto" ? styles.chipActive : {}) }} onClick={() => onChangeSkipMonthMode("auto")}>Auto-résolution</button>
-            <button style={{ ...styles.chip, ...(skipMonthMode === "calm" ? styles.chipActive : {}) }} onClick={() => onChangeSkipMonthMode("calm")}>Gestion prudente</button>
+            <button className="cl-tap" style={{ ...styles.chip, ...(skipMonthMode === "auto" ? styles.chipActive : {}) }} onClick={() => onChangeSkipMonthMode("auto")}>Auto-résolution</button>
+            <button className="cl-tap" style={{ ...styles.chip, ...(skipMonthMode === "calm" ? styles.chipActive : {}) }} onClick={() => onChangeSkipMonthMode("calm")}>Gestion prudente</button>
           </div>
           <div style={{ fontSize: 10.5, color: C.inkSoft }}>
             {skipMonthMode === "auto"

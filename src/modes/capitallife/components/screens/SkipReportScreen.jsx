@@ -29,7 +29,7 @@ export default function SkipReportScreen({ report, currency, onBack }) {
     return (
       <div style={styles.app}>
         <div style={styles.topBar}>
-          <button style={styles.backBtn} onClick={onBack}>←</button>
+          <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
           <div style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>📋 Rapport</div>
         </div>
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center", color: C.inkSoft, fontSize: 13 }}>
@@ -46,7 +46,7 @@ export default function SkipReportScreen({ report, currency, onBack }) {
   return (
     <div style={styles.app}>
       <div style={styles.topBar}>
-        <button style={styles.backBtn} onClick={onBack}>←</button>
+        <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>📋 Rapport du mois</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>

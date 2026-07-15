@@ -42,7 +42,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
   return (
     <div style={styles.app}>
       <div style={styles.topBar}>
-        <button style={styles.backBtn} onClick={onBack}>←</button>
+        <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>🏷️ OppMarket</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
@@ -62,7 +62,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
       <div style={{ flexShrink: 0, display: "flex", padding: "10px 16px", overflowX: "auto", borderBottom: `1px solid ${C.line}` }}>
         <div style={{ ...styles.centerCol, display: "flex", gap: 8 }}>
           {FILTERS.map((ft) => (
-            <button key={ft.key} style={{ ...styles.chip, ...(filter === ft.key ? styles.chipActive : {}) }} onClick={() => setFilter(ft.key)}>
+            <button className="cl-tap" key={ft.key} style={{ ...styles.chip, ...(filter === ft.key ? styles.chipActive : {}) }} onClick={() => setFilter(ft.key)}>
               {ft.label}
             </button>
           ))}
@@ -88,7 +88,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
 
           return (
             <div key={l.id} style={{ ...styles.card, padding: 0, overflow: "hidden" }}>
-            <button
+            <button className="cl-tap"
               onClick={() => onOpen(l)}
               style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit", padding: 0, background: "transparent", border: "none" }}
             >
@@ -166,7 +166,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
             {l.card.type !== "stock" && (!l.inspected || !l.negotiated) && (
               <div style={{ display: "flex", gap: 8, padding: "0 14px 14px" }}>
                 {!l.inspected && (
-                  <button
+                  <button className="cl-tap"
                     style={{ ...styles.smallBtn, flex: 1, opacity: canInspect ? 1 : 0.5 }}
                     disabled={!canInspect}
                     onClick={() => onInspect(l.id)}
@@ -175,7 +175,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
                   </button>
                 )}
                 {!l.negotiated && (
-                  <button
+                  <button className="cl-tap"
                     style={{ ...styles.smallBtn, flex: 1, opacity: canBargain ? 1 : 0.5 }}
                     disabled={!canBargain}
                     onClick={() => onNegotiate(l.id)}

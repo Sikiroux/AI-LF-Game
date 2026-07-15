@@ -54,10 +54,10 @@ function EmployeeRow({ employee, cash, actionPoints, currency, onFire, onTrain, 
       </div>
       <div style={{ color: C.inkSoft, fontSize: 11, marginTop: 5 }}>Confiance <b style={{ color: C.ink }}>{qualitativeLabel(employee.trust)}</b></div>
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-        <button style={{ ...styles.smallBtn, flex: 1, opacity: canTrain ? 1 : 0.4 }} disabled={!canTrain} onClick={() => onTrain(employee.id)}>
+        <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1, opacity: canTrain ? 1 : 0.4 }} disabled={!canTrain} onClick={() => onTrain(employee.id)}>
           Former ({f(trainCost)} · ⚡{ACTION_COSTS.train})
         </button>
-        <button style={{ ...styles.dangerBtn, flex: 1, opacity: canFire ? 1 : 0.4 }} disabled={!canFire} onClick={() => onFire(employee.id)}>
+        <button className="cl-tap" style={{ ...styles.dangerBtn, flex: 1, opacity: canFire ? 1 : 0.4 }} disabled={!canFire} onClick={() => onFire(employee.id)}>
           Licencier ({f(severance)} · ⚡{ACTION_COSTS.fire})
         </button>
       </div>
@@ -79,7 +79,7 @@ function CandidateRow({ candidate, currency, onHire, disabled, C, styles }) {
         <span style={{ color: C.inkSoft }}>Motivation <b style={{ color: C.ink }}>{qualitativeLabel(candidate.motivation)}</b></span>
         <span style={{ color: C.inkSoft }}>Loyauté <b style={{ color: C.ink }}>{qualitativeLabel(candidate.loyalty)}</b></span>
       </div>
-      <button style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", marginTop: 10, opacity: disabled ? 0.4 : 1 }} disabled={disabled} onClick={() => onHire(candidate)}>
+      <button className="cl-tap" style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", marginTop: 10, opacity: disabled ? 0.4 : 1 }} disabled={disabled} onClick={() => onHire(candidate)}>
         Embaucher (⚡{ACTION_COSTS.hire})
       </button>
     </div>
@@ -104,12 +104,12 @@ function TreasurySection({ asset, currency, onPayDividend, onToggleAutoManage, C
           <>
             <div style={{ display: "flex", gap: 6, margin: "10px 0" }}>
               {[0.25, 0.5, 1].map((pct) => (
-                <button key={pct} style={{ ...styles.chip, ...(clamped === Math.round(treasury * pct) ? styles.chipActive : {}) }} onClick={() => setAmount(Math.round(treasury * pct))}>
+                <button className="cl-tap" key={pct} style={{ ...styles.chip, ...(clamped === Math.round(treasury * pct) ? styles.chipActive : {}) }} onClick={() => setAmount(Math.round(treasury * pct))}>
                   {pct === 1 ? "Tout" : `${Math.round(pct * 100)}%`}
                 </button>
               ))}
             </div>
-            <button style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box" }} onClick={() => onPayDividend(clamped)}>
+            <button className="cl-tap" style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box" }} onClick={() => onPayDividend(clamped)}>
               Se verser {f(clamped)} de dividende
             </button>
           </>
@@ -154,7 +154,7 @@ function StakeSection({ asset, cash, actionPoints, currency, managementThreshold
         </div>
         <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
           {presets.map((opt) => (
-            <button key={opt} style={{ ...styles.chip, ...(clampedDelta === opt ? styles.chipActive : {}) }} onClick={() => setDeltaPct(opt)}>
+            <button className="cl-tap" key={opt} style={{ ...styles.chip, ...(clampedDelta === opt ? styles.chipActive : {}) }} onClick={() => setDeltaPct(opt)}>
               +{opt}%{opt === remaining ? " (tout)" : ""}
             </button>
           ))}
@@ -163,10 +163,10 @@ function StakeSection({ asset, cash, actionPoints, currency, managementThreshold
         <Row C={C} label="Cash-flow supplémentaire" value={`+${f(addedGross)}/mois`} tone="good" />
         {willUnlock && <div style={{ fontSize: 11, color: C.good, marginTop: 4, fontWeight: 700 }}>🔓 Débloque la gestion du personnel</div>}
         <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-          <button style={{ ...styles.primaryBtn, flex: 1, opacity: affordCash ? 1 : 0.4 }} disabled={!affordCash} onClick={() => onBuyStake(clampedDelta, false)}>
+          <button className="cl-tap" style={{ ...styles.primaryBtn, flex: 1, opacity: affordCash ? 1 : 0.4 }} disabled={!affordCash} onClick={() => onBuyStake(clampedDelta, false)}>
             Payer comptant (⚡{ACTION_COSTS.buyAsset})
           </button>
-          <button style={{ ...styles.smallBtn, flex: 1, opacity: affordLoan ? 1 : 0.4 }} disabled={!affordLoan} onClick={() => onBuyStake(clampedDelta, true)}>
+          <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1, opacity: affordLoan ? 1 : 0.4 }} disabled={!affordLoan} onClick={() => onBuyStake(clampedDelta, true)}>
             Financer ({f(fin.downPayment)} apport)
           </button>
         </div>
@@ -189,7 +189,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
     return (
       <div style={styles.app}>
         <div style={styles.topBar}>
-          <button style={styles.backBtn} onClick={onBack}>←</button>
+          <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
           <div style={{ fontSize: 15, fontWeight: 700 }}>Actif introuvable</div>
         </div>
       </div>
@@ -215,7 +215,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
   return (
     <div style={styles.app}>
       <div style={styles.topBar}>
-        <button style={styles.backBtn} onClick={onBack}>←</button>
+        <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>{asset.name}</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>{SECTOR_LABELS[asset.sector] || ""} · {TYPE_LABELS[asset.type] || asset.type}</div>
@@ -225,7 +225,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
       <div style={{ flexShrink: 0, display: "flex", padding: "10px 16px", borderBottom: `1px solid ${C.line}` }}>
         <div style={{ ...styles.centerCol, display: "flex", gap: 8 }}>
           {TABS.map((t) => (
-            <button key={t.key} style={{ ...styles.chip, ...(tab === t.key ? styles.chipActive : {}) }} onClick={() => setTab(t.key)}>{t.label}</button>
+            <button className="cl-tap" key={t.key} style={{ ...styles.chip, ...(tab === t.key ? styles.chipActive : {}) }} onClick={() => setTab(t.key)}>{t.label}</button>
           ))}
         </div>
       </div>
@@ -290,7 +290,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
                 <div style={{ fontSize: 12.5, color: C.inkSoft, fontStyle: "italic" }}>Aucune action de gestion disponible pour ce type d'actif.</div>
               ) : (
                 <>
-                  <button
+                  <button className="cl-tap"
                     style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", opacity: canMaintain ? 1 : 0.4 }}
                     disabled={!canMaintain}
                     onClick={() => onMaintenance(asset.id)}
@@ -312,7 +312,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
               <div style={{ fontSize: 12.5, color: C.inkSoft, marginBottom: 12, lineHeight: 1.5 }}>
                 Booste la réputation de l'entreprise, ce qui améliore sa santé globale et sa rentabilité au fil des mois.
               </div>
-              <button
+              <button className="cl-tap"
                 style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", opacity: canAd ? 1 : 0.4 }}
                 disabled={!canAd}
                 onClick={() => onAd(asset.id)}
@@ -329,11 +329,11 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
           <div style={{ ...styles.card, marginTop: 14 }}>
             <div style={{ padding: 16 }}>
               <div style={styles.sectionTitle}>Cycle de vie du bien</div>
-              <button style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", opacity: renovationCheck.ok ? 1 : 0.4 }} disabled={!renovationCheck.ok} onClick={() => onRenovate?.(asset.id)}>
+              <button className="cl-tap" style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", opacity: renovationCheck.ok ? 1 : 0.4 }} disabled={!renovationCheck.ok} onClick={() => onRenovate?.(asset.id)}>
                 Rénover ({f(renovationCost)} · ⚡{ACTION_COSTS.maintenance})
               </button>
               {!renovationCheck.ok && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>{renovationCheck.reason}</div>}
-              {!asset.tenant && <button style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8 }} onClick={() => onPickTenant?.(asset.id)}>Choisir un locataire</button>}
+              {!asset.tenant && <button className="cl-tap" style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8 }} onClick={() => onPickTenant?.(asset.id)}>Choisir un locataire</button>}
             </div>
           </div>
         )}
@@ -342,7 +342,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
           <div style={{ ...styles.card, marginTop: 14 }}>
             <div style={{ padding: 16 }}>
               <div style={styles.sectionTitle}>Développement</div>
-              <button style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", opacity: locationCheck.ok ? 1 : 0.4 }} disabled={!locationCheck.ok} onClick={() => onOpenSecondLocation?.(asset.id)}>
+              <button className="cl-tap" style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", opacity: locationCheck.ok ? 1 : 0.4 }} disabled={!locationCheck.ok} onClick={() => onOpenSecondLocation?.(asset.id)}>
                 Ouvrir un second établissement ({f(locationCheck.cost || Math.round(asset.cost * 0.6))} · ⚡{ACTION_COSTS.buyAsset})
               </button>
               {!locationCheck.ok && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>{locationCheck.reason}</div>}
@@ -355,7 +355,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
             <div style={{ padding: 16 }}>
               <div style={styles.sectionTitle}>Vente</div>
               <Row C={C} label="Produit net estimé" value={f(sale.proceeds)} tone="good" />
-              <button style={{ ...styles.dangerBtn, width: "100%", boxSizing: "border-box", marginTop: 10 }} onClick={() => onSell?.(asset.id, sale)}>Vendre l'actif</button>
+              <button className="cl-tap" style={{ ...styles.dangerBtn, width: "100%", boxSizing: "border-box", marginTop: 10 }} onClick={() => onSell?.(asset.id, sale)}>Vendre l'actif</button>
             </div>
           </div>
         )}
@@ -380,7 +380,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 18, marginBottom: 4 }}>
                   <div style={styles.sectionTitle}>Recruter</div>
-                  <button style={{ ...styles.smallBtn, padding: "4px 10px", fontSize: 11 }} onClick={regenerateCandidates}>↻ Autres candidats</button>
+                  <button className="cl-tap" style={{ ...styles.smallBtn, padding: "4px 10px", fontSize: 11 }} onClick={regenerateCandidates}>↻ Autres candidats</button>
                 </div>
                 {asset.employees.length >= MAX_EMPLOYEES ? (
                   <div style={{ fontSize: 12.5, color: C.inkSoft, fontStyle: "italic" }}>Effectif maximum atteint.</div>

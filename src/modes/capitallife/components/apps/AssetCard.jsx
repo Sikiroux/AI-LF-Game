@@ -41,7 +41,7 @@ export default function AssetCard({ asset, currency, cash, onPayOff, onStartAmor
       </div>
 
       {manageable && (
-        <button style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 10, ...(needsAttention ? { borderColor: C.bad, color: C.bad } : {}) }} onClick={() => onSelect(asset.id)}>
+        <button className="cl-tap" style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 10, ...(needsAttention ? { borderColor: C.bad, color: C.bad } : {}) }} onClick={() => onSelect(asset.id)}>
           {needsAttention ? "⚠ Gérer — nécessite votre attention" : "Gérer"}
         </button>
       )}
@@ -55,13 +55,13 @@ export default function AssetCard({ asset, currency, cash, onPayOff, onStartAmor
           </div>
 
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <button style={{ ...styles.primaryBtn, flex: 1, padding: "9px 10px", opacity: canPayOff ? 1 : 0.4 }} disabled={!canPayOff} onClick={() => onPayOff(asset.id)}>Rembourser le solde entier</button>
+            <button className="cl-tap" style={{ ...styles.primaryBtn, flex: 1, padding: "9px 10px", opacity: canPayOff ? 1 : 0.4 }} disabled={!canPayOff} onClick={() => onPayOff(asset.id)}>Rembourser le solde entier</button>
           </div>
           {!canPayOff && <div style={{ fontSize: 10, color: C.bad, marginTop: 4 }}>Liquidités insuffisantes pour solder d'un coup.</div>}
 
           {!asset.amortizing ? (
             <>
-              <button style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8 }} onClick={() => setShowAmort((v) => !v)}>
+              <button className="cl-tap" style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8 }} onClick={() => setShowAmort((v) => !v)}>
                 {showAmort ? "Annuler" : "Option avancée : passer en mensualités classiques"}
               </button>
               {showAmort && (
@@ -71,12 +71,12 @@ export default function AssetCard({ asset, currency, cash, onPayOff, onStartAmor
                     <div style={{ fontFamily: "ui-monospace, monospace", fontWeight: 700, color: C.ink, width: 60, textAlign: "right" }}>{months} mois</div>
                   </div>
                   <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 4 }}>Mensualité estimée : <b style={{ color: C.ink }}>{f(previewPayment)}</b>/mois (capital + intérêts). Le solde baisse à chaque paie jusqu'à être remboursé.</div>
-                  <button style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", marginTop: 8 }} onClick={() => { onStartAmortization(asset.id, months); setShowAmort(false); }}>Activer sur {months} mois</button>
+                  <button className="cl-tap" style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box", marginTop: 8 }} onClick={() => { onStartAmortization(asset.id, months); setShowAmort(false); }}>Activer sur {months} mois</button>
                 </div>
               )}
             </>
           ) : (
-            <button style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8 }} onClick={() => onCancelAmortization(asset.id)}>Repasser en intérêts seuls</button>
+            <button className="cl-tap" style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8 }} onClick={() => onCancelAmortization(asset.id)}>Repasser en intérêts seuls</button>
           )}
         </>
       )}

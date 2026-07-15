@@ -39,7 +39,7 @@ export default function CapitalLifeHomeScreen({
   return (
     <div style={styles.app}>
       <div style={{ ...styles.topBar, justifyContent: "space-between" }}>
-        <button style={styles.smallBtn} onClick={onMenu}>Menu</button>
+        <button className="cl-tap" style={styles.smallBtn} onClick={onMenu}>Menu</button>
         <div style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>Capital Life</div>
         <div style={{ width: 54 }} />
       </div>
@@ -97,7 +97,7 @@ export default function CapitalLifeHomeScreen({
             <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink }}>{lastEvent.title}</div>
             <div style={{ fontSize: 11.5, color: C.inkSoft, marginTop: 2, lineHeight: 1.4 }}>{lastEvent.detail}</div>
             {hasSkipReport && (
-              <button
+              <button className="cl-tap"
                 style={{ marginTop: 8, background: "transparent", border: "none", color: C.accent, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 }}
                 onClick={onOpenSkipReport}
               >
@@ -123,31 +123,31 @@ export default function CapitalLifeHomeScreen({
 
       <div style={{ flexShrink: 0, padding: "12px 16px 18px", background: C.surfaceRaised, borderTop: `1px solid ${C.line}` }}>
         <div style={styles.centerCol}>
-          <button style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box" }} onClick={onNextDay}>Jour suivant ▶</button>
+          <button className="cl-tap" style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box" }} onClick={onNextDay}>Jour suivant ▶</button>
           <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
             {onSkipWeek && (
-              <button style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={onSkipWeek}>
+              <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={onSkipWeek}>
                 ⏭ 7 jours
               </button>
             )}
-            <button style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={onSkipMonth}>
+            <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={onSkipMonth}>
               ⏭ Mois prochain
             </button>
             {onSkipToTrainingEnd && (
-              <button style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={onSkipToTrainingEnd}>
+              <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={onSkipToTrainingEnd}>
                 ⏭ Fin formation
               </button>
             )}
           </div>
           {skipMonthMode && onChangeSkipMonthMode && (
             <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 8 }}>
-              <button
+              <button className="cl-tap"
                 style={{ ...styles.chip, padding: "4px 10px", fontSize: 10.5, ...(skipMonthMode === "auto" ? styles.chipActive : {}) }}
                 onClick={() => onChangeSkipMonthMode("auto")}
               >
                 Auto-résolution
               </button>
-              <button
+              <button className="cl-tap"
                 style={{ ...styles.chip, padding: "4px 10px", fontSize: 10.5, ...(skipMonthMode === "calm" ? styles.chipActive : {}) }}
                 onClick={() => onChangeSkipMonthMode("calm")}
               >
