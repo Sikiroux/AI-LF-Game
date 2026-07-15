@@ -28,12 +28,14 @@ function photoFile(listing) {
   return `${cat.file}-${variant}.png`;
 }
 
-export default function OpportunitySiteScreen({ listings, day, cash, currency, actionPoints, onOpen, onBack }) {
+export default function OpportunitySiteScreen({ listings, day, cash, currency, actionPoints, onOpen, onInspect, onNegotiate, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const [filter, setFilter] = useState("all");
   const f = (n) => fmt(n, currency);
   const canNegotiate = actionPoints == null || actionPoints >= ACTION_COSTS.buyAsset;
+  const canInspect = actionPoints == null || actionPoints >= ACTION_COSTS.inspectListing;
+  const canBargain = actionPoints == null || actionPoints >= ACTION_COSTS.negotiateListing;
 
   const filtered = filter === "all" ? listings : listings.filter((l) => l.card.type === filter);
 
@@ -78,15 +80,17 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
           const cat = CATEGORIES[l.card.type];
           const apport = l.card.downPayment != null ? l.card.downPayment : l.card.cost;
           const affordable = cash >= apport;
-          const yieldPct = l.card.cost > 0 ? ((l.card.cashflow * 12) / l.card.cost) * 100 : 0;
+          const knownCashflow = l.card.type === "stock" || l.kind === "jackpot" || l.inspected;
+          const displayedCashflow = knownCashflow ? l.card.cashflow : (l.apparentCashflow ?? l.card.cashflow);
+          const yieldPct = l.card.cost > 0 ? ((displayedCashflow * 12) / l.card.cost) * 100 : 0;
           const expiryTone = daysLeft <= 1 ? "urgent" : daysLeft <= 3 ? "soon" : "normal";
           const photo = photoFile(l);
 
           return (
+            <div key={l.id} style={{ ...styles.card, padding: 0, overflow: "hidden" }}>
             <button
-              key={l.id}
               onClick={() => onOpen(l)}
-              style={{ ...styles.card, textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit", padding: 0 }}
+              style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit", padding: 0, background: "transparent", border: "none" }}
             >
               <div style={{ ...styles.placeholderImg, height: 108, borderRadius: 0, borderLeft: "none", borderRight: "none", borderTop: "none", overflow: "hidden" }}>
                 {photo ? (
@@ -123,20 +127,31 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
                 </div>
                 {l.card.desc && <div style={{ fontSize: 11.5, color: C.inkSoft, lineHeight: 1.4, marginBottom: 10 }}>{l.card.desc}</div>}
 
+                {(l.inspected || l.negotiated) && (
+                  <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
+                    {l.inspected && (
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 7px", borderRadius: 6, color: "#fff", background: l.flawed ? C.bad : C.good }}>
+                        {l.flawed ? "⚠️ Vice caché détecté" : "✓ Inspecté : sain"}
+                      </span>
+                    )}
+                    {l.negotiated && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 7px", borderRadius: 6, color: "#fff", background: C.accent }}>🤝 Prix négocié</span>}
+                  </div>
+                )}
+
                 <div style={{ display: "flex", gap: 16, marginBottom: 10 }}>
                   <div>
                     <div style={{ fontSize: 9.5, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>Apport</div>
                     <div style={{ ...styles.mono, fontSize: 13.5, fontWeight: 700, marginTop: 1, color: affordable ? C.ink : C.bad }}>{f(apport)}</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: 9.5, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>Cash-flow</div>
-                    <div style={{ ...styles.mono, fontSize: 13.5, fontWeight: 700, marginTop: 1, color: l.card.cashflow >= 0 ? C.good : C.bad }}>
-                      {l.card.cashflow >= 0 ? "+" : ""}{f(l.card.cashflow)}/mois
+                    <div style={{ fontSize: 9.5, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>Cash-flow{!knownCashflow && " (est.)"}</div>
+                    <div style={{ ...styles.mono, fontSize: 13.5, fontWeight: 700, marginTop: 1, color: displayedCashflow >= 0 ? C.good : C.bad }}>
+                      {knownCashflow ? "" : "≈ "}{displayedCashflow >= 0 ? "+" : ""}{f(displayedCashflow)}/mois
                     </div>
                   </div>
                   <div>
                     <div style={{ fontSize: 9.5, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>Rentabilité</div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 1 }}>{yieldPct.toFixed(1)} %</div>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 1 }}>{yieldPct.toFixed(1)} %{!knownCashflow && " ~"}</div>
                   </div>
                 </div>
 
@@ -148,6 +163,29 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
                 </div>
               </div>
             </button>
+            {l.card.type !== "stock" && (!l.inspected || !l.negotiated) && (
+              <div style={{ display: "flex", gap: 8, padding: "0 14px 14px" }}>
+                {!l.inspected && (
+                  <button
+                    style={{ ...styles.smallBtn, flex: 1, opacity: canInspect ? 1 : 0.5 }}
+                    disabled={!canInspect}
+                    onClick={() => onInspect(l.id)}
+                  >
+                    🔍 Inspecter · ⚡{ACTION_COSTS.inspectListing}
+                  </button>
+                )}
+                {!l.negotiated && (
+                  <button
+                    style={{ ...styles.smallBtn, flex: 1, opacity: canBargain ? 1 : 0.5 }}
+                    disabled={!canBargain}
+                    onClick={() => onNegotiate(l.id)}
+                  >
+                    🤝 Négocier · ⚡{ACTION_COSTS.negotiateListing}
+                  </button>
+                )}
+              </div>
+            )}
+            </div>
           );
         })}
       </div>

@@ -30,7 +30,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     managementThresholdPct, setManagementThresholdPct,
     babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft, lastEvent, lastSkipReport,
     tokens, portfolio, journal, marketTurn, traderJournalActive, onToggleTraderJournal, buyStock, sellStock,
-    listings, pendingDecision, openListing, skipListing, buyListing,
+    listings, pendingDecision, openListing, skipListing, buyListing, inspectListing, negotiateListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     selectedAssetId, setSelectedAssetId, performAssetMaintenance, performAssetAd,
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,
@@ -202,7 +202,7 @@ export default function CapitalLifeApp({ onExitHome }) {
   if (view === "opportunities") {
     return (
       <>
-        <OpportunitySiteScreen listings={listings} day={day} cash={cash} currency={currency} actionPoints={actionPoints} onOpen={openListing} onBack={() => setView("game")} />
+        <OpportunitySiteScreen listings={listings} day={day} cash={cash} currency={currency} actionPoints={actionPoints} onOpen={openListing} onInspect={inspectListing} onNegotiate={negotiateListing} onBack={() => setView("game")} />
         {pendingDecision && (
           <DecisionModal
             decision={pendingDecision}

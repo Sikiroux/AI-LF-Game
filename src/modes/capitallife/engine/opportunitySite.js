@@ -46,22 +46,54 @@ function pickListingSource(cash, urgentBonus = 0) {
   return rand(NORMAL_DEALS);
 }
 
+// Information imparfaite : une annonce sur cinq environ cache un vice
+// (bien/entreprise repris avec un état dégradé dès l'achat) invisible tant
+// qu'elle n'a pas été inspectée — un chiffre de cash-flow correct ne dit pas
+// tout sur l'état réel de ce qu'on achète.
+export const FLAW_CHANCE = 0.22;
+const ESTIMATE_NOISE = 0.22; // ±22% avant inspection
+
 function draftListing(day, cash, urgentBonus = 0) {
   const { card, kind } = pickListingSource(cash, urgentBonus);
   const [lo, hi] = DURATION_RANGES[kind];
-  return { id: uid(), card, kind, postedDay: day, expiresDay: day + randInt(lo, hi) };
+  const flawed = kind !== "jackpot" && card.type !== "stock" && Math.random() < FLAW_CHANCE;
+  const apparentCashflow = Math.round(card.cashflow * (1 - ESTIMATE_NOISE + Math.random() * ESTIMATE_NOISE * 2));
+  return {
+    id: uid(), card, kind, postedDay: day, expiresDay: day + randInt(lo, hi),
+    flawed, inspected: false, negotiated: false, apparentCashflow,
+  };
 }
+
+// Acheteurs concurrents : chaque jour, les annonces déjà abordables (donc
+// convoitées) ou exceptionnelles risquent de disparaître avant leur date
+// d'expiration affichée — raflées par un autre acheteur. Une raison réelle
+// de ne pas laisser traîner une bonne affaire.
+const SNIPE_CHANCE_AFFORDABLE = 0.018;
+const SNIPE_CHANCE_OTHER = 0.006;
+const SNIPE_CHANCE_JACKPOT = 0.045;
 
 // Fait avancer le site d'un jour : les annonces caduques disparaissent, de
 // nouvelles peuvent apparaître pour se rapprocher de TARGET_LISTINGS (jamais
-// moins de MIN_LISTINGS, jamais plus de MAX_LISTINGS).
+// moins de MIN_LISTINGS, jamais plus de MAX_LISTINGS). Retourne aussi le
+// titre de la première annonce raflée par un concurrent ce jour-là, le cas
+// échéant (pour un événement dans le journal).
 export function advanceListings(listings, day, cash, urgentBonus = 0) {
-  let next = listings.filter((l) => l.expiresDay > day);
+  let sniped = null;
+  let next = listings.filter((l) => {
+    if (l.expiresDay <= day) return false;
+    if (l.kind === "jackpot" && Math.random() < SNIPE_CHANCE_JACKPOT) { sniped = sniped || l.card.title; return false; }
+    if (l.kind !== "jackpot") {
+      const apport = l.card.downPayment != null ? l.card.downPayment : l.card.cost;
+      const chance = cash >= apport ? SNIPE_CHANCE_AFFORDABLE : SNIPE_CHANCE_OTHER;
+      if (Math.random() < chance) { sniped = sniped || l.card.title; return false; }
+    }
+    return true;
+  });
   const emptySlots = Math.max(0, TARGET_LISTINGS - next.length);
   for (let i = 0; i < emptySlots; i++) {
     if (Math.random() < NEW_LISTING_FILL_CHANCE) next.push(draftListing(day, cash, urgentBonus));
   }
   while (next.length < MIN_LISTINGS) next.push(draftListing(day, cash, urgentBonus));
   if (next.length > MAX_LISTINGS) next = next.slice(0, MAX_LISTINGS);
-  return next;
+  return { listings: next, sniped };
 }
