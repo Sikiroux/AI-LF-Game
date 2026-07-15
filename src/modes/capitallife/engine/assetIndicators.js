@@ -191,6 +191,82 @@ export function performMaintenance(asset, day) {
   return { asset: { ...next, stability: computeStability(next) }, cost };
 }
 
+export const RENOVATION_COST_RATE = 0.1;
+export const RENOVATION_DAYS = 12;
+
+export function canRenovate(asset, day, cash) {
+  if (asset.type !== "realestate") return { ok: false, reason: "Seul un bien immobilier peut être rénové." };
+  if (asset.renovationUntilDay != null && day < asset.renovationUntilDay) return { ok: false, reason: "Une rénovation est déjà en cours." };
+  const cost = Math.round(asset.cost * RENOVATION_COST_RATE);
+  if (cash < cost) return { ok: false, reason: "Liquidités insuffisantes." };
+  return { ok: true, cost };
+}
+
+export function renovate(asset, day) {
+  const cost = Math.round(asset.cost * RENOVATION_COST_RATE);
+  const baseGrossCashflow = Math.round((asset.baseGrossCashflow ?? asset.grossCashflow ?? 0) * 1.15);
+  const next = {
+    ...asset,
+    condition: clamp((asset.condition ?? 60) + 30),
+    baseGrossCashflow,
+    grossCashflow: 0,
+    cashflow: -(asset.loanMonthly || 0),
+    renovationUntilDay: day + RENOVATION_DAYS,
+    incomeEffectExpiresDay: day + RENOVATION_DAYS,
+    nextTenantReliabilityBonus: 15,
+  };
+  return { asset: { ...next, stability: computeStability(next) }, cost };
+}
+
+export function generateTenantCandidates(asset, count = 3) {
+  const profiles = [
+    { profile: "Fiable", reliability: 88, happiness: 78, rentMultiplier: 0.92 },
+    { profile: "Équilibré", reliability: 72, happiness: 72, rentMultiplier: 1 },
+    { profile: "Rémunérateur", reliability: 48, happiness: 65, rentMultiplier: 1.12 },
+  ];
+  const bonus = asset.nextTenantReliabilityBonus || 0;
+  return profiles.slice(0, Math.max(2, Math.min(3, count))).map((profile) => ({
+    id: uid(),
+    ...profile,
+    name: randomName(),
+    reliability: clamp(profile.reliability + bonus),
+    proposedRent: Math.round((asset.baseGrossCashflow ?? asset.grossCashflow ?? 0) * profile.rentMultiplier),
+  }));
+}
+
+export function pickTenant(asset, candidate) {
+  const baseGrossCashflow = candidate.proposedRent;
+  const tenant = { id: candidate.id, name: candidate.name, profile: candidate.profile, reliability: candidate.reliability, happiness: candidate.happiness, tenureMonths: 0 };
+  const next = { ...asset, tenant, baseGrossCashflow, grossCashflow: baseGrossCashflow, nextTenantReliabilityBonus: 0 };
+  next.cashflow = baseGrossCashflow - (next.loanMonthly || 0);
+  return { ...next, stability: computeStability(next) };
+}
+
+export function canOpenSecondLocation(asset, cash) {
+  if (asset.type !== "business") return { ok: false, reason: "Cette action est réservée aux entreprises." };
+  if ((asset.stability ?? 0) < 70) return { ok: false, reason: "La stabilité doit être au moins bonne." };
+  if ((asset.locationCount || 1) >= 2) return { ok: false, reason: "Un second établissement est déjà ouvert." };
+  const cost = Math.round(asset.cost * 0.6);
+  if (cash < cost) return { ok: false, reason: "Liquidités insuffisantes." };
+  return { ok: true, cost };
+}
+
+export function openSecondLocation(asset, day) {
+  const cost = Math.round(asset.cost * 0.6);
+  const baseGrossCashflow = Math.round((asset.baseGrossCashflow ?? asset.grossCashflow ?? 0) * 1.9);
+  const next = { ...asset, locationCount: 2, incidentRiskMultiplier: 2, baseGrossCashflow, grossCashflow: baseGrossCashflow, secondLocationOpenedDay: day };
+  next.cashflow = baseGrossCashflow - (next.loanMonthly || 0) - totalSalaries(next);
+  return { asset: { ...next, stability: computeStability(next) }, cost };
+}
+
+export function sellAsset(asset, marketConditions = {}) {
+  const economicModifier = Number(marketConditions.economicModifier ?? 1);
+  const sectorModifier = Number(marketConditions.sectorModifier ?? marketConditions.sectorConditions?.[asset.sector] ?? 1);
+  const stabilityModifier = 0.75 + clamp(asset.stability ?? 60) / 200;
+  const price = Math.max(0, Math.round(asset.cost * economicModifier * sectorModifier * stabilityModifier));
+  return { price, loanBalance: asset.loanBalance || 0, proceeds: Math.max(0, price - (asset.loanBalance || 0)) };
+}
+
 export const AD_COOLDOWN_DAYS = 20;
 export const AD_COST_RATE = 0.03; // 3% de la valeur de l'actif
 
