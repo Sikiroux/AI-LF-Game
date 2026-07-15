@@ -5,6 +5,7 @@ import { tickMarketDays } from "../../../engine/bourse/market.js";
 import { advanceListings } from "./opportunitySite.js";
 import { driftAssetIndicators, totalSalaries, businessTreasuryRetention, autoManageBusiness } from "./assetIndicators.js";
 import { rollAssetEvent, applyAssetEvent } from "./assetEvents.js";
+import { rollAssetDecision } from "./assetDecisions.js";
 import {
   SMALL_DOODAD_CARDS, BIG_DOODAD_CARDS, BIG_DOODAD_TERM_MONTHS,
   incomeRatio, scaleDoodadAmount, buildDailyEventTable, rollDailyEvent,
@@ -79,6 +80,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
   const events = [];
   const journalEntries = [];
   let won = false;
+  let pendingAssetDecision = null;
   let bankrupt = false;
 
   for (let i = 0; i < numDays; i++) {
@@ -101,7 +103,19 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
       return a;
     });
 
-    if (!quiet) {
+    // Incidents importants (panne, vacance, baisse de fréquentation, contrôle
+    // fiscal) : au lieu d'un effet automatique, ils ouvrent une décision à
+    // plusieurs options — on arrête alors d'avancer le temps (même en plein
+    // "Sauter le mois") jusqu'à ce que le joueur choisisse, exactement comme
+    // pour une faillite. Un seul incident de ce type à la fois par simulation.
+    if (!quiet && !pendingAssetDecision) {
+      for (const a of assets) {
+        const decision = rollAssetDecision(a, nd);
+        if (decision) { pendingAssetDecision = decision; break; }
+      }
+    }
+
+    if (!quiet && !pendingAssetDecision) {
       assets = assets.map((a) => {
         const type = rollAssetEvent(a, nd);
         if (!type) return a;
@@ -261,6 +275,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
         break;
       }
     }
+    if (pendingAssetDecision) break;
   }
 
   return {
@@ -269,6 +284,6 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
     lastSeasonalDays, consecutiveWinningPaydays,
-    events, journalEntries, bankrupt, won,
+    events, journalEntries, bankrupt, won, pendingAssetDecision,
   };
 }

@@ -7,10 +7,13 @@ import { fmt, uid } from "../../../utils/format.js";
 import { generateScenario } from "../data/scenarioGenerator.js";
 import { simulateDays, WIN_STREAK_TARGET } from "../engine/dayLoop.js";
 import { advanceListings } from "../engine/opportunitySite.js";
+import { applyAssetDecisionOption } from "../engine/assetDecisions.js";
 import {
   initAssetIndicators, canPerformMaintenance, performMaintenance,
   totalSalaries, hireEmployee, fireEmployee, fireSeverance, trainEmployee, trainingCost, MAX_EMPLOYEES,
   applyStakePurchase, DEFAULT_MANAGEMENT_THRESHOLD_PCT, canRunAd, runAd, payDividend,
+  canRenovate, renovate, generateTenantCandidates, pickTenant,
+  canOpenSecondLocation, openSecondLocation, sellAsset,
 } from "../engine/assetIndicators.js";
 import { DAILY_ACTION_POINTS, ACTION_COSTS } from "../engine/actionPoints.js";
 import {
@@ -40,6 +43,7 @@ export default function useCapitalLifeState() {
   const [selectedAssetId, setSelectedAssetId] = useState(null);
   const [listings, setListings] = useState([]);
   const [pendingDecision, setPendingDecision] = useState(null);
+  const [assetDecision, setAssetDecision] = useState(null);
   const [lastEvent, setLastEvent] = useState(null);
   const [lastSkipReport, setLastSkipReport] = useState(null);
   const [casinoHandsPlayed, setCasinoHandsPlayed] = useState(0);
@@ -442,6 +446,53 @@ export default function useCapitalLifeState() {
     banner("Publicité lancée", `${a.name} : -${f(cost)}, réputation améliorée.`, "good");
   }
 
+  // --- Cycle de vie des actifs (rénovation, locataire, second établissement, vente) ---
+
+  function performAssetRenovation(assetId) {
+    const a = assets.find((x) => x.id === assetId);
+    if (!a) return;
+    const check = canRenovate(a, day, cash);
+    if (!check.ok) { banner("Rénovation impossible", check.reason, "info"); return; }
+    if (!spendActionPoints(ACTION_COSTS.maintenance)) return;
+    const { asset: updated, cost } = renovate(a, day);
+    const history = [{ day, title: "Rénovation lancée", detail: `-${f(cost)}, remise en location dans quelques jours.`, tone: "good" }, ...(a.history || [])].slice(0, 8);
+    setCash((c) => c - cost);
+    setAssets((list) => list.map((x) => (x.id === assetId ? { ...updated, history } : x)));
+    banner("Rénovation lancée", `${a.name} : -${f(cost)}.`, "good");
+  }
+
+  // Choisit directement le profil "Équilibré" parmi les candidats générés —
+  // pas encore d'écran de sélection dédié, à faire évoluer plus tard.
+  function performPickTenant(assetId) {
+    const a = assets.find((x) => x.id === assetId);
+    if (!a) return;
+    const candidates = generateTenantCandidates(a);
+    const chosen = candidates[Math.min(1, candidates.length - 1)];
+    const updated = pickTenant(a, chosen);
+    setAssets((list) => list.map((x) => (x.id === assetId ? updated : x)));
+    banner("Locataire choisi", `${a.name} : ${chosen.name} (${chosen.profile}), loyer ${f(chosen.proposedRent)}/mois.`, "good");
+  }
+
+  function performOpenSecondLocation(assetId) {
+    const a = assets.find((x) => x.id === assetId);
+    if (!a) return;
+    const check = canOpenSecondLocation(a, cash);
+    if (!check.ok) { banner("Ouverture impossible", check.reason, "info"); return; }
+    if (!spendActionPoints(ACTION_COSTS.buyAsset)) return;
+    const { asset: updated, cost } = openSecondLocation(a, day);
+    setCash((c) => c - cost);
+    setAssets((list) => list.map((x) => (x.id === assetId ? updated : x)));
+    banner("Second établissement ouvert", `${a.name} : -${f(cost)}, revenu quasiment doublé (risque d'incident accru).`, "good");
+  }
+
+  function performSellAsset(assetId, sale) {
+    const a = assets.find((x) => x.id === assetId);
+    if (!a) return;
+    setCash((c) => c + sale.proceeds);
+    setAssets((list) => list.filter((x) => x.id !== assetId));
+    banner("Actif vendu", `${a.name} : +${f(sale.proceeds)} net.`, "good");
+  }
+
   // --- Employés (business rachetés uniquement) ---
 
   function hireAssetEmployee(assetId, candidate) {
@@ -549,6 +600,7 @@ export default function useCapitalLifeState() {
     setLastSeasonalDays(result.lastSeasonalDays);
     setConsecutiveWinningPaydays(result.consecutiveWinningPaydays);
     setActionPoints(dailyActionPoints);
+    setAssetDecision(result.pendingAssetDecision || null);
     if (result.bankrupt) setPhase("bankrupt");
     if (result.won) setPhase("won");
     if (result.journalEntries.length) setJournal((j) => [...result.journalEntries.slice().reverse(), ...j].slice(0, 60));
@@ -559,6 +611,24 @@ export default function useCapitalLifeState() {
       banner("Résumé de la période", `${result.events.length} événements : ${result.events.map((e) => e.title).join(", ")}`, "info");
     }
     setLastSkipReport(report || null);
+  }
+
+  // Résout la décision d'incident en attente (cf. assetDecisions.js) : le
+  // temps était arrêté depuis que rollAssetDecision l'a détectée dans
+  // simulateDays. Ne fait PAS reprendre automatiquement un "Sauter le mois"
+  // interrompu — le joueur relance lui-même l'avancée du temps ensuite.
+  function resolveAssetDecision(optionKey) {
+    if (!assetDecision) return;
+    const asset = assets.find((a) => a.id === assetDecision.assetId);
+    if (!asset) { setAssetDecision(null); return; }
+    const option = assetDecision.options.find((o) => o.key === optionKey);
+    if (option && option.paCost > 0 && !spendActionPoints(option.paCost)) return;
+    const { asset: updated, cashDelta, event } = applyAssetDecisionOption(asset, assetDecision.type, optionKey, day, currency);
+    const history = event ? [{ day, ...event }, ...(asset.history || [])].slice(0, 8) : asset.history;
+    setCash((c) => Math.max(0, c + cashDelta));
+    setAssets((list) => list.map((x) => (x.id === asset.id ? { ...updated, history } : x)));
+    setAssetDecision(null);
+    if (event) banner(event.title, event.detail, event.tone);
   }
 
   function snapshot() {
@@ -724,6 +794,8 @@ export default function useCapitalLifeState() {
     selectedAssetId, setSelectedAssetId, performAssetMaintenance, performAssetAd,
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,
     payAssetDividend, toggleAssetAutoManage,
+    performAssetRenovation, performPickTenant, performOpenSecondLocation, performSellAsset,
+    economicModifier, sectorConditions,
     casinoHandsPlayed, casinoNetResult, actionPoints,
     onCasinoCashDelta: (amount) => setCash((c) => Math.max(0, c + amount)),
     onCasinoHandPlayed: (netProfit) => { setCasinoHandsPlayed((n) => n + 1); setCasinoNetResult((n) => n + netProfit); },
@@ -733,5 +805,6 @@ export default function useCapitalLifeState() {
     beginTraining, applyToJob, doMission,
     rentTier, changeRentTier,
     consecutiveWinningPaydays, winStreakTarget: WIN_STREAK_TARGET,
+    assetDecision, resolveAssetDecision,
   };
 }

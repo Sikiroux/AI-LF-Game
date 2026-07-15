@@ -16,6 +16,7 @@ import AssetsScreen from "./components/apps/AssetsScreen.jsx";
 import AssetDetailScreen from "./components/apps/AssetDetailScreen.jsx";
 import CareerScreen from "./components/apps/CareerScreen.jsx";
 import DebtsScreen from "../../components/ledger/DebtsScreen.jsx";
+import AssetIncidentModal from "./components/modals/AssetIncidentModal.jsx";
 
 export default function CapitalLifeApp({ onExitHome }) {
   const {
@@ -32,6 +33,8 @@ export default function CapitalLifeApp({ onExitHome }) {
     selectedAssetId, setSelectedAssetId, performAssetMaintenance, performAssetAd,
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,
     payAssetDividend, toggleAssetAutoManage,
+    performAssetRenovation, performPickTenant, performOpenSecondLocation, performSellAsset,
+    economicModifier, sectorConditions,
     casinoHandsPlayed, casinoNetResult, actionPoints, onCasinoCashDelta, onCasinoHandPlayed,
     currency, setCurrency,
     dailyActionPoints, setDailyActionPoints,
@@ -39,6 +42,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     beginTraining, applyToJob, doMission,
     rentTier, changeRentTier,
     consecutiveWinningPaydays, winStreakTarget,
+    assetDecision, resolveAssetDecision,
   } = useCapitalLifeState();
 
   if (!loaded) return <LoadingScreen />;
@@ -121,6 +125,11 @@ export default function CapitalLifeApp({ onExitHome }) {
         onBuyStake={(assetId, delta, useLoan) => buyAssetStake(assetId, delta, useLoan)}
         onPayDividend={(amount) => payAssetDividend(selectedAssetId, amount)}
         onToggleAutoManage={() => toggleAssetAutoManage(selectedAssetId)}
+        onRenovate={performAssetRenovation}
+        onPickTenant={performPickTenant}
+        onOpenSecondLocation={performOpenSecondLocation}
+        onSell={(assetId, sale) => { performSellAsset(assetId, sale); setView("assets"); }}
+        marketConditions={{ economicModifier: economicModifier?.loanRateMult ?? 1, sectorConditions }}
         onBack={() => setView("assets")}
       />
     );
@@ -204,6 +213,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     );
   }
   return (
+    <>
     <CapitalLifeHomeScreen
       day={day}
       cash={cash}
@@ -231,5 +241,7 @@ export default function CapitalLifeApp({ onExitHome }) {
       onOpenSkipReport={() => setView("skipReport")}
       onMenu={() => setView("menu")}
     />
+    {assetDecision && <AssetIncidentModal decision={assetDecision} actionPoints={actionPoints} onChoose={resolveAssetDecision} />}
+    </>
   );
 }
