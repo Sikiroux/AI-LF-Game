@@ -17,6 +17,7 @@ function randomName() {
 }
 
 export const MAX_EMPLOYEES = 5;
+export const EMPLOYEE_ROLES = ["vendeur", "technicien", "marketing", "comptable", "manager"];
 
 // Seuil de participation (%) à partir duquel la gestion du personnel
 // (recruter/former/licencier) se débloque sur une entreprise détenue en
@@ -40,7 +41,21 @@ export function generateCandidate(refSalary) {
   const motivation = 45 + Math.round(Math.random() * 45);
   const loyalty = 45 + Math.round(Math.random() * 40);
   const salary = Math.max(150, Math.round(refSalary * (0.6 + (competence / 100) * 0.8)));
-  return { id: uid(), name: randomName(), competence, motivation, loyalty, salary };
+  const role = EMPLOYEE_ROLES[Math.floor(Math.random() * EMPLOYEE_ROLES.length)];
+  const trust = 50 + Math.round(Math.random() * 30);
+  return { id: uid(), name: randomName(), role, competence, motivation, loyalty, trust, salary };
+}
+
+export function employeeRoleEffects(asset) {
+  const employees = asset.employees || [];
+  const count = (role) => employees.filter((employee) => employee.role === role).length;
+  return {
+    revenueMultiplier: 1 + count("vendeur") * 0.04,
+    breakdownRiskMultiplier: Math.max(0.45, 1 - count("technicien") * 0.3),
+    taxAuditRiskMultiplier: Math.max(0.4, 1 - count("comptable") * 0.35),
+    adEffectMultiplier: 1 + count("marketing") * 0.25,
+    autoManageThreshold: count("manager") > 0 ? 70 : 60,
+  };
 }
 
 export function totalSalaries(asset) {
@@ -55,13 +70,18 @@ export function computeStaffMorale(employees) {
 }
 
 export function hireEmployee(asset, candidate) {
+  if (candidate.role === "manager" && (asset.employees || []).some((employee) => employee.role === "manager")) return asset;
   const employees = [...(asset.employees || []), candidate];
   const next = { ...asset, employees, staffMorale: computeStaffMorale(employees) };
   return { ...next, stability: computeStability(next) };
 }
 
 export function fireEmployee(asset, employeeId) {
-  const employees = (asset.employees || []).filter((e) => e.id !== employeeId);
+  const employees = (asset.employees || []).filter((e) => e.id !== employeeId).map((employee) => ({
+    ...employee,
+    trust: clamp((employee.trust ?? 60) - 12),
+    motivation: clamp(employee.motivation - 5),
+  }));
   const next = { ...asset, employees, staffMorale: computeStaffMorale(employees) };
   return { ...next, stability: computeStability(next) };
 }
@@ -76,7 +96,7 @@ export function trainingCost(employee) {
 
 export function trainEmployee(asset, employeeId) {
   const employees = (asset.employees || []).map((e) => (e.id === employeeId
-    ? { ...e, competence: clamp(e.competence + 12 + Math.round(Math.random() * 8)), motivation: clamp(e.motivation + 8) }
+    ? { ...e, competence: clamp(e.competence + 12 + Math.round(Math.random() * 8)), motivation: clamp(e.motivation + 8), trust: clamp((e.trust ?? 60) + 10) }
     : e));
   const next = { ...asset, employees, staffMorale: computeStaffMorale(employees) };
   return { ...next, stability: computeStability(next) };
@@ -287,7 +307,8 @@ export function canRunAd(asset, day, cash) {
 
 export function runAd(asset, day) {
   const cost = Math.round(asset.cost * AD_COST_RATE);
-  const reputation = clamp(asset.reputation + 10 + Math.round(Math.random() * 10));
+  const effect = employeeRoleEffects(asset).adEffectMultiplier;
+  const reputation = clamp(asset.reputation + Math.round((10 + Math.random() * 10) * effect));
   const next = { ...asset, reputation, lastAdDay: day };
   return { asset: { ...next, stability: computeStability(next) }, cost };
 }
@@ -317,19 +338,18 @@ export function payDividend(asset, amount) {
 // trésorerie de l'entreprise elle-même — jamais par les liquidités
 // personnelles du joueur. Pensé pour "Sauter le mois", où le joueur ne
 // micro-gère pas sa boîte au jour le jour.
-const AUTO_MANAGE_THRESHOLD = 60;
-
 export function autoManageBusiness(asset, day) {
   if (asset.type !== "business" || !asset.autoManage) return { asset, actions: [] };
   let next = asset;
   const actions = [];
 
-  if (next.condition < AUTO_MANAGE_THRESHOLD && canPerformMaintenance(next, day, next.treasury || 0).ok) {
+  const threshold = employeeRoleEffects(next).autoManageThreshold;
+  if (next.condition < threshold && canPerformMaintenance(next, day, next.treasury || 0).ok) {
     const { asset: updated, cost } = performMaintenance(next, day);
     next = { ...updated, treasury: (next.treasury || 0) - cost };
     actions.push({ kind: "maintenance", cost });
   }
-  if (next.reputation != null && next.reputation < AUTO_MANAGE_THRESHOLD && canRunAd(next, day, next.treasury || 0).ok) {
+  if (next.reputation != null && next.reputation < threshold && canRunAd(next, day, next.treasury || 0).ok) {
     const { asset: updated, cost } = runAd(next, day);
     next = { ...updated, treasury: (next.treasury || 0) - cost };
     actions.push({ kind: "ad", cost });
@@ -367,6 +387,7 @@ export function driftAssetIndicators(asset) {
         ...e,
         motivation: clamp(e.motivation + Math.round((Math.random() - 0.5) * 8)),
         loyalty: clamp(e.loyalty + Math.round((Math.random() - 0.5) * 4)),
+        trust: clamp((e.trust ?? 60) + Math.round((Math.random() - 0.55) * 5)),
       }));
       staffMorale = computeStaffMorale(employees);
     } else {
@@ -380,7 +401,8 @@ export function driftAssetIndicators(asset) {
     const hasTempEffect = asset.incomeEffectExpiresDay != null;
     const grossCashflow = hasTempEffect ? asset.grossCashflow : baseGrossCashflow;
     next = { ...next, baseGrossCashflow, grossCashflow };
-    next.cashflow = grossCashflow - (asset.loanMonthly || 0) - totalSalaries(next);
+    const roleBonus = Math.round(grossCashflow * (employeeRoleEffects(next).revenueMultiplier - 1));
+    next.cashflow = grossCashflow + roleBonus - (asset.loanMonthly || 0) - totalSalaries(next);
     return { ...next, stability };
   }
   return asset;
