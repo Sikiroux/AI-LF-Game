@@ -383,6 +383,23 @@ export default function useCapitalLifeState() {
     banner("Dette remboursée", `${d.reason} soldée pour ${f(d.balance)}.`, "good");
   }
 
+  // Regroupe toutes les dettes de scénario/imprévu en une seule mensualité
+  // plus légère — un vrai outil de redressement (pas gratuit : 10% de frais
+  // de consolidation étalés sur une durée plus longue, donc plus d'intérêt
+  // total payé au bout du compte).
+  const CONSOLIDATION_FEE_RATE = 0.1;
+  const CONSOLIDATION_MIN_MONTHS = 24;
+  function consolidateDebts() {
+    const active = debts.filter((d) => d.balance > 0);
+    if (active.length < 2) { banner("Consolidation impossible", "Il faut au moins deux dettes à regrouper.", "info"); return; }
+    const totalBalance = active.reduce((s, d) => s + d.balance, 0);
+    const months = Math.max(CONSOLIDATION_MIN_MONTHS, ...active.map((d) => d.monthsRemaining));
+    const consolidatedTotal = Math.round(totalBalance * (1 + CONSOLIDATION_FEE_RATE));
+    const monthlyPayment = Math.max(1, Math.round(consolidatedTotal / months));
+    setDebts([{ id: uid(), reason: "Dette consolidée", monthlyPayment, monthsRemaining: months, totalMonths: months, balance: monthlyPayment * months }]);
+    banner("Dettes consolidées", `${active.length} dettes regroupées : ${f(monthlyPayment)}/mois sur ${months} mois (au lieu de ${f(active.reduce((s, d) => s + d.monthlyPayment, 0))}/mois).`, "good");
+  }
+
   // --- Mes actifs ---
 
   function payOffLoan(assetId) {
@@ -789,7 +806,7 @@ export default function useCapitalLifeState() {
     loaded, view, setView, phase,
     scenarioDraft, goToNewScenario, rerollScenario, startGame,
     profession, day, cash, debts, liabilities, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
-    payOffLiability, payOffDebt,
+    payOffLiability, payOffDebt, consolidateDebts,
     skipMonthMode, setSkipMonthMode,
     managementThresholdPct, setManagementThresholdPct,
     babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft,

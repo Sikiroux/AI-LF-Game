@@ -64,7 +64,27 @@ function liquidateForShortfall(assets, shortfall) {
   }
   const kept = assets.filter((a) => !soldIds.has(a.id));
   const totalRaised = liquidated.reduce((s, l) => s + l.saleValue, 0);
-  return { assets: kept, liquidated, totalRaised, covered: remaining <= 0 };
+  return { assets: kept, liquidated, totalRaised, covered: remaining <= 0, remaining: Math.max(0, remaining) };
+}
+
+// Ligne de crédit d'urgence : dernier filet avant la faillite définitive,
+// quand même liquider tous les actifs vendables ne suffit pas. Plafonnée (pas
+// un joker illimité) et à un taux punitif — un vrai dépannage, pas une
+// stratégie viable à répéter.
+const EMERGENCY_CREDIT_CAP_MONTHS = 3;
+const EMERGENCY_CREDIT_SURCHARGE = 0.35;
+const EMERGENCY_CREDIT_TERM_MONTHS = 18;
+
+function drawEmergencyCredit(missing, monthlyExpenseEstimate) {
+  const cap = Math.round(Math.max(1, monthlyExpenseEstimate) * EMERGENCY_CREDIT_CAP_MONTHS);
+  const drawn = Math.min(missing, cap);
+  if (drawn <= 0) return null;
+  const owed = Math.round(drawn * (1 + EMERGENCY_CREDIT_SURCHARGE));
+  const monthlyPayment = Math.max(1, Math.round(owed / EMERGENCY_CREDIT_TERM_MONTHS));
+  return {
+    drawn,
+    debt: { id: uid(), reason: "Ligne de crédit d'urgence", monthlyPayment, monthsRemaining: EMERGENCY_CREDIT_TERM_MONTHS, totalMonths: EMERGENCY_CREDIT_TERM_MONTHS, balance: monthlyPayment * EMERGENCY_CREDIT_TERM_MONTHS },
+  };
 }
 
 function amortizeAssetsList(assetList) {
@@ -298,7 +318,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
 
     const rawCash = cash + cashDelta + payday;
     if (rawCash < 0) {
-      const { assets: keptAssets, liquidated, totalRaised, covered } = liquidateForShortfall(assets, -rawCash);
+      const { assets: keptAssets, liquidated, totalRaised, covered, remaining } = liquidateForShortfall(assets, -rawCash);
       assets = keptAssets;
       if (liquidated.length > 0) {
         events.push({
@@ -308,12 +328,32 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
         });
       }
       if (!covered) {
-        cash = 0;
-        day = nd;
-        bankrupt = true;
-        break;
+        // Dernier recours avant la faillite définitive : une ligne de crédit
+        // d'urgence plafonnée, à taux punitif — pas un joker illimité, juste
+        // de quoi éviter qu'un incident isolé ne mette fin à la partie.
+        const debtMonthlyNow = debts.reduce((s, deb) => s + deb.monthlyPayment, 0);
+        const rentNow = state.rentTier ? rentCost(state.rentTier, profession.salary) : 0;
+        const expenseEstimate = calcExpenses(profession, kids, debtMonthlyNow, liabilities) + rentNow;
+        const credit = drawEmergencyCredit(remaining, expenseEstimate);
+        if (credit) {
+          debts = [...debts, credit.debt];
+          events.push({
+            title: "Ligne de crédit d'urgence",
+            detail: `${fmt(credit.drawn, currency)} empruntés en urgence : -${fmt(credit.debt.monthlyPayment, currency)}/mois pendant ${EMERGENCY_CREDIT_TERM_MONTHS} mois.`,
+            tone: "bad",
+          });
+        }
+        const stillMissing = remaining - (credit ? credit.drawn : 0);
+        if (stillMissing > 0) {
+          cash = 0;
+          day = nd;
+          bankrupt = true;
+          break;
+        }
+        cash = rawCash + totalRaised + (credit ? credit.drawn : 0);
+      } else {
+        cash = rawCash + totalRaised;
       }
-      cash = rawCash + totalRaised;
     } else {
       cash = rawCash;
     }

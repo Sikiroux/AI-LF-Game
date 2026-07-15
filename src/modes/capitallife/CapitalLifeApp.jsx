@@ -34,6 +34,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,
     payAssetDividend, toggleAssetAutoManage,
     performAssetRenovation, performPickTenant, performOpenSecondLocation, performSellAsset,
+    consolidateDebts,
     economicModifier, sectorConditions,
     casinoHandsPlayed, casinoNetResult, actionPoints, onCasinoCashDelta, onCasinoHandPlayed,
     currency, setCurrency,
@@ -172,6 +173,7 @@ export default function CapitalLifeApp({ onExitHome }) {
         currency={currency}
         onPayOffLiability={payOffLiability}
         onPayOffDebt={payOffDebt}
+        onConsolidateDebts={consolidateDebts}
         onBack={() => setView("game")}
       />
     );
