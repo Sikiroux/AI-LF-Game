@@ -35,6 +35,11 @@ export default defineConfig(({ command }) => {
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
+        // Sans ça, la route de secours SPA du service worker intercepte
+        // TOUTE navigation — y compris un clic sur le lien du manuel PDF —
+        // et sert index.html à la place : écran blanc (chemins relatifs
+        // cassés dans l'APK) au lieu du PDF attendu.
+        navigateFallbackDenylist: [/\.pdf$/],
       },
     }),
   ],

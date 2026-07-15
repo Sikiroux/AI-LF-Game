@@ -3,6 +3,7 @@ import { fmt } from "../../../../utils/format.js";
 import { SECTOR_LABELS } from "../../../../data/sectors.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
 import { ACTION_COSTS } from "../../engine/actionPoints.js";
+import { LISTING_BASE, AVAILABLE_LISTING_VARIANTS } from "../../data/imageManifest.js";
 
 const CATEGORIES = {
   realestate: { label: "Immobilier", badge: "immo", file: "immobilier" },
@@ -19,9 +20,12 @@ const FILTERS = [
 
 function photoFile(listing) {
   const cat = CATEGORIES[listing.card.type];
-  if (!cat) return "listings/divers-1.png";
-  const variant = (listing.id.split("").reduce((s, c) => s + c.charCodeAt(0), 0) % 5) + 1;
-  return `listings/${cat.file}-${variant}.png`;
+  if (!cat) return null;
+  const variants = AVAILABLE_LISTING_VARIANTS[listing.card.type] || [];
+  if (variants.length === 0) return null;
+  const hash = listing.id.split("").reduce((s, c) => s + c.charCodeAt(0), 0);
+  const variant = variants[hash % variants.length];
+  return `${cat.file}-${variant}.png`;
 }
 
 export default function OpportunitySiteScreen({ listings, day, cash, currency, actionPoints, onOpen, onBack }) {
@@ -76,6 +80,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
           const affordable = cash >= apport;
           const yieldPct = l.card.cost > 0 ? ((l.card.cashflow * 12) / l.card.cost) * 100 : 0;
           const expiryTone = daysLeft <= 1 ? "urgent" : daysLeft <= 3 ? "soon" : "normal";
+          const photo = photoFile(l);
 
           return (
             <button
@@ -83,8 +88,12 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
               onClick={() => onOpen(l)}
               style={{ ...styles.card, textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit", padding: 0 }}
             >
-              <div style={{ ...styles.placeholderImg, height: 108, borderRadius: 0, borderLeft: "none", borderRight: "none", borderTop: "none" }}>
-                📷
+              <div style={{ ...styles.placeholderImg, height: 108, borderRadius: 0, borderLeft: "none", borderRight: "none", borderTop: "none", overflow: "hidden" }}>
+                {photo ? (
+                  <img src={`${LISTING_BASE}${photo}`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  "📷"
+                )}
                 {cat && (
                   <span style={{ position: "absolute", top: 8, left: 8, fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "#fff", padding: "4px 8px", borderRadius: 6, background: C[`cat${cat.badge[0].toUpperCase()}${cat.badge.slice(1)}`] }}>
                     {cat.label}
@@ -103,7 +112,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
                 }}>
                   ⏳ {daysLeft}j
                 </span>
-                <span style={{ ...styles.placeholderFile, position: "absolute", bottom: 8 }}>{photoFile(l)}</span>
+                {!photo && <span style={{ ...styles.placeholderFile, position: "absolute", bottom: 8 }}>{cat ? `listings/${cat.file}-*.png` : "listings/divers-1.png"}</span>}
               </div>
 
               <div style={{ padding: "12px 14px 14px" }}>
