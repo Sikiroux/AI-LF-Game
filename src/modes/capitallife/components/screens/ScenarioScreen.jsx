@@ -1,6 +1,7 @@
 import { calcExpenses, LIABILITY_KEYS, LIABILITY_LABELS } from "../../../../engine/financing.js";
 import { fmt } from "../../../../utils/format.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { SCENARIO_PRESETS } from "../../data/scenarioGenerator.js";
 
 function Row({ label, value, bold, tone, C }) {
   return (
@@ -11,7 +12,7 @@ function Row({ label, value, bold, tone, C }) {
   );
 }
 
-export default function ScenarioScreen({ scenario, currency, onStart, onReroll, onBack }) {
+export default function ScenarioScreen({ scenario, currency, presetKey = "random", onChangePreset, onStart, onReroll, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const { profession, startingCash, liabilities, debt } = scenario;
@@ -29,6 +30,22 @@ export default function ScenarioScreen({ scenario, currency, onStart, onReroll, 
       </div>
 
       <div style={{ ...styles.content, padding: 16 }}>
+        <div style={{ ...styles.card, marginBottom: 16 }}>
+          <div style={{ padding: 16 }}>
+            <div style={styles.sectionTitle}>Profil de départ</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+              {SCENARIO_PRESETS.map((preset) => (
+                <button key={preset.key} style={{ ...styles.chip, ...(presetKey === preset.key ? styles.chipActive : {}) }} onClick={() => onChangePreset?.(preset.key)}>
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: 11.5, color: C.inkSoft, lineHeight: 1.5, marginTop: 10 }}>
+              {(SCENARIO_PRESETS.find((preset) => preset.key === presetKey) || SCENARIO_PRESETS[0]).description}
+            </div>
+          </div>
+        </div>
+
         <div style={{ textAlign: "center", marginBottom: 16 }}>
           <div style={{ fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: C.accent, fontWeight: 700 }}>Profession</div>
           <div style={{ fontSize: 22, color: C.ink, marginTop: 4, fontWeight: 700 }}>{profession.icon} {profession.name}</div>

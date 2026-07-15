@@ -14,6 +14,46 @@ const DEBT_REASONS = [
 // variés et moins systématiquement chargés.
 const LIABILITY_CHANCE = { carLoan: 0.6, creditCard: 0.65, schoolLoan: 0.55 };
 
+export const SCENARIO_PRESETS = [
+  {
+    key: "random",
+    label: "Aléatoire",
+    description: "Tirage classique, sans contrainte.",
+    apply: null,
+  },
+  {
+    key: "young_graduate",
+    label: "Jeune diplômé endetté",
+    description: "Peu de cash, gros prêt étudiant, salaire d'entrée de carrière.",
+    apply: (draft) => {
+      const reference = draft.profession.liabilities?.schoolLoan || draft.profession.salary * 12;
+      return {
+        ...draft,
+        startingCash: Math.round(draft.startingCash * 0.4),
+        liabilities: { ...draft.liabilities, schoolLoan: Math.max(draft.liabilities.schoolLoan || 0, Math.round(reference * 1.4)) },
+      };
+    },
+  },
+  {
+    key: "single_parent",
+    label: "Parent solo",
+    description: "Démarre avec un enfant à charge et un budget serré.",
+    apply: (draft) => ({ ...draft, startingKids: 1 }),
+  },
+  {
+    key: "heir",
+    label: "Héritier d'un bien dégradé",
+    description: "Un bien immobilier de départ, mais en mauvais état et sans locataire.",
+    apply: (draft) => ({ ...draft, startingAssetHint: "degraded_realestate" }),
+  },
+  {
+    key: "recession_start",
+    label: "Départ en récession",
+    description: "La partie démarre avec un contexte économique dégradé.",
+    apply: (draft) => ({ ...draft, startingEconomy: "recession" }),
+  },
+];
+
 export function randomizeCapitalLifeLiabilities(profession) {
   const ref = profession.liabilities || {};
   const out = { mortgage: 0, carLoan: 0, creditCard: 0, schoolLoan: 0 };
@@ -32,7 +72,7 @@ export function randomizeCapitalLifeLiabilities(profession) {
 // exactement comme si le joueur avait déjà une vie derrière lui en arrivant dans
 // le mode. Les dettes sont générées ici (pas au moment de "Commencer") pour que
 // l'aperçu affiché au joueur corresponde exactement à ce qu'il obtient.
-export function generateScenario() {
+export function generateScenario(presetKey = "random") {
   const profession = rand(PROFESSIONS);
   const startingCash = Math.round(profession.cash * (0.6 + Math.random() * 0.9));
   const liabilities = randomizeCapitalLifeLiabilities(profession);
@@ -46,5 +86,7 @@ export function generateScenario() {
     totalMonths: monthsRemaining,
     balance: monthlyPayment * monthsRemaining,
   };
-  return { profession, startingCash, liabilities, debt };
+  const draft = { profession, startingCash, liabilities, debt, presetKey };
+  const preset = SCENARIO_PRESETS.find((item) => item.key === presetKey) || SCENARIO_PRESETS[0];
+  return preset.apply ? preset.apply({ ...draft, presetKey: preset.key }) : { ...draft, presetKey: preset.key };
 }
