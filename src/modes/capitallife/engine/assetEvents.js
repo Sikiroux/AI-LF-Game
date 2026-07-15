@@ -24,15 +24,11 @@ export function buildAssetEventTable(asset, day) {
   if (asset.type === "realestate" && asset.tenant) {
     table.push({ type: "repair", probability: 0.0005 + neglect(asset.condition) * 0.011 });
     table.push({ type: "unpaidRent", probability: 0.0004 + neglect(asset.tenant.reliability) * 0.009 });
-    table.push({ type: "vacancy", probability: 0.0003 + neglect(asset.tenant.happiness) * 0.007 });
     table.push({ type: "goodNews", probability: 0.0012 });
   } else if (asset.type === "business" && asset.reputation != null) {
-    table.push({ type: "repair", probability: 0.0005 + neglect(asset.condition) * 0.011 });
-    table.push({ type: "footfallDrop", probability: 0.0004 + neglect(asset.reputation) * 0.009 });
     table.push({ type: "goodNews", probability: 0.0012 });
     if (asset.treasury > 0) {
       table.push({ type: "exceptionalDistribution", probability: 0.0008 });
-      table.push({ type: "taxAudit", probability: 0.0005 });
     }
   }
   return table;
