@@ -14,6 +14,7 @@ const APPS = [
   { key: "debts", emoji: "💳", label: "Mes dettes", file: "icon-dettes.png" },
   { key: "career", emoji: "💼", label: "Carrière", file: "icon-carriere.png" },
   { key: "casino", emoji: "🎰", label: "Casino", file: "icon-casino.png" },
+  { key: "forecast", emoji: "🔮", label: "Prévisions", file: "icon-forecast.png" },
 ];
 
 export default function CapitalLifeHomeScreen({

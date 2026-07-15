@@ -34,6 +34,7 @@ export default function useCapitalLifeState() {
   const [view, setView] = useState("menu"); // menu | scenario | game | trading | opportunities | assets | casino
   const [phase, setPhase] = useState("playing"); // playing | won | bankrupt
   const [scenarioDraft, setScenarioDraft] = useState(null);
+  const [scenarioPresetKey, setScenarioPresetKey] = useState("random");
   const [profession, setProfession] = useState(null);
   const [day, setDay] = useState(0);
   const [cash, setCash] = useState(0);
@@ -201,12 +202,18 @@ export default function useCapitalLifeState() {
   }
 
   function goToNewScenario() {
-    setScenarioDraft(generateScenario());
+    setScenarioPresetKey("random");
+    setScenarioDraft(generateScenario("random"));
     setView("scenario");
   }
 
   function rerollScenario() {
-    setScenarioDraft(generateScenario());
+    setScenarioDraft(generateScenario(scenarioPresetKey));
+  }
+
+  function changeScenarioPreset(presetKey) {
+    setScenarioPresetKey(presetKey);
+    setScenarioDraft(generateScenario(presetKey));
   }
 
   function startGame() {
@@ -215,8 +222,14 @@ export default function useCapitalLifeState() {
     setPhase("playing");
     setDebts([scenarioDraft.debt]);
     setLiabilities(scenarioDraft.liabilities);
-    setKids(0);
-    setAssets([]);
+    setKids(scenarioDraft.startingKids || 0);
+    setAssets(scenarioDraft.startingAssetHint === "degraded_realestate" ? [{
+      id: uid(), name: "Bien hérité (à retaper)", type: "realestate", sector: "immobilier",
+      cost: 40000, downPayment: 40000, loanAmount: 0, loanBalance: 0, loanMonthly: 0, annualRate: 0,
+      amortizing: false, amortMonths: null,
+      grossCashflow: 0, baseGrossCashflow: 0, incomeEffectExpiresTurn: null, cashflow: 0,
+      condition: 25 + Math.round(Math.random() * 10), tenant: null,
+    }] : []);
     setPendingDecision(null);
     setLastEvent(null);
     setCasinoHandsPlayed(0); setCasinoNetResult(0); setLastCasinoPlayDay(null);
@@ -231,7 +244,7 @@ export default function useCapitalLifeState() {
     setLuckyUntilDay(0);
     setLastSeasonalDays({});
     setConsecutiveWinningPaydays(0);
-    setEconomicCycle("growth");
+    setEconomicCycle(scenarioDraft.startingEconomy === "recession" ? "recession" : "growth");
     setEconomicCycleUntilDay(1 + randomCycleDuration());
     lastSmallDoodadCardRef.current = null; lastBigDoodadCardRef.current = null; lastMarketCardRef.current = null;
     setDay(1);
@@ -834,7 +847,7 @@ export default function useCapitalLifeState() {
 
   return {
     loaded, view, setView, phase,
-    scenarioDraft, goToNewScenario, rerollScenario, startGame,
+    scenarioDraft, scenarioPresetKey, changeScenarioPreset, goToNewScenario, rerollScenario, startGame,
     profession, day, cash, debts, liabilities, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
     skipWeek, skipToTrainingEnd,
     payOffLiability, payOffDebt, consolidateDebts,
