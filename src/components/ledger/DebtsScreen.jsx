@@ -8,7 +8,7 @@ import DebtCard from "./DebtCard.jsx";
 // logique de remboursement et même façon de combiner les dettes de départ
 // (liabilities, communes aux deux modes) et les emprunts/imprévus propres à
 // Capital Life (`extraDebts`) — seul l'habillage visuel change avec `variant`.
-export default function DebtsScreen({ variant, profession, liabilities, extraDebts = [], cash, currency, onPayOffLiability, onPayOffDebt, onBack }) {
+export default function DebtsScreen({ variant, profession, liabilities, extraDebts = [], cash, currency, onPayOffLiability, onPayOffDebt, onConsolidateDebts, onBack }) {
   const capitalLifeColors = useCapitalLifeColors();
   const f = (n) => fmt(n, currency);
 
@@ -44,6 +44,11 @@ export default function DebtsScreen({ variant, profession, liabilities, extraDeb
         <div style={{ ...s.content, padding: 16 }}>
           {all.length === 0 && <div style={{ fontSize: 13, color: C.inkSoft, fontStyle: "italic", textAlign: "center", marginTop: 24 }}>Aucune dette en cours.</div>}
           {all.map((d) => <DebtCard key={d.id} debt={d} currency={currency} cash={cash} onPayOff={handlePayOff} theme={theme} />)}
+          {onConsolidateDebts && loanDebts.length >= 2 && (
+            <button style={{ ...s.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 10 }} onClick={onConsolidateDebts}>
+              Consolider mes dettes en une seule mensualité (frais de 10%)
+            </button>
+          )}
         </div>
       </div>
     );

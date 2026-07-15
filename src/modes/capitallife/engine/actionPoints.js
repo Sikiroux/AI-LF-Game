@@ -3,8 +3,18 @@
 // former), jamais la navigation libre entre applis (OppMarket, Finances,
 // Bourse restent gratuites et illimitées). Se recharge à chaque avancée du
 // temps (jour suivant ou saut de mois), quel que soit le nombre de jours
-// sautés. Réglable dans les Options — le surmenage (career.js) se mesure
-// relativement à ce budget, jamais à un chiffre fixe.
+// sautés. Le surmenage (career.js) se mesure relativement à ce budget,
+// jamais à un chiffre fixe.
+//
+// Lié à la difficulté choisie au lancement de la partie plutôt que réglable
+// librement en cours de route (15 PA sans contrepartie n'a aucune raison
+// d'être moins bon que 8) — verrouillé une fois la partie commencée.
+export const DIFFICULTY_PRESETS = {
+  detente: { label: "Détente", dailyActionPoints: 15 },
+  standard: { label: "Standard", dailyActionPoints: 10 },
+  expert: { label: "Expert", dailyActionPoints: 8 },
+};
+export const DEFAULT_DIFFICULTY = "standard";
 export const DAILY_ACTION_POINTS_OPTIONS = [8, 10, 12, 15];
 export const DAILY_ACTION_POINTS = 10;
 

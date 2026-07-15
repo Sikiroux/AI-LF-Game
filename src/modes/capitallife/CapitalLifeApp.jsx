@@ -16,6 +16,7 @@ import AssetsScreen from "./components/apps/AssetsScreen.jsx";
 import AssetDetailScreen from "./components/apps/AssetDetailScreen.jsx";
 import CareerScreen from "./components/apps/CareerScreen.jsx";
 import DebtsScreen from "../../components/ledger/DebtsScreen.jsx";
+import AssetIncidentModal from "./components/modals/AssetIncidentModal.jsx";
 
 export default function CapitalLifeApp({ onExitHome }) {
   const {
@@ -32,12 +33,17 @@ export default function CapitalLifeApp({ onExitHome }) {
     selectedAssetId, setSelectedAssetId, performAssetMaintenance, performAssetAd,
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,
     payAssetDividend, toggleAssetAutoManage,
+    performAssetRenovation, performPickTenant, performOpenSecondLocation, performSellAsset,
+    consolidateDebts,
+    economicModifier, sectorConditions,
     casinoHandsPlayed, casinoNetResult, actionPoints, onCasinoCashDelta, onCasinoHandPlayed,
     currency, setCurrency,
-    dailyActionPoints, setDailyActionPoints,
-    skills, training, missions, daysWithoutRest, enCouple, lastJobRejectionDay,
+    dailyActionPoints, difficulty, setDifficulty,
+    skills, training, missions, fatigue, enCouple, lastJobRejectionDay,
     beginTraining, applyToJob, doMission,
     rentTier, changeRentTier,
+    consecutiveWinningPaydays, winStreakTarget,
+    assetDecision, resolveAssetDecision,
   } = useCapitalLifeState();
 
   if (!loaded) return <LoadingScreen />;
@@ -58,13 +64,12 @@ export default function CapitalLifeApp({ onExitHome }) {
         managementThresholdPct={managementThresholdPct}
         onChangeManagementThreshold={setManagementThresholdPct}
         dailyActionPoints={dailyActionPoints}
-        onChangeDailyActionPoints={setDailyActionPoints}
         onBack={() => setView("menu")}
       />
     );
   }
   if (view === "scenario") {
-    return <ScenarioScreen scenario={scenarioDraft} currency={currency} onStart={startGame} onReroll={rerollScenario} onBack={() => setView("menu")} />;
+    return <ScenarioScreen scenario={scenarioDraft} currency={currency} difficulty={difficulty} onChangeDifficulty={setDifficulty} onStart={startGame} onReroll={rerollScenario} onBack={() => setView("menu")} />;
   }
   if (phase === "won") {
     return <CapitalLifeWonScreen day={day} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} debts={debts} currency={currency} onReset={resetGame} />;
@@ -120,6 +125,11 @@ export default function CapitalLifeApp({ onExitHome }) {
         onBuyStake={(assetId, delta, useLoan) => buyAssetStake(assetId, delta, useLoan)}
         onPayDividend={(amount) => payAssetDividend(selectedAssetId, amount)}
         onToggleAutoManage={() => toggleAssetAutoManage(selectedAssetId)}
+        onRenovate={performAssetRenovation}
+        onPickTenant={performPickTenant}
+        onOpenSecondLocation={performOpenSecondLocation}
+        onSell={(assetId, sale) => { performSellAsset(assetId, sale); setView("assets"); }}
+        marketConditions={{ economicModifier: economicModifier?.loanRateMult ?? 1, sectorConditions }}
         onBack={() => setView("assets")}
       />
     );
@@ -129,7 +139,7 @@ export default function CapitalLifeApp({ onExitHome }) {
       <CareerScreen
         profession={profession} skills={skills} training={training} missions={missions}
         cash={cash} currency={currency} day={day} actionPoints={actionPoints} dailyActionPoints={dailyActionPoints}
-        daysWithoutRest={daysWithoutRest} enCouple={enCouple} lastJobRejectionDay={lastJobRejectionDay}
+        fatigue={fatigue} enCouple={enCouple} lastJobRejectionDay={lastJobRejectionDay}
         rentTier={rentTier}
         onBeginTraining={beginTraining} onApplyToJob={applyToJob} onDoMission={doMission} onChangeRentTier={changeRentTier}
         onBack={() => setView("game")}
@@ -163,6 +173,7 @@ export default function CapitalLifeApp({ onExitHome }) {
         currency={currency}
         onPayOffLiability={payOffLiability}
         onPayOffDebt={payOffDebt}
+        onConsolidateDebts={consolidateDebts}
         onBack={() => setView("game")}
       />
     );
@@ -203,6 +214,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     );
   }
   return (
+    <>
     <CapitalLifeHomeScreen
       day={day}
       cash={cash}
@@ -218,6 +230,9 @@ export default function CapitalLifeApp({ onExitHome }) {
       hasSkipReport={!!lastSkipReport}
       actionPoints={actionPoints}
       rentTier={rentTier}
+      skills={skills}
+      consecutiveWinningPaydays={consecutiveWinningPaydays}
+      winStreakTarget={winStreakTarget}
       assetsNeedingAttention={assets.filter((a) => a.condition != null && a.condition < 50).length}
       skipMonthMode={skipMonthMode}
       onChangeSkipMonthMode={setSkipMonthMode}
@@ -227,5 +242,7 @@ export default function CapitalLifeApp({ onExitHome }) {
       onOpenSkipReport={() => setView("skipReport")}
       onMenu={() => setView("menu")}
     />
+    {assetDecision && <AssetIncidentModal decision={assetDecision} actionPoints={actionPoints} onChoose={resolveAssetDecision} />}
+    </>
   );
 }

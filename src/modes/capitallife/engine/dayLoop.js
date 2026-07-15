@@ -5,12 +5,44 @@ import { tickMarketDays } from "../../../engine/bourse/market.js";
 import { advanceListings } from "./opportunitySite.js";
 import { driftAssetIndicators, totalSalaries, businessTreasuryRetention, autoManageBusiness } from "./assetIndicators.js";
 import { rollAssetEvent, applyAssetEvent } from "./assetEvents.js";
+import { rollAssetDecision, applyAssetDecisionOption } from "./assetDecisions.js";
 import {
   SMALL_DOODAD_CARDS, BIG_DOODAD_CARDS, BIG_DOODAD_TERM_MONTHS,
   incomeRatio, scaleDoodadAmount, buildDailyEventTable, rollDailyEvent,
 } from "./dailyEvents.js";
 import { rollSeasonalEvent } from "./seasonalEvents.js";
 import { rentCost } from "./lifestyle.js";
+
+// Victoire durable : atteindre le seuil d'indépendance financière une seule
+// fois peut être un effet de bord temporaire (bonne nouvelle sur un actif,
+// mois exceptionnel...). On exige plusieurs jours de paie consécutifs où le
+// revenu passif couvre les dépenses ET où le joueur garde une vraie réserve
+// de liquidités (pas juste "sur le papier") avant de déclarer la victoire.
+export const WIN_STREAK_TARGET = 3;
+const WIN_RESERVE_MONTHS = 2;
+
+// "Gestion prudente" (ex "mois calme") : jusqu'ici ce mode désactivait
+// purement et simplement tous les incidents d'actifs ET tous les événements
+// de vie, ce qui en faisait un mode strictement supérieur au jeu normal —
+// aucun risque, tout le revenu. Ça reste un mode qui limite le risque
+// (probabilité d'incident réduite, décisions résolues automatiquement sans
+// interrompre le temps), mais plus un mode "aucune conséquence" : les
+// événements peuvent toujours survenir, avec une fréquence amortie des deux
+// côtés (bons comme mauvais), et les événements calendaires (rentrée, Noël)
+// tombent toujours, prudent ou non.
+const PRUDENT_EVENT_CHANCE = 0.55;
+
+// Frais mensuels de gestion automatique (salaire de gestionnaire implicite),
+// en % du cash-flow brut de l'entreprise concernée.
+const AUTO_MANAGE_FEE_RATE = 0.05;
+
+// Choisit l'option la plus "sûre" d'une décision d'incident pour la
+// résolution automatique en gestion prudente : la première option gratuite
+// en PA (généralement la plus passive/sans risque immédiat), sinon la
+// dernière option de la liste à défaut.
+function pickPrudentOption(decision) {
+  return decision.options.find((o) => o.paCost === 0) || decision.options[decision.options.length - 1];
+}
 
 // Faillite : quand les liquidités ne suffisent pas à couvrir un paiement (loyer,
 // imprévu, jour de paie...), on liquide en urgence les actifs les moins
@@ -32,7 +64,27 @@ function liquidateForShortfall(assets, shortfall) {
   }
   const kept = assets.filter((a) => !soldIds.has(a.id));
   const totalRaised = liquidated.reduce((s, l) => s + l.saleValue, 0);
-  return { assets: kept, liquidated, totalRaised, covered: remaining <= 0 };
+  return { assets: kept, liquidated, totalRaised, covered: remaining <= 0, remaining: Math.max(0, remaining) };
+}
+
+// Ligne de crédit d'urgence : dernier filet avant la faillite définitive,
+// quand même liquider tous les actifs vendables ne suffit pas. Plafonnée (pas
+// un joker illimité) et à un taux punitif — un vrai dépannage, pas une
+// stratégie viable à répéter.
+const EMERGENCY_CREDIT_CAP_MONTHS = 3;
+const EMERGENCY_CREDIT_SURCHARGE = 0.35;
+const EMERGENCY_CREDIT_TERM_MONTHS = 18;
+
+function drawEmergencyCredit(missing, monthlyExpenseEstimate) {
+  const cap = Math.round(Math.max(1, monthlyExpenseEstimate) * EMERGENCY_CREDIT_CAP_MONTHS);
+  const drawn = Math.min(missing, cap);
+  if (drawn <= 0) return null;
+  const owed = Math.round(drawn * (1 + EMERGENCY_CREDIT_SURCHARGE));
+  const monthlyPayment = Math.max(1, Math.round(owed / EMERGENCY_CREDIT_TERM_MONTHS));
+  return {
+    drawn,
+    debt: { id: uid(), reason: "Ligne de crédit d'urgence", monthlyPayment, monthsRemaining: EMERGENCY_CREDIT_TERM_MONTHS, totalMonths: EMERGENCY_CREDIT_TERM_MONTHS, balance: monthlyPayment * EMERGENCY_CREDIT_TERM_MONTHS },
+  };
 }
 
 function amortizeAssetsList(assetList) {
@@ -63,12 +115,15 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
-    lastSeasonalDays,
+    lastSeasonalDays, consecutiveWinningPaydays,
   } = state;
   lastSeasonalDays = { ...(lastSeasonalDays || {}) };
+  consecutiveWinningPaydays = consecutiveWinningPaydays || 0;
 
   const events = [];
   const journalEntries = [];
+  let won = false;
+  let pendingAssetDecision = null;
   let bankrupt = false;
 
   for (let i = 0; i < numDays; i++) {
@@ -91,7 +146,31 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
       return a;
     });
 
-    if (!quiet) {
+    // Incidents importants (panne, vacance, baisse de fréquentation, contrôle
+    // fiscal) : au lieu d'un effet automatique, ils ouvrent une décision à
+    // plusieurs options. En résolution normale, on arrête d'avancer le temps
+    // (même en plein "Sauter le mois") jusqu'à ce que le joueur choisisse,
+    // exactement comme pour une faillite. En gestion prudente, l'option la
+    // plus sûre est choisie automatiquement, sans interrompre le temps.
+    if (!pendingAssetDecision) {
+      for (const a of assets) {
+        const decision = rollAssetDecision(a, nd);
+        if (!decision) continue;
+        if (quiet) {
+          const option = pickPrudentOption(decision);
+          const result = applyAssetDecisionOption(a, decision.type, option.key, nd, currency);
+          cashDelta += result.cashDelta;
+          if (result.event) events.push(result.event);
+          const history = result.event ? [{ day: nd, ...result.event }, ...(a.history || [])].slice(0, 8) : a.history;
+          assets = assets.map((x) => (x.id === a.id ? { ...result.asset, history } : x));
+        } else {
+          pendingAssetDecision = decision;
+        }
+        break;
+      }
+    }
+
+    if (!pendingAssetDecision && (!quiet || Math.random() < PRUDENT_EVENT_CHANCE)) {
       assets = assets.map((a) => {
         const type = rollAssetEvent(a, nd);
         if (!type) return a;
@@ -103,7 +182,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
       });
     }
 
-    if (!quiet) {
+    if (!quiet || Math.random() < PRUDENT_EVENT_CHANCE) {
       const lucky = nd < luckyUntilDay;
       const table = buildDailyEventTable({ profession, day: nd, kids, babyEnabled, layoffEnabled, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, lucky });
       const eventType = rollDailyEvent(table);
@@ -160,13 +239,15 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
         lastLayoffDay = nd;
         events.push({ title: "Licencié", detail: "Vous perdez votre emploi. Pas de salaire pendant 2 mois.", tone: "bad" });
       }
+    }
 
-      const seasonal = rollSeasonalEvent({ day: nd, profession, kids, lastSeasonalDays, currency, fmt });
-      if (seasonal) {
-        cashDelta -= seasonal.amount;
-        lastSeasonalDays[seasonal.id] = nd;
-        events.push(seasonal.event);
-      }
+    // Toujours évalué, prudent ou non : ce sont des échéances calendaires
+    // prévisibles (rentrée, Noël), pas un risque à amortir.
+    const seasonal = rollSeasonalEvent({ day: nd, profession, kids, lastSeasonalDays, currency, fmt });
+    if (seasonal) {
+      cashDelta -= seasonal.amount;
+      lastSeasonalDays[seasonal.id] = nd;
+      events.push(seasonal.event);
     }
 
     // Pilote automatique des entreprises : entretien/publicité déclenchés tout
@@ -186,12 +267,17 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     });
 
     let payday = 0;
-    if ((nd - 1) % 30 === 0) {
+    const isPayday = (nd - 1) % 30 === 0;
+    let paydayExpenses = 0;
+    let paydayPassiveIncome = 0;
+    if (isPayday) {
       const debtMonthly = debts.reduce((s, deb) => s + deb.monthlyPayment, 0);
       const rent = state.rentTier ? rentCost(state.rentTier, profession.salary) : 0;
       const expenses = calcExpenses(profession, kids, debtMonthly, liabilities) + rent;
       const salary = layoffMonthsLeft > 0 ? 0 : profession.salary;
       const passiveIncome = calcPassiveIncome(assets);
+      paydayExpenses = expenses;
+      paydayPassiveIncome = passiveIncome;
       // Une part du cash-flow des entreprises reste dans leur trésorerie plutôt
       // que de tomber directement dans les liquidités du joueur (cf. dividendes) —
       // n'affecte que ce qui arrive réellement en cash ce mois-ci, pas le revenu
@@ -203,7 +289,20 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
           return retained > 0 ? { ...a, treasury: (a.treasury || 0) + retained } : a;
         });
       }
-      payday = salary + passiveIncome - expenses - treasuryRetained;
+      // La gestion automatique n'était jusqu'ici qu'un avantage sans
+      // contrepartie (entretien/pub gratuits tant que la trésorerie suit) —
+      // un vrai gestionnaire coûte un salaire : prélevé sur la trésorerie de
+      // l'entreprise en priorité, sur les liquidités personnelles sinon.
+      let autoManageFeesFromCash = 0;
+      assets = assets.map((a) => {
+        if (a.type !== "business" || !a.autoManage) return a;
+        const fee = Math.round((a.grossCashflow || 0) * AUTO_MANAGE_FEE_RATE);
+        if (fee <= 0) return a;
+        const fromTreasury = Math.min(a.treasury || 0, fee);
+        autoManageFeesFromCash += fee - fromTreasury;
+        return { ...a, treasury: (a.treasury || 0) - fromTreasury };
+      });
+      payday = salary + passiveIncome - expenses - treasuryRetained - autoManageFeesFromCash;
       debts = debts.map((deb) => {
         const monthsRemaining = deb.monthsRemaining - 1;
         if (monthsRemaining <= 0) return null;
@@ -211,12 +310,15 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
       }).filter(Boolean);
       if (layoffMonthsLeft > 0) layoffMonthsLeft = Math.max(0, layoffMonthsLeft - 1);
       assets = amortizeAssetsList(assets).map(driftAssetIndicators);
-      events.push({ title: "Jour de paie", detail: `Salaire + revenus passifs - dépenses = ${payday >= 0 ? "+" : ""}${fmt(payday, currency)}${treasuryRetained > 0 ? ` (dont ${fmt(treasuryRetained, currency)} conservés en trésorerie d'entreprise)` : ""}`, tone: payday >= 0 ? "good" : "bad" });
+      const paydayNotes = [];
+      if (treasuryRetained > 0) paydayNotes.push(`${fmt(treasuryRetained, currency)} conservés en trésorerie d'entreprise`);
+      if (autoManageFeesFromCash > 0) paydayNotes.push(`${fmt(autoManageFeesFromCash, currency)} de frais de gestion automatique`);
+      events.push({ title: "Jour de paie", detail: `Salaire + revenus passifs - dépenses = ${payday >= 0 ? "+" : ""}${fmt(payday, currency)}${paydayNotes.length ? ` (dont ${paydayNotes.join(", ")})` : ""}`, tone: payday >= 0 ? "good" : "bad" });
     }
 
     const rawCash = cash + cashDelta + payday;
     if (rawCash < 0) {
-      const { assets: keptAssets, liquidated, totalRaised, covered } = liquidateForShortfall(assets, -rawCash);
+      const { assets: keptAssets, liquidated, totalRaised, covered, remaining } = liquidateForShortfall(assets, -rawCash);
       assets = keptAssets;
       if (liquidated.length > 0) {
         events.push({
@@ -226,16 +328,47 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
         });
       }
       if (!covered) {
-        cash = 0;
-        day = nd;
-        bankrupt = true;
-        break;
+        // Dernier recours avant la faillite définitive : une ligne de crédit
+        // d'urgence plafonnée, à taux punitif — pas un joker illimité, juste
+        // de quoi éviter qu'un incident isolé ne mette fin à la partie.
+        const debtMonthlyNow = debts.reduce((s, deb) => s + deb.monthlyPayment, 0);
+        const rentNow = state.rentTier ? rentCost(state.rentTier, profession.salary) : 0;
+        const expenseEstimate = calcExpenses(profession, kids, debtMonthlyNow, liabilities) + rentNow;
+        const credit = drawEmergencyCredit(remaining, expenseEstimate);
+        if (credit) {
+          debts = [...debts, credit.debt];
+          events.push({
+            title: "Ligne de crédit d'urgence",
+            detail: `${fmt(credit.drawn, currency)} empruntés en urgence : -${fmt(credit.debt.monthlyPayment, currency)}/mois pendant ${EMERGENCY_CREDIT_TERM_MONTHS} mois.`,
+            tone: "bad",
+          });
+        }
+        const stillMissing = remaining - (credit ? credit.drawn : 0);
+        if (stillMissing > 0) {
+          cash = 0;
+          day = nd;
+          bankrupt = true;
+          break;
+        }
+        cash = rawCash + totalRaised + (credit ? credit.drawn : 0);
+      } else {
+        cash = rawCash + totalRaised;
       }
-      cash = rawCash + totalRaised;
     } else {
       cash = rawCash;
     }
     day = nd;
+
+    if (isPayday) {
+      const reserveOk = cash >= paydayExpenses * WIN_RESERVE_MONTHS;
+      const incomeOk = paydayExpenses > 0 && paydayPassiveIncome >= paydayExpenses;
+      consecutiveWinningPaydays = incomeOk && reserveOk ? consecutiveWinningPaydays + 1 : 0;
+      if (consecutiveWinningPaydays >= WIN_STREAK_TARGET) {
+        won = true;
+        break;
+      }
+    }
+    if (pendingAssetDecision) break;
   }
 
   return {
@@ -243,7 +376,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
-    lastSeasonalDays,
-    events, journalEntries, bankrupt,
+    lastSeasonalDays, consecutiveWinningPaydays,
+    events, journalEntries, bankrupt, won, pendingAssetDecision,
   };
 }

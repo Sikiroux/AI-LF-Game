@@ -3,6 +3,7 @@ import { fmt } from "../../../../utils/format.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
 import { rentCost } from "../../engine/lifestyle.js";
 import { calendarInfo } from "../../engine/seasonalEvents.js";
+import { computeTier } from "../../engine/progression.js";
 import AppIcon from "./AppIcon.jsx";
 
 const APPS = [
@@ -18,20 +19,20 @@ const APPS = [
 export default function CapitalLifeHomeScreen({
   day, cash, profession, debts, liabilities, kids, assets, passiveIncome, layoffMonthsLeft, currency,
   lastEvent, hasSkipReport, skipMonthMode, onChangeSkipMonthMode, assetsNeedingAttention, actionPoints,
-  rentTier,
+  rentTier, skills, consecutiveWinningPaydays, winStreakTarget,
   onNextDay, onSkipMonth, onOpenApp, onOpenSkipReport, onMenu,
 }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const f = (n) => fmt(n, currency);
 
-  const { month, monthOfYear, year, dayOfMonth, monthName } = calendarInfo(day);
+  const { monthOfYear, year, dayOfMonth, monthName } = calendarInfo(day);
   const debtMonthly = debts.reduce((s, d) => s + d.monthlyPayment, 0);
   const expenses = profession ? calcExpenses(profession, kids, debtMonthly, liabilities) + rentCost(rentTier, profession.salary) : 0;
   const salary = layoffMonthsLeft > 0 ? 0 : (profession ? profession.salary : 0);
   const netCashflow = salary + passiveIncome - expenses;
   const objectifPct = Math.max(0, Math.min(100, Math.round((passiveIncome / Math.max(1, expenses)) * 100)));
-  const niveau = 1 + Math.floor(month / 6);
+  const tier = computeTier({ assets, skills, cash, expenses, netCashflow, finPct: objectifPct, won: false });
   const seasonalHint = monthOfYear === 9 ? "🎒 Rentrée" : monthOfYear === 12 && dayOfMonth >= 10 ? "🎄 Noël approche" : null;
 
   return (
@@ -52,7 +53,7 @@ export default function CapitalLifeHomeScreen({
               </div>
               <div style={{ fontSize: 12, color: C.inkSoft }}>
                 <b style={{ color: C.ink, fontWeight: 600, display: "block", fontSize: 13 }}>{monthName} — Année {year}</b>
-                Jour {dayOfMonth}/30 · Niveau {niveau}
+                Jour {dayOfMonth}/30 · {tier ? tier.label : "Débutant"}
                 {actionPoints != null && <span> · <span style={{ color: actionPoints > 0 ? C.ink : C.bad, fontWeight: 600 }}>⚡ {actionPoints} PA</span></span>}
                 {seasonalHint && <span> · <span style={{ color: C.accent, fontWeight: 700 }}>{seasonalHint}</span></span>}
               </div>
@@ -78,6 +79,11 @@ export default function CapitalLifeHomeScreen({
               </div>
             </div>
           </div>
+          {consecutiveWinningPaydays > 0 && winStreakTarget && (
+            <div style={{ fontSize: 11, color: C.good, marginTop: 8, fontWeight: 700 }}>
+              🏁 Indépendance financière stable depuis {consecutiveWinningPaydays}/{winStreakTarget} mois de paie
+            </div>
+          )}
           {layoffMonthsLeft > 0 && (
             <div style={{ fontSize: 11, color: C.bad, marginTop: 8, fontWeight: 700 }}>📉 Sans emploi — {layoffMonthsLeft} mois restant{layoffMonthsLeft > 1 ? "s" : ""}</div>
           )}
@@ -132,7 +138,7 @@ export default function CapitalLifeHomeScreen({
                 style={{ ...styles.chip, padding: "4px 10px", fontSize: 10.5, ...(skipMonthMode === "calm" ? styles.chipActive : {}) }}
                 onClick={() => onChangeSkipMonthMode("calm")}
               >
-                Mois calme
+                Gestion prudente
               </button>
             </div>
           )}

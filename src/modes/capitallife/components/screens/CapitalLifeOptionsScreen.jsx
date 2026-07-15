@@ -1,9 +1,8 @@
 import { CURRENCIES, CURRENCY_ORDER } from "../../../../data/currencies.js";
 import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
 import { MANAGEMENT_THRESHOLD_OPTIONS } from "../../engine/assetIndicators.js";
-import { DAILY_ACTION_POINTS_OPTIONS } from "../../engine/actionPoints.js";
 
-export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, babyEnabled, onToggleBaby, layoffEnabled, onToggleLayoff, skipMonthMode, onChangeSkipMonthMode, managementThresholdPct, onChangeManagementThreshold, dailyActionPoints, onChangeDailyActionPoints, onBack }) {
+export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, babyEnabled, onToggleBaby, layoffEnabled, onToggleLayoff, skipMonthMode, onChangeSkipMonthMode, managementThresholdPct, onChangeManagementThreshold, dailyActionPoints, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   return (
@@ -40,15 +39,10 @@ export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, b
 
         <div style={{ ...styles.card, padding: 16, marginBottom: 14 }}>
           <div style={styles.sectionTitle}>Points d'action par jour</div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-            {DAILY_ACTION_POINTS_OPTIONS.map((n) => (
-              <button key={n} style={{ ...styles.chip, ...(dailyActionPoints === n ? styles.chipActive : {}) }} onClick={() => onChangeDailyActionPoints(n)}>
-                ⚡ {n}
-              </button>
-            ))}
-          </div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: C.ink, marginBottom: 6 }}>⚡ {dailyActionPoints}</div>
           <div style={{ fontSize: 10, color: C.inkSoft }}>
             Budget quotidien pour gérer vos actifs, vous former ou faire des missions. Le surmenage se mesure par rapport à ce budget : le dépenser en entier plusieurs jours d'affilée augmente le risque de burnout.
+            Lié à la difficulté choisie au lancement de la partie — changez de difficulté en démarrant une nouvelle partie pour l'ajuster.
           </div>
         </div>
 
@@ -70,12 +64,12 @@ export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, b
           <div style={styles.sectionTitle}>Sauter le mois</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
             <button style={{ ...styles.chip, ...(skipMonthMode === "auto" ? styles.chipActive : {}) }} onClick={() => onChangeSkipMonthMode("auto")}>Auto-résolution</button>
-            <button style={{ ...styles.chip, ...(skipMonthMode === "calm" ? styles.chipActive : {}) }} onClick={() => onChangeSkipMonthMode("calm")}>Mois calme</button>
+            <button style={{ ...styles.chip, ...(skipMonthMode === "calm" ? styles.chipActive : {}) }} onClick={() => onChangeSkipMonthMode("calm")}>Gestion prudente</button>
           </div>
           <div style={{ fontSize: 10.5, color: C.inkSoft }}>
             {skipMonthMode === "auto"
               ? "Les événements du mois se déclenchent normalement en arrière-plan."
-              : "Aucun événement de vie pendant le saut — la Bourse et le site d'annonces continuent d'évoluer."}
+              : "Fréquence d'événements réduite (bons comme mauvais) et incidents résolus automatiquement avec l'option la plus prudente, sans jamais interrompre le temps."}
           </div>
         </div>
       </div>
