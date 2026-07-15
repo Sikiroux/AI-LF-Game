@@ -3,7 +3,7 @@ import StampCell from "./StampCell.jsx";
 import DiceZone from "./DiceZone.jsx";
 import { COLORS, styles } from "../../styles/theme.js";
 
-export default function RatBoard({ position, dice, diceRolling, onRoll, skipTurns, charityTurnsLeft, isDesktop, pending, moving }) {
+export default function RatBoard({ position, dice, diceRolling, onRoll, skipTurns, charityTurnsLeft, isDesktop, pending, moving, locked, lockedLabel, onEndTurn, endTurnReady }) {
   const size = RAT_RACE_SEQUENCE.length;
   const perSide = size / 4;
   const cellsPerRow = perSide + 1;
@@ -33,7 +33,7 @@ export default function RatBoard({ position, dice, diceRolling, onRoll, skipTurn
           <div style={{ fontFamily: "Georgia, serif", color: COLORS.ink, fontSize: isDesktop ? 14 : 10, textAlign: "center", textTransform: "uppercase", letterSpacing: 1 }}>Course<br/>infernale</div>
         </div>
       </div>
-      <DiceZone dice={dice} diceRolling={diceRolling} onRoll={onRoll} skipTurns={skipTurns} extra={charityTurnsLeft > 0 ? `2 dés actifs — ${charityTurnsLeft} tour(s)` : null} pending={pending} moving={moving} />
+      <DiceZone dice={dice} diceRolling={diceRolling} onRoll={onRoll} skipTurns={skipTurns} extra={charityTurnsLeft > 0 ? `2 dés actifs — ${charityTurnsLeft} tour(s)` : null} pending={pending} moving={moving} locked={locked} lockedLabel={lockedLabel} onEndTurn={onEndTurn} endTurnReady={endTurnReady} />
     </div>
   );
 }

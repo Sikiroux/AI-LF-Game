@@ -2,7 +2,7 @@ import { FAST_TRACK_SEQUENCE } from "../../engine/fastTrack.js";
 import DiceZone from "./DiceZone.jsx";
 import { COLORS, styles } from "../../styles/theme.js";
 
-export default function FastBoard({ fastTrack, displayPosition, dice, diceRolling, onRoll, skipTurns, isDesktop, pending, moving, charityTurnsLeft }) {
+export default function FastBoard({ fastTrack, displayPosition, dice, diceRolling, onRoll, skipTurns, isDesktop, pending, moving, charityTurnsLeft, locked, lockedLabel, onEndTurn, endTurnReady }) {
   const cellSize = isDesktop ? 60 : 40;
   const labels = { cashflowday: "Cashflow", business: "Business", dream: "Rêve", taxaudit: "Fisc", lawsuit: "Procès", divorce: "Divorce", charity: "Don" };
   const accents = { cashflowday: COLORS.teal, business: COLORS.navy, dream: COLORS.mustard, taxaudit: COLORS.rust, lawsuit: COLORS.rust, divorce: COLORS.charcoal, charity: COLORS.plum };
@@ -20,7 +20,7 @@ export default function FastBoard({ fastTrack, displayPosition, dice, diceRollin
           );
         })}
       </div>
-      <DiceZone dice={dice} diceRolling={diceRolling} onRoll={onRoll} skipTurns={skipTurns} extra={charityTurnsLeft > 0 ? `3 dés actifs — ${charityTurnsLeft} tour(s)` : null} pending={pending} moving={moving} />
+      <DiceZone dice={dice} diceRolling={diceRolling} onRoll={onRoll} skipTurns={skipTurns} extra={charityTurnsLeft > 0 ? `3 dés actifs — ${charityTurnsLeft} tour(s)` : null} pending={pending} moving={moving} locked={locked} lockedLabel={lockedLabel} onEndTurn={onEndTurn} endTurnReady={endTurnReady} />
     </div>
   );
 }
