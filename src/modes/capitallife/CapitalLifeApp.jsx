@@ -18,6 +18,7 @@ import CareerScreen from "./components/apps/CareerScreen.jsx";
 import DebtsScreen from "../../components/ledger/DebtsScreen.jsx";
 import AssetIncidentModal from "./components/modals/AssetIncidentModal.jsx";
 import ForecastScreen from "./components/apps/ForecastScreen.jsx";
+import CapitalLifeManualScreen from "./components/screens/CapitalLifeManualScreen.jsx";
 
 export default function CapitalLifeApp({ onExitHome }) {
   const {
@@ -50,7 +51,10 @@ export default function CapitalLifeApp({ onExitHome }) {
 
   if (!loaded) return <LoadingScreen />;
   if (view === "menu") {
-    return <CapitalLifeMenuScreen hasSave={hasSave} onResume={() => setView("game")} onNew={goToNewScenario} onOptions={() => setView("options")} onExitHome={onExitHome} />;
+    return <CapitalLifeMenuScreen hasSave={hasSave} onResume={() => setView("game")} onNew={goToNewScenario} onOptions={() => setView("options")} onOpenManual={() => setView("manual")} onExitHome={onExitHome} />;
+  }
+  if (view === "manual") {
+    return <CapitalLifeManualScreen onBack={() => setView("menu")} />;
   }
   if (view === "options") {
     return (
