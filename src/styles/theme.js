@@ -13,6 +13,12 @@ export const COLORS = {
   charcoal: "#2E3236",
 };
 
+// Police d'affichage "carnet d'explorateur" (titres, tampons) — un serif à
+// empattements marqués, embarqué en woff2 local plutôt que via un CDN, pour
+// fonctionner hors ligne dans l'APK comme sur le web. Georgia reste le repli
+// si le woff2 n'a pas encore chargé.
+export const FONT_DISPLAY = '"Fraunces", Georgia, serif';
+
 export const styles = {
   app: { position: "fixed", inset: 0, background: COLORS.paper, backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(35,42,49,0.05) 27px)`, fontFamily: "'Helvetica Neue', Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", paddingTop: "var(--safe-area-inset-top, env(safe-area-inset-top, 0px))", paddingBottom: "var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))", paddingLeft: "var(--safe-area-inset-left, env(safe-area-inset-left, 0px))", paddingRight: "var(--safe-area-inset-right, env(safe-area-inset-right, 0px))", boxSizing: "border-box" },
   header: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "12px 16px", borderBottom: `1px dashed ${COLORS.inkSoft}`, flexShrink: 0, background: COLORS.paperDark },
@@ -31,7 +37,7 @@ export const styles = {
   smallBtnDanger: { background: COLORS.rust, color: COLORS.card, border: `1.5px solid ${COLORS.ink}`, borderRadius: 6, padding: "8px 12px", fontSize: 11, cursor: "pointer", textTransform: "uppercase", letterSpacing: 0.4 },
   banner: { marginTop: 12, background: COLORS.card, border: "1.5px dashed", borderRadius: 8, padding: "10px 14px", width: "100%", maxWidth: 380, boxSizing: "border-box" },
   ledger: { background: COLORS.card, borderRadius: 10, padding: 16, border: `1px solid ${COLORS.inkSoft}` },
-  ledgerTitle: { fontFamily: "Georgia, serif", fontSize: 14, color: COLORS.ink, marginBottom: 8, borderBottom: `2px solid ${COLORS.mustard}`, paddingBottom: 6, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700, display: "inline-block" },
+  ledgerTitle: { fontFamily: FONT_DISPLAY, fontSize: 14, color: COLORS.ink, marginBottom: 8, borderBottom: `2px solid ${COLORS.mustard}`, paddingBottom: 6, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700, display: "inline-block" },
   ledgerRow: { display: "flex", justifyContent: "space-between", fontSize: 13, padding: "3px 0" },
   ledgerDivider: { height: 0, borderTop: `1px dashed ${COLORS.inkSoft}`, margin: "6px 0" },
   exitBar: { marginTop: 14, background: COLORS.paper, borderRadius: 8, padding: 10, border: `1px dashed ${COLORS.inkSoft}` },
@@ -56,13 +62,29 @@ export const styles = {
   currencyBadge: { width: 30, height: 30, borderRadius: "50%", border: `1.5px dashed ${COLORS.ink}`, background: COLORS.card, color: COLORS.ink, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
   currencyBadgeLarge: { width: 46, height: 46, borderRadius: "50%", border: `2px dashed ${COLORS.ink}`, background: COLORS.card, color: COLORS.ink, fontSize: 14, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer" },
   menuSaveCard: { background: COLORS.card, border: `1.5px dashed ${COLORS.inkSoft}`, borderRadius: 8, padding: "10px 14px", marginBottom: 4 },
-  bigStamp: { fontFamily: "Georgia, serif", fontSize: 28, fontWeight: 700, color: COLORS.teal, border: `3px double ${COLORS.teal}`, borderRadius: 8, padding: "10px 22px", transform: "rotate(-4deg)", letterSpacing: 3 },
+  bigStamp: { fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, color: COLORS.teal, border: `3px double ${COLORS.teal}`, borderRadius: 8, padding: "10px 22px", transform: "rotate(-4deg)", letterSpacing: 3 },
   menuCover: { position: "relative", background: COLORS.card, border: `1.5px solid ${COLORS.ink}`, borderRadius: 14, padding: "34px 26px 26px", boxShadow: "5px 5px 0 rgba(35,42,49,0.18)", overflow: "hidden" },
   menuWatermark: { position: "absolute", top: 10, right: -18, fontSize: 90, color: COLORS.ink, pointerEvents: "none", userSelect: "none" },
+  // Cachet en cercle pointillé pour l'icône vedette d'un écran de menu — plus
+  // "tampon de passeport" qu'un emoji flottant seul, cohérent avec le reste
+  // de l'identité "carnet d'explorateur" du mode classique.
+  stampRing: {
+    width: 62, height: 62, borderRadius: "50%", border: `1.5px dashed ${COLORS.rust}`,
+    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26,
+    color: COLORS.rust, margin: "0 auto 14px", transform: "rotate(6deg)",
+  },
   menuBtnIcon: { marginRight: 8 },
 };
 
 export const CSS_EXTRA = `
+  @font-face {
+    font-family: "Fraunces";
+    font-weight: 600 700;
+    font-style: normal;
+    font-display: swap;
+    src: url("${import.meta.env.BASE_URL}fonts/fraunces-var-latin.woff2") format("woff2");
+  }
+
   * { -webkit-tap-highlight-color: transparent; }
   button { font-family: inherit; }
   .btn-primary:active { transform: translate(3px, 3px); box-shadow: none !important; }

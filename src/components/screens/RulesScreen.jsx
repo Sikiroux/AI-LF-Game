@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { styles, COLORS, CSS_EXTRA } from "../../styles/theme.js";
+import { styles, COLORS, CSS_EXTRA, FONT_DISPLAY } from "../../styles/theme.js";
 
 const SECTIONS = [
   {
@@ -70,7 +70,7 @@ export default function RulesScreen({ onBack }) {
       <style>{CSS_EXTRA}</style>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", maxWidth: 480, marginBottom: 10 }}>
         <button className="btn-small" style={styles.smallBtn} onClick={onBack}>← Retour</button>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: COLORS.ink, fontWeight: 700 }}>📖 Règles du jeu</div>
+        <div style={{ fontFamily: FONT_DISPLAY, fontSize: 18, color: COLORS.ink, fontWeight: 700 }}>📖 Règles du jeu</div>
         <div style={{ width: 70 }} />
       </div>
 
@@ -84,7 +84,7 @@ export default function RulesScreen({ onBack }) {
                 style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", display: "flex", justifyContent: "space-between", alignItems: "center", background: "transparent", border: "none", padding: 0, textTransform: "none", letterSpacing: 0, cursor: "pointer" }}
                 onClick={() => setOpenIndex(open ? -1 : i)}
               >
-                <span style={{ fontFamily: "Georgia, serif", fontSize: 15, color: COLORS.ink, fontWeight: 700 }}>{section.title}</span>
+                <span style={{ fontFamily: FONT_DISPLAY, fontSize: 15, color: COLORS.ink, fontWeight: 700 }}>{section.title}</span>
                 <span style={{ fontSize: 13, color: COLORS.inkSoft }}>{open ? "▲" : "▼"}</span>
               </button>
               {open && (
