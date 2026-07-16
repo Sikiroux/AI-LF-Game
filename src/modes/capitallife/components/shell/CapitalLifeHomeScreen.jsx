@@ -1,20 +1,20 @@
 import { calcExpenses } from "../../../../engine/financing.js";
 import { fmt } from "../../../../utils/format.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, FONT_DISPLAY } from "../../styles/theme.js";
 import { rentCost } from "../../engine/lifestyle.js";
 import { calendarInfo } from "../../engine/seasonalEvents.js";
 import { computeTier } from "../../engine/progression.js";
 import AppIcon from "./AppIcon.jsx";
 
 const APPS = [
-  { key: "finances", emoji: "📊", label: "Finances", file: "icon-finances.png" },
-  { key: "opportunities", emoji: "🏷️", label: "OppMarket", file: "icon-oppmarket.png" },
-  { key: "trading", emoji: "📈", label: "Bourse", file: "icon-bourse.png" },
-  { key: "assets", emoji: "📁", label: "Mes actifs", file: "icon-actifs.png" },
-  { key: "debts", emoji: "💳", label: "Mes dettes", file: "icon-dettes.png" },
-  { key: "career", emoji: "💼", label: "Carrière", file: "icon-carriere.png" },
-  { key: "casino", emoji: "🎰", label: "Casino", file: "icon-casino.png" },
-  { key: "forecast", emoji: "🔮", label: "Prévisions", file: "icon-forecast.png" },
+  { key: "finances", emoji: "📊", label: "Finances", file: "icon-finances.png", gradient: "linear-gradient(155deg, #7BA9E8, #4C7DC9)" },
+  { key: "opportunities", emoji: "🏷️", label: "OppMarket", file: "icon-oppmarket.png", gradient: "linear-gradient(155deg, #F0955B, #E2662E)" },
+  { key: "trading", emoji: "📈", label: "Bourse", file: "icon-bourse.png", gradient: "linear-gradient(155deg, #4FCB94, #2FA377)" },
+  { key: "assets", emoji: "📁", label: "Mes actifs", file: "icon-actifs.png", gradient: "linear-gradient(155deg, #B08FE0, #8E5AC9)" },
+  { key: "debts", emoji: "💳", label: "Mes dettes", file: "icon-dettes.png", gradient: "linear-gradient(155deg, #EA7D6C, #D9483A)" },
+  { key: "career", emoji: "💼", label: "Carrière", file: "icon-carriere.png", gradient: "linear-gradient(155deg, #E0B84A, #C68A2E)" },
+  { key: "casino", emoji: "🎰", label: "Casino", file: "icon-casino.png", gradient: "linear-gradient(155deg, #E877A8, #C94A80)" },
+  { key: "forecast", emoji: "🔮", label: "Prévisions", file: "icon-forecast.png", gradient: "linear-gradient(155deg, #5EC2D8, #3B9BB3)" },
 ];
 
 export default function CapitalLifeHomeScreen({
@@ -40,7 +40,7 @@ export default function CapitalLifeHomeScreen({
     <div style={styles.app}>
       <div style={{ ...styles.topBar, justifyContent: "space-between" }}>
         <button className="cl-tap" style={styles.smallBtn} onClick={onMenu}>Menu</button>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>Capital Life</div>
+        <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 600, fontSize: 14, color: C.ink }}>Capital Life</div>
         <div style={{ width: 54 }} />
       </div>
 
@@ -49,18 +49,18 @@ export default function CapitalLifeHomeScreen({
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ background: C.accent, color: C.accentInk, borderRadius: 10, padding: "6px 10px", textAlign: "center", lineHeight: 1.1 }}>
-                <div style={{ fontSize: 18, fontWeight: 800 }}>{day}</div>
+                <div style={{ fontFamily: FONT_DISPLAY, fontVariantNumeric: "tabular-nums", fontSize: 18, fontWeight: 700 }}>{day}</div>
                 <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "0.06em", opacity: 0.85 }}>Jour</div>
               </div>
               <div style={{ fontSize: 12, color: C.inkSoft }}>
-                <b style={{ color: C.ink, fontWeight: 600, display: "block", fontSize: 13 }}>{monthName} — Année {year}</b>
+                <b style={{ fontFamily: FONT_DISPLAY, color: C.ink, fontWeight: 600, display: "block", fontSize: 13 }}>{monthName} — Année {year}</b>
                 Jour {dayOfMonth}/30 · {tier ? tier.label : "Débutant"}
                 {actionPoints != null && <span> · <span style={{ color: actionPoints > 0 ? C.ink : C.bad, fontWeight: 600 }}>⚡ {actionPoints} PA</span></span>}
                 {seasonalHint && <span> · <span style={{ color: C.accent, fontWeight: 700 }}>{seasonalHint}</span></span>}
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ ...styles.mono, fontSize: 20, fontWeight: 700 }}>{f(cash)}</div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontVariantNumeric: "tabular-nums", fontSize: 20, fontWeight: 700 }}>{f(cash)}</div>
               <div style={{ fontSize: 10, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.06em" }}>Liquidités</div>
             </div>
           </div>
@@ -68,13 +68,13 @@ export default function CapitalLifeHomeScreen({
           <div style={{ display: "flex", gap: 8 }}>
             <div style={{ flex: "1 1 0", background: C.surface, border: `1px solid ${C.line}`, borderRadius: 10, padding: "9px 12px" }}>
               <div style={{ fontSize: 9, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Cash-flow / mois</div>
-              <div style={{ ...styles.mono, fontSize: 15, fontWeight: 700, color: netCashflow >= 0 ? C.good : C.bad }}>
+              <div style={{ fontFamily: FONT_DISPLAY, fontVariantNumeric: "tabular-nums", fontSize: 15, fontWeight: 700, color: netCashflow >= 0 ? C.good : C.bad }}>
                 {netCashflow >= 0 ? "+" : ""}{f(netCashflow)}
               </div>
             </div>
             <div style={{ flex: "1.2 1 0", background: C.surface, border: `1px solid ${C.line}`, borderRadius: 10, padding: "9px 12px" }}>
               <div style={{ fontSize: 9, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Indépendance financière</div>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>{objectifPct}%</div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontVariantNumeric: "tabular-nums", fontSize: 15, fontWeight: 700 }}>{objectifPct}%</div>
               <div style={{ height: 4, borderRadius: 2, background: C.line, marginTop: 6, overflow: "hidden" }}>
                 <div style={{ height: "100%", background: C.accent, width: `${objectifPct}%` }} />
               </div>
@@ -114,6 +114,7 @@ export default function CapitalLifeHomeScreen({
               emoji={app.emoji}
               label={app.label}
               file={app.file}
+              gradient={app.gradient}
               badge={app.key === "assets" ? assetsNeedingAttention : null}
               onClick={() => onOpenApp(app.key)}
             />

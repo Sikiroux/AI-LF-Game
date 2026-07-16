@@ -1,5 +1,5 @@
 import { CURRENCIES, CURRENCY_ORDER } from "../../../../data/currencies.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, FONT_DISPLAY } from "../../styles/theme.js";
 import { MANAGEMENT_THRESHOLD_OPTIONS } from "../../engine/assetIndicators.js";
 
 export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, babyEnabled, onToggleBaby, layoffEnabled, onToggleLayoff, skipMonthMode, onChangeSkipMonthMode, managementThresholdPct, onChangeManagementThreshold, dailyActionPoints, onBack }) {
@@ -9,7 +9,7 @@ export default function CapitalLifeOptionsScreen({ currency, onSelectCurrency, b
     <div style={styles.app}>
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
-        <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>⚙️ Options — Capital Life</div>
+        <div style={{ fontFamily: FONT_DISPLAY, fontSize: 15, fontWeight: 600, color: C.ink }}>⚙️ Options — Capital Life</div>
       </div>
 
       <div style={{ ...styles.content, padding: 16 }}>

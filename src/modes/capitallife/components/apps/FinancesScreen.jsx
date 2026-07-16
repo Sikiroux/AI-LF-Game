@@ -1,6 +1,6 @@
 import { LIABILITY_KEYS, LIABILITY_LABELS } from "../../../../engine/financing.js";
 import { fmt } from "../../../../utils/format.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, FONT_DISPLAY } from "../../styles/theme.js";
 import { rentCost } from "../../engine/lifestyle.js";
 
 function Row({ label, value, bold, tone, C }) {
@@ -32,7 +32,7 @@ export default function FinancesScreen({ day, profession, kids, debts, liabiliti
     <div style={styles.app}>
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
-        <div style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>📊 Finances</div>
+        <div style={{ fontFamily: FONT_DISPLAY, fontSize: 15, fontWeight: 600, flex: 1 }}>📊 Finances</div>
         <div style={{ width: 30 }} />
       </div>
 

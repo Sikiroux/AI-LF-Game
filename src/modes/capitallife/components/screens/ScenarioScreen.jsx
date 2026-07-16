@@ -1,6 +1,6 @@
 import { calcExpenses, LIABILITY_KEYS, LIABILITY_LABELS } from "../../../../engine/financing.js";
 import { fmt } from "../../../../utils/format.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, FONT_DISPLAY } from "../../styles/theme.js";
 import { DIFFICULTY_PRESETS } from "../../engine/actionPoints.js";
 import { SCENARIO_PRESETS } from "../../data/scenarioGenerator.js";
 
@@ -27,7 +27,7 @@ export default function ScenarioScreen({ scenario, currency, difficulty, onChang
     <div style={styles.app}>
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
-        <div style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>Votre mise en situation</div>
+        <div style={{ fontFamily: FONT_DISPLAY, fontSize: 15, fontWeight: 600, flex: 1 }}>Votre mise en situation</div>
       </div>
 
       <div style={{ ...styles.content, padding: 16 }}>

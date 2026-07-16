@@ -7,7 +7,7 @@ import {
   JOB_APPLY_PA_COST, JOB_REJECTION_COOLDOWN_DAYS,
 } from "../../engine/career.js";
 import { RENT_TIERS, rentTierByKey, rentCost, moveCost, MOVE_PA_COST } from "../../engine/lifestyle.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, FONT_DISPLAY } from "../../styles/theme.js";
 
 const TABS = [
   { key: "competences", label: "Compétences" },
@@ -43,7 +43,7 @@ export default function CareerScreen({
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>💼 Carrière</div>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 15, fontWeight: 600, color: C.ink }}>💼 Carrière</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
             {profession.name} · {f(profession.salary)}/mois
             {fatigue > 0 && <> · <span style={{ color: fatigue > 70 ? C.bad : fatigue > 40 ? C.warn : C.inkSoft, fontWeight: 600 }}>Fatigue {fatigue}%</span></>}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { fmt } from "../../../../utils/format.js";
 import { SECTOR_LABELS } from "../../../../data/sectors.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, FONT_DISPLAY } from "../../styles/theme.js";
 import CandlestickChart from "./CandlestickChart.jsx";
 import TokenListItem from "./TokenListItem.jsx";
 
@@ -36,7 +36,7 @@ export default function TradingScreen({ tokens, portfolio, journal, cash, curren
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>📈 Bourse</div>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 15, fontWeight: 600, color: C.ink }}>📈 Bourse</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>Liquidités {f(cash)} · Portefeuille {f(portfolioValue)}</div>
         </div>
       </div>

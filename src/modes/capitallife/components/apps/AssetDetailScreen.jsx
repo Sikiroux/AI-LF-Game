@@ -9,7 +9,7 @@ import {
 } from "../../engine/assetIndicators.js";
 import { computeFinancing } from "../../../../engine/financing.js";
 import { ACTION_COSTS } from "../../engine/actionPoints.js";
-import { useCapitalLifeColors, getStyles, sectorBadge, qualityTone } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, sectorBadge, qualityTone, FONT_DISPLAY } from "../../styles/theme.js";
 
 const TYPE_LABELS = { stock: "Actions", realestate: "Immobilier", business: "Business" };
 const TABS = [
@@ -183,7 +183,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
       <div style={styles.app}>
         <div style={styles.topBar}>
           <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>Actif introuvable</div>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 15, fontWeight: 600 }}>Actif introuvable</div>
         </div>
       </div>
     );
@@ -210,7 +210,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>{asset.name}</div>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 15, fontWeight: 600, color: C.ink }}>{asset.name}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
             <span style={sectorBadge(asset.sector, C)}>{SECTOR_LABELS[asset.sector] || ""}</span>
             <span style={{ fontSize: 10, color: C.inkSoft }}>{TYPE_LABELS[asset.type] || asset.type}</span>

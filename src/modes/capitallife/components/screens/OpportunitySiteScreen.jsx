@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { fmt } from "../../../../utils/format.js";
 import { SECTOR_LABELS } from "../../../../data/sectors.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, FONT_DISPLAY } from "../../styles/theme.js";
 import { ACTION_COSTS } from "../../engine/actionPoints.js";
 import { LISTING_BASE, AVAILABLE_LISTING_VARIANTS } from "../../data/imageManifest.js";
 
@@ -44,7 +44,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>🏷️ OppMarket</div>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 15, fontWeight: 600, color: C.ink }}>🏷️ OppMarket</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
             {listings.length} annonce{listings.length > 1 ? "s" : ""} active{listings.length > 1 ? "s" : ""} · liquidités {f(cash)}
             {actionPoints != null && <> · négocier coûte <span style={{ color: canNegotiate ? C.ink : C.bad, fontWeight: 600 }}>⚡{ACTION_COSTS.buyAsset}</span></>}

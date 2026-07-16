@@ -6,22 +6,30 @@ import { SECTOR_COLORS } from "../../../data/sectors.js";
 // collision. Deux jeux de couleurs (clair/sombre) suivis en JS plutôt qu'en
 // CSS, cohérent avec le reste du projet qui construit ses styles en objets
 // inline plutôt qu'en classes.
+// Accent corail (au lieu du bleu générique fintech précédent) — couleur de
+// marque, volontairement distincte des couleurs sémantiques (good/bad/warn)
+// pour ne jamais confondre "action possible" et "bonne nouvelle".
 export const LIGHT_COLORS = {
   bg: "#EEF1F8", surface: "#FFFFFF", surfaceRaised: "#E3E8F3",
   ink: "#141D33", inkSoft: "#5C6680", line: "#D6DCEA",
-  accent: "#2F6FE0", accentInk: "#FFFFFF",
-  good: "#1FA968", bad: "#E5484D", warn: "#C9820A",
+  accent: "#E2662E", accentInk: "#FFFFFF",
+  good: "#1FA968", bad: "#E5484D", warn: "#B8931A",
   catImmo: "#C96A32", catBiz: "#1E9C77", catActions: "#2F6FE0", catEncheres: "#8E5AC9",
   placeholderBg: "#E3E8F3", placeholderLine: "#B7C0D6",
 };
 export const DARK_COLORS = {
   bg: "#0B1220", surface: "#141D33", surfaceRaised: "#1C2846",
   ink: "#E9EDF6", inkSoft: "#8993AC", line: "#2A3555",
-  accent: "#5A96FF", accentInk: "#0B1220",
-  good: "#35C77E", bad: "#FF6B6B", warn: "#F0A93E",
+  accent: "#F0834F", accentInk: "#12100D",
+  good: "#35C77E", bad: "#FF6B6B", warn: "#E8C24A",
   catImmo: "#E28A55", catBiz: "#3FBF95", catActions: "#5A96FF", catEncheres: "#B189E8",
   placeholderBg: "#1C2846", placeholderLine: "#3A4770",
 };
+
+// Police d'affichage (titres, gros chiffres, boutons) — un rond géométrique
+// chaleureux, embarqué en woff2 local (public/fonts/) plutôt que via un CDN
+// de polices, pour fonctionner hors ligne dans l'APK comme sur le web.
+export const FONT_DISPLAY = '"Fredoka", ui-rounded, "SF Pro Rounded", system-ui, sans-serif';
 
 export function usePrefersDarkMode() {
   const [dark, setDark] = useState(
@@ -66,6 +74,21 @@ export const RADIUS = { xs: 6, sm: 8, md: 12, lg: 16, pill: 999 };
 // (App.jsx) pour couvrir tous les écrans sans dupliquer une balise <style>
 // partout.
 export const CL_CSS_EXTRA = `
+  @font-face {
+    font-family: "Fredoka";
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+    src: url("${import.meta.env.BASE_URL}fonts/fredoka-600-latin.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: "Fredoka";
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+    src: url("${import.meta.env.BASE_URL}fonts/fredoka-700-latin.woff2") format("woff2");
+  }
+
   .cl-tap {
     transition: transform 0.12s ease-out, opacity 0.12s ease-out, filter 0.12s ease-out;
     -webkit-tap-highlight-color: transparent;
@@ -140,10 +163,11 @@ export function getStyles(C) {
       display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: C.ink, cursor: "pointer", flexShrink: 0,
     },
     card: { background: C.surface, border: `1px solid ${C.line}`, borderRadius: RADIUS.lg, overflow: "hidden", boxShadow: `0 1px 3px ${C.ink}0D` },
-    sectionTitle: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: C.inkSoft, fontWeight: 700, margin: "0 0 12px" },
+    sectionTitle: { fontFamily: FONT_DISPLAY, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.06em", color: C.inkSoft, fontWeight: 600, margin: "0 0 12px" },
     primaryBtn: {
       background: C.accent, color: C.accentInk, border: "none", borderRadius: RADIUS.md, padding: `${SPACE.md}px ${SPACE.xl}px`,
-      fontWeight: 700, fontSize: 14, cursor: "pointer",
+      fontFamily: FONT_DISPLAY, fontWeight: 600, fontSize: 14.5, cursor: "pointer",
+      boxShadow: `0 4px 14px ${C.accent}59`,
     },
     smallBtn: {
       background: C.surface, color: C.ink, border: `1px solid ${C.line}`, borderRadius: RADIUS.md, padding: `${SPACE.sm}px ${SPACE.lg}px`,

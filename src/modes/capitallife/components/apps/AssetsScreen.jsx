@@ -1,5 +1,5 @@
 import { fmt } from "../../../../utils/format.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, FONT_DISPLAY } from "../../styles/theme.js";
 import AssetCard from "./AssetCard.jsx";
 
 export default function AssetsScreen({ assets, cash, currency, onPayOff, onPayOffAll, onStartAmortization, onCancelAmortization, onSelect, onBack }) {
@@ -15,7 +15,7 @@ export default function AssetsScreen({ assets, cash, currency, onPayOff, onPayOf
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>📁 Mes actifs</div>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 15, fontWeight: 600, color: C.ink }}>📁 Mes actifs</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
             Liquidités {f(cash)}{totalDue > 0 && <> · {f(totalDue)} dû</>}
           </div>

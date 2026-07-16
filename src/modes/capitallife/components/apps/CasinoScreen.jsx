@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { fmt } from "../../../../utils/format.js";
 import { buildShoe, shuffleDeck, handValue, isBlackjack, CHIP_VALUES } from "../../../../engine/casino/blackjack.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, FONT_DISPLAY } from "../../styles/theme.js";
 import PlayingCard from "./PlayingCard.jsx";
 
 export default function CasinoScreen({ cash, currency, onCashDelta, onBack, handsPlayed, netResult, onHandPlayed }) {
@@ -113,7 +113,7 @@ export default function CasinoScreen({ cash, currency, onCashDelta, onBack, hand
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>🎰 Casino — Blackjack</div>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 15, fontWeight: 600, color: C.ink }}>🎰 Casino — Blackjack</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
             Liquidités {f(cash)} · {handsPlayed} main{handsPlayed > 1 ? "s" : ""} jouée{handsPlayed > 1 ? "s" : ""} · net {netResult >= 0 ? "+" : ""}{f(netResult)}
           </div>

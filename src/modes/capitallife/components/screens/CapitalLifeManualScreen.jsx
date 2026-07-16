@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, FONT_DISPLAY } from "../../styles/theme.js";
 import { MANUAL_SECTIONS } from "../../data/manualContent.js";
 
 export default function CapitalLifeManualScreen({ onBack }) {
@@ -12,7 +12,7 @@ export default function CapitalLifeManualScreen({ onBack }) {
     <div style={styles.app}>
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
-        <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>📖 Manuel</div>
+        <div style={{ fontFamily: FONT_DISPLAY, fontSize: 15, fontWeight: 600, color: C.ink }}>📖 Manuel</div>
       </div>
 
       <div style={{ flexShrink: 0, display: "flex", padding: "0 16px", overflowX: "auto", background: C.surfaceRaised }}>

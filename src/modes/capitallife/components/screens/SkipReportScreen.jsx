@@ -1,5 +1,5 @@
 import { fmt } from "../../../../utils/format.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, FONT_DISPLAY } from "../../styles/theme.js";
 
 function toneColor(tone, C) {
   if (tone === "good") return C.good;
@@ -30,7 +30,7 @@ export default function SkipReportScreen({ report, currency, onBack }) {
       <div style={styles.app}>
         <div style={styles.topBar}>
           <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
-          <div style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>📋 Rapport</div>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 15, fontWeight: 600, flex: 1 }}>📋 Rapport</div>
         </div>
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center", color: C.inkSoft, fontSize: 13 }}>
           Aucun rapport disponible pour l'instant. Utilisez « Sauter jusqu'au mois prochain » pour en générer un.
@@ -48,7 +48,7 @@ export default function SkipReportScreen({ report, currency, onBack }) {
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>📋 Rapport du mois</div>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 15, fontWeight: 600, color: C.ink }}>📋 Rapport du mois</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
             Jour {report.fromDay} → {report.toDay} · {report.daysSkipped} jour{report.daysSkipped > 1 ? "s" : ""} · {report.mode === "calm" ? "Gestion prudente" : "Auto-résolution"}
           </div>
