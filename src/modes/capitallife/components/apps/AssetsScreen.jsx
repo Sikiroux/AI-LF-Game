@@ -35,7 +35,13 @@ export default function AssetsScreen({ assets, cash, currency, onPayOff, onPayOf
             <div style={{ fontSize: 10, color: C.inkSoft, textAlign: "center", marginTop: 4 }}>Solde les prêts les plus petits en premier, dans la limite de vos liquidités.</div>
           </div>
         )}
-        {assets.length === 0 && <div style={{ fontSize: 13, color: C.inkSoft, fontStyle: "italic", textAlign: "center", marginTop: 24 }}>Aucun actif pour l'instant.</div>}
+        {assets.length === 0 && (
+          <div style={{ ...styles.card, textAlign: "center", padding: "36px 20px", marginTop: 12 }}>
+            <div style={{ fontSize: 32, marginBottom: 10 }}>📁</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>Rien en portefeuille</div>
+            <div style={{ fontSize: 12, color: C.inkSoft, marginTop: 4 }}>Vos achats depuis OppMarket apparaîtront ici.</div>
+          </div>
+        )}
         {assets.map((a) => (
           <AssetCard key={a.id} asset={a} currency={currency} cash={cash} onPayOff={onPayOff} onStartAmortization={onStartAmortization} onCancelAmortization={onCancelAmortization} onSelect={onSelect} C={C} styles={styles} />
         ))}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { SECTOR_COLORS } from "../../../data/sectors.js";
 
 // Palette dédiée à Capital Life — complètement séparée du thème "passeport
 // financier" du mode classique (src/styles/theme.js), pour zéro risque de
@@ -84,10 +85,36 @@ export const CL_CSS_EXTRA = `
   .btn-primary:active, .btn-small:active { transform: scale(0.96); opacity: 0.85; }
 `;
 
+// Badge coloré par secteur (immobilier, tech, finance...) réutilisant la
+// palette déjà définie dans data/sectors.js — remplace un simple libellé
+// gris uniforme par une pastille qui porte l'info d'un coup d'œil, au lieu
+// de tout aplatir en texte.
+export function sectorBadge(sector, C) {
+  return {
+    display: "inline-flex", alignItems: "center", fontSize: 9.5, fontWeight: 700,
+    textTransform: "uppercase", letterSpacing: "0.04em", color: "#fff",
+    padding: `${SPACE.xs - 1}px ${SPACE.sm}px`, borderRadius: RADIUS.pill,
+    background: SECTOR_COLORS[sector] || C.inkSoft,
+  };
+}
+
+// Petite jauge qualitative (état, réputation, fiabilité...) — un repère
+// visuel en plus du texte plutôt qu'une ligne de plus dans une liste.
+export function qualityTone(label, C) {
+  if (label === "Excellent" || label === "Bon" || label === "Sain") return C.good;
+  if (label === "Moyen" || label === "Tendu") return C.warn;
+  if (label === "Fragile" || label === "Critique") return C.bad;
+  return C.inkSoft;
+}
+
 export function getStyles(C) {
   return {
     app: {
-      position: "fixed", inset: 0, background: C.bg, color: C.ink,
+      position: "fixed", inset: 0, color: C.ink,
+      // Léger dégradé radial (au lieu d'un aplat uni) pour donner un peu de
+      // profondeur au fond de chaque écran, sans toucher au système de
+      // cartes/icônes existant.
+      background: `radial-gradient(ellipse 120% 60% at 50% -10%, ${C.accent}14, transparent 60%), ${C.bg}`,
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
       display: "flex", flexDirection: "column", overflow: "hidden",
       paddingTop: "var(--safe-area-inset-top, env(safe-area-inset-top, 0px))",
@@ -112,7 +139,7 @@ export function getStyles(C) {
       width: 30, height: 30, borderRadius: RADIUS.sm, background: C.surface, border: `1px solid ${C.line}`,
       display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: C.ink, cursor: "pointer", flexShrink: 0,
     },
-    card: { background: C.surface, border: `1px solid ${C.line}`, borderRadius: RADIUS.lg, overflow: "hidden" },
+    card: { background: C.surface, border: `1px solid ${C.line}`, borderRadius: RADIUS.lg, overflow: "hidden", boxShadow: `0 1px 3px ${C.ink}0D` },
     sectionTitle: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: C.inkSoft, fontWeight: 700, margin: "0 0 12px" },
     primaryBtn: {
       background: C.accent, color: C.accentInk, border: "none", borderRadius: RADIUS.md, padding: `${SPACE.md}px ${SPACE.xl}px`,
@@ -135,6 +162,18 @@ export function getStyles(C) {
       whiteSpace: "nowrap", cursor: "pointer", background: "transparent",
     },
     chipActive: { background: C.accent, color: C.accentInk, border: `1px solid ${C.accent}`, fontWeight: 600 },
+    // Bande d'onglets façon navigateur (soulignement sur l'onglet actif,
+    // pas de forme "pilule" empilée) — pour les bascules qui changent tout
+    // le contenu en dessous (filtres OppMarket, onglets Carrière/Actif),
+    // à distinguer des chip de choix multiple (devise, difficulté...) qui
+    // gardent le style `chip` en pilule.
+    tabBar: { display: "flex", gap: SPACE.md, borderBottom: `1px solid ${C.line}` },
+    tab: {
+      flex: "0 0 auto", padding: `${SPACE.sm}px ${SPACE.xs}px`, fontSize: 12.5, fontWeight: 600,
+      color: C.inkSoft, background: "transparent", border: "none", borderBottom: "2px solid transparent",
+      cursor: "pointer", whiteSpace: "nowrap", marginBottom: -1,
+    },
+    tabActive: { color: C.ink, borderBottom: `2px solid ${C.accent}` },
     placeholderImg: {
       background: C.placeholderBg, border: `1px dashed ${C.placeholderLine}`,
       display: "flex", alignItems: "center", justifyContent: "center", position: "relative",

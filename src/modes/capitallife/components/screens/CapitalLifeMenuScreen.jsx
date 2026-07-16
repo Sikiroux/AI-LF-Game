@@ -1,6 +1,6 @@
 import { styles, COLORS, CSS_EXTRA } from "../../../../styles/theme.js";
 
-export default function CapitalLifeMenuScreen({ hasSave, onResume, onNew, onOptions, onExitHome }) {
+export default function CapitalLifeMenuScreen({ hasSave, onResume, onNew, onOptions, onOpenManual, onExitHome }) {
   return (
     <div style={{ ...styles.app, alignItems: "center", justifyContent: "center", display: "flex", flexDirection: "column", padding: 24, textAlign: "center" }}>
       <style>{CSS_EXTRA}</style>
@@ -16,9 +16,9 @@ export default function CapitalLifeMenuScreen({ hasSave, onResume, onNew, onOpti
           <button className={hasSave ? "btn-small" : "btn-primary"} style={hasSave ? styles.smallBtn : styles.primaryBtn} onClick={onNew}>
             <span style={styles.menuBtnIcon}>🗂️</span>Nouvelle situation
           </button>
-          <a className="btn-small" style={{ ...styles.smallBtn, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" }} href={`${import.meta.env.BASE_URL}manuels/manuel-capital-life.pdf`} target="_blank" rel="noopener noreferrer">
-            <span style={styles.menuBtnIcon}>📄</span>Manuel PDF
-          </a>
+          <button className="btn-small" style={styles.smallBtn} onClick={onOpenManual}>
+            <span style={styles.menuBtnIcon}>📖</span>Manuel
+          </button>
           <button className="btn-small" style={styles.smallBtn} onClick={onOptions}><span style={styles.menuBtnIcon}>⚙️</span>Options</button>
           <button className="btn-small" style={{ ...styles.smallBtn, background: "transparent", border: "none", opacity: 0.7 }} onClick={onExitHome}>← Autres modes de jeu</button>
         </div>
