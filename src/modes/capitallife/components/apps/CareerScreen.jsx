@@ -51,10 +51,10 @@ export default function CareerScreen({
         </div>
       </div>
 
-      <div style={{ flexShrink: 0, display: "flex", padding: "10px 16px", borderBottom: `1px solid ${C.line}` }}>
-        <div style={{ ...styles.centerCol, display: "flex", gap: 8 }}>
+      <div style={{ flexShrink: 0, display: "flex", padding: "0 16px", overflowX: "auto", background: C.surfaceRaised }}>
+        <div style={{ ...styles.centerCol, ...styles.tabBar }}>
           {TABS.map((t) => (
-            <button className="cl-tap" key={t.key} style={{ ...styles.chip, ...(tab === t.key ? styles.chipActive : {}) }} onClick={() => setTab(t.key)}>{t.label}</button>
+            <button className="cl-tap" key={t.key} style={{ ...styles.tab, ...(tab === t.key ? styles.tabActive : {}) }} onClick={() => setTab(t.key)}>{t.label}</button>
           ))}
         </div>
       </div>

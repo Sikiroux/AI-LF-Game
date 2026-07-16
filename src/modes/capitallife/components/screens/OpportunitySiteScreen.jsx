@@ -59,10 +59,10 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
         </div>
       )}
 
-      <div style={{ flexShrink: 0, display: "flex", padding: "10px 16px", overflowX: "auto", borderBottom: `1px solid ${C.line}` }}>
-        <div style={{ ...styles.centerCol, display: "flex", gap: 8 }}>
+      <div style={{ flexShrink: 0, display: "flex", padding: "0 16px", overflowX: "auto", background: C.surfaceRaised }}>
+        <div style={{ ...styles.centerCol, ...styles.tabBar }}>
           {FILTERS.map((ft) => (
-            <button className="cl-tap" key={ft.key} style={{ ...styles.chip, ...(filter === ft.key ? styles.chipActive : {}) }} onClick={() => setFilter(ft.key)}>
+            <button className="cl-tap" key={ft.key} style={{ ...styles.tab, ...(filter === ft.key ? styles.tabActive : {}) }} onClick={() => setFilter(ft.key)}>
               {ft.label}
             </button>
           ))}

@@ -162,6 +162,18 @@ export function getStyles(C) {
       whiteSpace: "nowrap", cursor: "pointer", background: "transparent",
     },
     chipActive: { background: C.accent, color: C.accentInk, border: `1px solid ${C.accent}`, fontWeight: 600 },
+    // Bande d'onglets façon navigateur (soulignement sur l'onglet actif,
+    // pas de forme "pilule" empilée) — pour les bascules qui changent tout
+    // le contenu en dessous (filtres OppMarket, onglets Carrière/Actif),
+    // à distinguer des chip de choix multiple (devise, difficulté...) qui
+    // gardent le style `chip` en pilule.
+    tabBar: { display: "flex", gap: SPACE.md, borderBottom: `1px solid ${C.line}` },
+    tab: {
+      flex: "0 0 auto", padding: `${SPACE.sm}px ${SPACE.xs}px`, fontSize: 12.5, fontWeight: 600,
+      color: C.inkSoft, background: "transparent", border: "none", borderBottom: "2px solid transparent",
+      cursor: "pointer", whiteSpace: "nowrap", marginBottom: -1,
+    },
+    tabActive: { color: C.ink, borderBottom: `2px solid ${C.accent}` },
     placeholderImg: {
       background: C.placeholderBg, border: `1px dashed ${C.placeholderLine}`,
       display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
