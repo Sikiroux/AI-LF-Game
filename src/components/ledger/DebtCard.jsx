@@ -25,6 +25,12 @@ export default function DebtCard({ debt, currency, cash, onPayOff, theme }) {
             <span style={{ fontFamily: theme.mono, color: theme.ink }}>{debt.monthsRemaining}</span>
           </div>
         )}
+        {debt.annualRate != null && (
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, padding: "3px 0" }}>
+            <span style={{ color: theme.inkSoft }}>Taux annuel</span>
+            <span style={{ fontFamily: theme.mono, color: theme.ink }}>{(debt.annualRate * 100).toFixed(1)}%</span>
+          </div>
+        )}
       </div>
       <button
         style={{ ...theme.primaryBtnStyle, width: "100%", boxSizing: "border-box", marginTop: 10, opacity: canPayOff ? 1 : 0.4 }}

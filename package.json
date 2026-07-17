@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "audit:balance": "node scripts/audit-capital-life.mjs",
     "build": "vite build",
     "build:apk": "CAP_BUILD=1 vite build",
     "preview": "vite preview"

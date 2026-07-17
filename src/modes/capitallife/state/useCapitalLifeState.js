@@ -823,7 +823,10 @@ export default function useCapitalLifeState() {
     setTraining(result.training);
     setSkills(result.skills);
     if (result.completedProfessionId) setQualifications((q) => ({ ...q, [result.completedProfessionId]: true }));
-    setMissions(generateMissions(result.skills, 3, cycleModifiers(economicCycle).missionPayMult));
+    // Trois contrats par semaine : leur renouvellement quotidien permettait
+    // d'enchaîner jusqu'à 90 missions par mois et dominait toute l'économie.
+    const crossesFreelanceWeek = numDays >= 7 || Math.floor((day + numDays - 1) / 7) > Math.floor((day - 1) / 7);
+    if (crossesFreelanceWeek) setMissions(generateMissions(result.skills, 3, cycleModifiers(economicCycle).missionPayMult));
     if (result.completed) banner(result.completedProfessionId ? "Cursus terminé" : "Formation terminée", result.completedProfessionId ? "Votre diplôme est validé." : "Votre compétence a progressé.", "good");
     return result.training ? result.training.paCost : 0;
   }

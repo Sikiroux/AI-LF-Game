@@ -1,6 +1,7 @@
 import { fmt, randNoRepeat, uid } from "../../../utils/format.js";
 import { MARKET_CARDS } from "../../../data/marketCards.js";
 import { calcExpenses, calcPassiveIncome } from "../../../engine/financing.js";
+import { amortizeCapitalLifeLiabilities } from "./liabilities.js";
 import { tickMarketDays } from "../../../engine/bourse/market.js";
 import { advanceListings } from "./opportunitySite.js";
 import { driftAssetIndicators, totalSalaries, businessTreasuryRetention, autoManageBusiness } from "./assetIndicators.js";
@@ -332,6 +333,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
         if (monthsRemaining <= 0) return null;
         return { ...deb, monthsRemaining, balance: deb.monthlyPayment * monthsRemaining };
       }).filter(Boolean);
+      liabilities = amortizeCapitalLifeLiabilities(profession, liabilities);
       if (layoffMonthsLeft > 0) layoffMonthsLeft = Math.max(0, layoffMonthsLeft - 1);
       assets = amortizeAssetsList(assets).map((a) => driftAssetIndicators(a, cycleMods.businessGrowthMult));
       const paydayNotes = [];

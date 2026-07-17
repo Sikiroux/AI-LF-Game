@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { fmt } from "../../utils/format.js";
 import { LIABILITY_KEYS, LIABILITY_LABELS } from "../../engine/financing.js";
+import { CAPITAL_LIFE_LIABILITY_ANNUAL_RATES } from "../../modes/capitallife/engine/liabilities.js";
 import { styles as classicStyles, COLORS as classicColors, CSS_EXTRA } from "../../styles/theme.js";
 import { useCapitalLifeColors, getStyles as getCLStyles } from "../../modes/capitallife/styles/theme.js";
 import DebtCard from "./DebtCard.jsx";
@@ -14,10 +15,10 @@ export default function DebtsScreen({ variant, profession, liabilities, extraDeb
   const f = (n) => fmt(n, currency);
 
   const liabilityDebts = LIABILITY_KEYS.filter((k) => liabilities[k] > 0).map((k) => ({
-    id: k, kind: "liability", label: LIABILITY_LABELS[k], balance: liabilities[k], monthlyPayment: profession.expenses[k],
+    id: k, kind: "liability", label: LIABILITY_LABELS[k], balance: liabilities[k], monthlyPayment: profession.expenses[k], annualRate: variant === "capitallife" ? CAPITAL_LIFE_LIABILITY_ANNUAL_RATES[k] : null,
   }));
   const loanDebts = extraDebts.filter((d) => d.balance > 0).map((d) => ({
-    id: d.id, kind: "loan", label: d.reason, balance: d.balance, monthlyPayment: d.monthlyPayment, monthsRemaining: d.monthsRemaining,
+    id: d.id, kind: "loan", label: d.reason, balance: d.balance, monthlyPayment: d.monthlyPayment, monthsRemaining: d.monthsRemaining, annualRate: d.annualRate,
   }));
   const all = [...liabilityDebts, ...loanDebts];
   const totalBalance = all.reduce((s, d) => s + d.balance, 0);

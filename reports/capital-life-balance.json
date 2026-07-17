@@ -1,0 +1,316 @@
+{
+  "generatedAt": "2026-07-17T04:29:22.648Z",
+  "runsPerCase": 1000,
+  "months": 24,
+  "assumptions": [
+    "Isole la boucle salaire/dépenses/dettes/missions, sans Bourse, OppMarket ni événements aléatoires.",
+    "Les mensualités réduisent le capital après application du taux propre à chaque type de dette.",
+    "Freelance hebdomadaire exécute les trois missions renouvelées chaque semaine."
+  ],
+  "professions": {
+    "instit": {
+      "passive_saver": {
+        "medianCash": 29807,
+        "medianNetWorth": 25042,
+        "medianDebt": 4597,
+        "p10NetWorth": 18950,
+        "p90NetWorth": 30485,
+        "debtFreeRate": 0.037,
+        "medianDebtFreeMonth": 16,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0.932
+      },
+      "debt_first": {
+        "medianCash": 25950,
+        "medianNetWorth": 25950,
+        "medianDebt": 0,
+        "p10NetWorth": 19912,
+        "p90NetWorth": 31078,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 8,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0
+      },
+      "freelance_weekly": {
+        "medianCash": 38104,
+        "medianNetWorth": 38104,
+        "medianDebt": 0,
+        "p10NetWorth": 32156,
+        "p90NetWorth": 43107,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 6,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 12089,
+        "persistentPaymentRate": 0
+      }
+    },
+    "infirmier": {
+      "passive_saver": {
+        "medianCash": 36607,
+        "medianNetWorth": 31166,
+        "medianDebt": 5160,
+        "p10NetWorth": 23410,
+        "p90NetWorth": 37703,
+        "debtFreeRate": 0.032,
+        "medianDebtFreeMonth": 13.5,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0.941
+      },
+      "debt_first": {
+        "medianCash": 32190,
+        "medianNetWorth": 32190,
+        "medianDebt": 0,
+        "p10NetWorth": 24535,
+        "p90NetWorth": 38411,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 8,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0
+      },
+      "freelance_weekly": {
+        "medianCash": 40377,
+        "medianNetWorth": 40377,
+        "medianDebt": 0,
+        "p10NetWorth": 32947,
+        "p90NetWorth": 46412,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 6,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 8141,
+        "persistentPaymentRate": 0
+      }
+    },
+    "policier": {
+      "passive_saver": {
+        "medianCash": 32321,
+        "medianNetWorth": 28024,
+        "medianDebt": 3985,
+        "p10NetWorth": 21581,
+        "p90NetWorth": 33920,
+        "debtFreeRate": 0.089,
+        "medianDebtFreeMonth": 15,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0.858
+      },
+      "debt_first": {
+        "medianCash": 28902,
+        "medianNetWorth": 28902,
+        "medianDebt": 0,
+        "p10NetWorth": 22753,
+        "p90NetWorth": 34365,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 7,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0
+      },
+      "freelance_weekly": {
+        "medianCash": 40811,
+        "medianNetWorth": 40811,
+        "medianDebt": 0,
+        "p10NetWorth": 34523,
+        "p90NetWorth": 46179,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 5,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 11761,
+        "persistentPaymentRate": 0
+      }
+    },
+    "secretaire": {
+      "passive_saver": {
+        "medianCash": 25698,
+        "medianNetWorth": 22172,
+        "medianDebt": 3184,
+        "p10NetWorth": 16828,
+        "p90NetWorth": 26964,
+        "debtFreeRate": 0.089,
+        "medianDebtFreeMonth": 16,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0.859
+      },
+      "debt_first": {
+        "medianCash": 22960,
+        "medianNetWorth": 22960,
+        "medianDebt": 0,
+        "p10NetWorth": 17771,
+        "p90NetWorth": 27391,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 7,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0
+      },
+      "freelance_weekly": {
+        "medianCash": 31438,
+        "medianNetWorth": 31438,
+        "medianDebt": 0,
+        "p10NetWorth": 26417,
+        "p90NetWorth": 36007,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 5,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 8487,
+        "persistentPaymentRate": 0
+      }
+    },
+    "camionneur": {
+      "passive_saver": {
+        "medianCash": 27694,
+        "medianNetWorth": 23589,
+        "medianDebt": 3795,
+        "p10NetWorth": 17621,
+        "p90NetWorth": 29174,
+        "debtFreeRate": 0.089,
+        "medianDebtFreeMonth": 16,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0.859
+      },
+      "debt_first": {
+        "medianCash": 24338,
+        "medianNetWorth": 24338,
+        "medianDebt": 0,
+        "p10NetWorth": 18693,
+        "p90NetWorth": 29720,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 8,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0
+      },
+      "freelance_weekly": {
+        "medianCash": 34333,
+        "medianNetWorth": 34333,
+        "medianDebt": 0,
+        "p10NetWorth": 28522,
+        "p90NetWorth": 39562,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 6,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 9873,
+        "persistentPaymentRate": 0
+      }
+    },
+    "ingenieur": {
+      "passive_saver": {
+        "medianCash": 56438,
+        "medianNetWorth": 46849,
+        "medianDebt": 9321,
+        "p10NetWorth": 34135,
+        "p90NetWorth": 57897,
+        "debtFreeRate": 0.032,
+        "medianDebtFreeMonth": 13.5,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0.941
+      },
+      "debt_first": {
+        "medianCash": 48459,
+        "medianNetWorth": 48459,
+        "medianDebt": 0,
+        "p10NetWorth": 36403,
+        "p90NetWorth": 58752,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 8,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0
+      },
+      "freelance_weekly": {
+        "medianCash": 63680,
+        "medianNetWorth": 63680,
+        "medianDebt": 0,
+        "p10NetWorth": 51767,
+        "p90NetWorth": 74147,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 6,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 15330,
+        "persistentPaymentRate": 0
+      }
+    },
+    "avocat": {
+      "passive_saver": {
+        "medianCash": 83401,
+        "medianNetWorth": 66104,
+        "medianDebt": 16074,
+        "p10NetWorth": 47038,
+        "p90NetWorth": 87291,
+        "debtFreeRate": 0.037,
+        "medianDebtFreeMonth": 16,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0.932
+      },
+      "debt_first": {
+        "medianCash": 68370,
+        "medianNetWorth": 68370,
+        "medianDebt": 0,
+        "p10NetWorth": 49743,
+        "p90NetWorth": 88426,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 9,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0
+      },
+      "freelance_weekly": {
+        "medianCash": 82252,
+        "medianNetWorth": 82252,
+        "medianDebt": 0,
+        "p10NetWorth": 63959,
+        "p90NetWorth": 102375,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 8,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 13814,
+        "persistentPaymentRate": 0
+      }
+    },
+    "medecin": {
+      "passive_saver": {
+        "medianCash": 137899,
+        "medianNetWorth": 105931,
+        "medianDebt": 30681,
+        "p10NetWorth": 67636,
+        "p90NetWorth": 146719,
+        "debtFreeRate": 0.04,
+        "medianDebtFreeMonth": 14.5,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0.94
+      },
+      "debt_first": {
+        "medianCash": 108836,
+        "medianNetWorth": 108836,
+        "medianDebt": 0,
+        "p10NetWorth": 71909,
+        "p90NetWorth": 148940,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 10,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0
+      },
+      "freelance_weekly": {
+        "medianCash": 122297,
+        "medianNetWorth": 122297,
+        "medianDebt": 0,
+        "p10NetWorth": 85783,
+        "p90NetWorth": 162461,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 9,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 13403,
+        "persistentPaymentRate": 0
+      }
+    }
+  }
+}
