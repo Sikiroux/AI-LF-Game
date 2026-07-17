@@ -13,6 +13,7 @@ import {
 import { rollSeasonalEvent } from "./seasonalEvents.js";
 import { rentCost } from "./lifestyle.js";
 import { nextCycle, cycleModifiers, randomCycleDuration, CYCLE_LABELS } from "./economy.js";
+import { ECONOMY_TICKS_PER_GAME_DAY } from "./economicClock.js";
 
 // Victoire durable : atteindre le seuil d'indépendance financière une seule
 // fois peut être un effet de bord temporaire (bonne nouvelle sur un actif,
@@ -129,10 +130,11 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
   let won = false;
   let pendingAssetDecision = null;
   let bankrupt = false;
+  let expiredListings = 0;
+  let snipedListings = 0;
 
   for (let i = 0; i < numDays; i++) {
     const nd = day + 1;
-    opportunityTurn += 1;
 
     // Cycle économique global : expansion → croissance → inflation →
     // ralentissement → récession → reprise → expansion, en boucle. Diffusé
@@ -145,15 +147,19 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     }
     const cycleMods = cycleModifiers(economicCycle);
 
-    const tick = tickMarketDays({ tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive, economicEffectDuration: 10, economicEffectPermanent: false, assets, currency }, 1);
+    const tick = tickMarketDays({ tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive, economicEffectDuration: 10, economicEffectPermanent: false, assets, currency }, ECONOMY_TICKS_PER_GAME_DAY);
     tokens = tick.tokens; pendingArcs = tick.pendingArcs; sectorConditions = tick.sectorConditions;
     economicModifier = tick.economicModifier; marketTurn = tick.marketTurn;
     let cashDelta = tick.cashDelta;
     if (tick.journalEntries.length) journalEntries.push(...tick.journalEntries);
 
-    const listingResult = advanceListings(listings, opportunityTurn, cash, cycleMods.urgentListingBonus);
-    listings = listingResult.listings;
-    if (listingResult.sniped) events.push({ title: "Occasion manquée", detail: `« ${listingResult.sniped} » vient d'être raflée par un autre acheteur.`, tone: "bad" });
+    for (let marketTick = 0; marketTick < ECONOMY_TICKS_PER_GAME_DAY; marketTick++) {
+      opportunityTurn += 1;
+      const listingResult = advanceListings(listings, opportunityTurn, cash, cycleMods.urgentListingBonus);
+      listings = listingResult.listings;
+      expiredListings += listingResult.expiredCount || 0;
+      if (listingResult.sniped) snipedListings += 1;
+    }
 
     // Restaure le revenu des actifs dont l'effet temporaire (vacance locative,
     // baisse de fréquentation) est arrivé à expiration.
@@ -387,6 +393,14 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
       }
     }
     if (pendingAssetDecision) break;
+  }
+
+  if (expiredListings + snipedListings > 0) {
+    events.push({
+      title: "OppMarket a continué de vivre",
+      detail: `${expiredListings} annonce${expiredListings > 1 ? "s ont" : " a"} expiré${expiredListings > 1 ? "es" : ""}${snipedListings ? ` et ${snipedListings} opportunité${snipedListings > 1 ? "s ont" : " a"} été saisie${snipedListings > 1 ? "s" : ""} par d'autres acheteurs` : ""}. De nouvelles offres sont disponibles.`,
+      tone: "info",
+    });
   }
 
   return {

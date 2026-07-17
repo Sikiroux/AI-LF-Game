@@ -105,8 +105,8 @@ export default function CapitalLifeApp({ onExitHome }) {
         onBuy={buyStock}
         onSell={sellStock}
         onBack={() => setView("game")}
-        advanceHint="le marché évolue automatiquement toutes les 30 secondes."
-        advanceSubHint="Les cours continuent de bouger depuis les autres applications et rattrapent votre absence au retour."
+        advanceHint="le marché évolue toutes les 30 secondes et produit 2 bougies par journée de calendrier."
+        advanceSubHint="Jour suivant : 2 bougies · 7 jours : 14 · mois : 60. Les cours continuent aussi depuis les autres applications."
       />
     );
   }

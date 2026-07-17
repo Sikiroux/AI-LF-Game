@@ -4,6 +4,7 @@ import { SECTOR_LABELS } from "../../../../data/sectors.js";
 import { useCapitalLifeColors, getStyles, DISPLAY_FONT } from "../../styles/theme.js";
 import { ACTION_COSTS } from "../../engine/actionPoints.js";
 import { LISTING_BASE, AVAILABLE_LISTING_VARIANTS } from "../../data/imageManifest.js";
+import { REALTIME_TICK_MS } from "../../engine/economicClock.js";
 
 const CATEGORIES = {
   realestate: { label: "Immobilier", badge: "immo", file: "immobilier" },
@@ -29,7 +30,7 @@ function photoFile(listing) {
 }
 
 function timeLeftLabel(ticks) {
-  const seconds = Math.max(0, ticks) * 30;
+  const seconds = Math.max(0, ticks) * (REALTIME_TICK_MS / 1000);
   if (seconds < 60) return "moins d'1 min";
   return `${Math.ceil(seconds / 60)} min`;
 }

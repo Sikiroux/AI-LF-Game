@@ -25,11 +25,10 @@ import {
 import { PROFESSIONS } from "../../../data/professions.js";
 import { SKILL_LABELS } from "../../../data/skills.js";
 import { DEFAULT_RENT_TIER, rentTierByKey, rentCost, moveCost, MOVE_PA_COST } from "../engine/lifestyle.js";
+import { REALTIME_TICK_MS, MAX_REALTIME_CATCHUP_TICKS } from "../engine/economicClock.js";
 
 const SAVE_KEY = "capitallife-save";
 const SETTINGS_KEY = "capitallife-settings";
-export const REALTIME_TICK_MS = 30000;
-const MAX_REALTIME_CATCHUP_TICKS = 120;
 
 export default function useCapitalLifeState() {
   const [loaded, setLoaded] = useState(false);

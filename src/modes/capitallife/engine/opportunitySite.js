@@ -79,8 +79,9 @@ const SNIPE_CHANCE_JACKPOT = 0.045;
 // échéant (pour un événement dans le journal).
 export function advanceListings(listings, day, cash, urgentBonus = 0) {
   let sniped = null;
+  let expiredCount = 0;
   let next = listings.filter((l) => {
-    if (l.expiresDay <= day) return false;
+    if (l.expiresDay <= day) { expiredCount += 1; return false; }
     if (l.kind === "jackpot" && Math.random() < SNIPE_CHANCE_JACKPOT) { sniped = sniped || l.card.title; return false; }
     if (l.kind !== "jackpot") {
       const apport = l.card.downPayment != null ? l.card.downPayment : l.card.cost;
@@ -95,5 +96,5 @@ export function advanceListings(listings, day, cash, urgentBonus = 0) {
   }
   while (next.length < MIN_LISTINGS) next.push(draftListing(day, cash, urgentBonus));
   if (next.length > MAX_LISTINGS) next = next.slice(0, MAX_LISTINGS);
-  return { listings: next, sniped };
+  return { listings: next, sniped, expiredCount };
 }
