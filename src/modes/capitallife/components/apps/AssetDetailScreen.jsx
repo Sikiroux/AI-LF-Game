@@ -34,7 +34,7 @@ function EmployeeRow({ employee, cash, actionPoints, currency, onFire, onTrain, 
   const canTrain = cash >= trainCost && actionPoints >= ACTION_COSTS.train;
   const canFire = cash >= severance && actionPoints >= ACTION_COSTS.fire;
   return (
-    <div style={{ ...styles.card, padding: 12, marginBottom: 8 }}>
+    <div style={{ padding: "12px 0", borderBottom: `1px solid ${C.line}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ fontWeight: 700, fontSize: 13, color: C.ink }}>{employee.name}</div>
         <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, color: C.bad }}>-{f(employee.salary)}/mois</div>
@@ -61,7 +61,7 @@ function EmployeeRow({ employee, cash, actionPoints, currency, onFire, onTrain, 
 function CandidateRow({ candidate, currency, onHire, disabled, C, styles }) {
   const f = (n) => fmt(n, currency);
   return (
-    <div style={{ ...styles.card, padding: 12, marginBottom: 8 }}>
+    <div style={{ padding: "12px 0", borderBottom: `1px solid ${C.line}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ fontWeight: 700, fontSize: 13, color: C.ink }}>{candidate.name}</div>
         <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, color: C.inkSoft }}>{f(candidate.salary)}/mois</div>
@@ -338,7 +338,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
                 <div style={{ marginTop: 12 }}>
                   <div style={{ fontSize: 11.5, color: C.inkSoft, marginBottom: 8 }}>Un loyer plus élevé s'accompagne généralement d'un risque d'impayé supérieur.</div>
                   {tenantCandidates.map((candidate) => (
-                    <div key={candidate.id} style={{ ...styles.card, padding: 11, marginBottom: 8 }}>
+                    <div key={candidate.id} style={{ padding: "11px 0", borderTop: `1px solid ${C.line}` }}>
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                         <div style={{ fontWeight: 700, color: C.ink }}>{candidate.name} · {candidate.profile}</div>
                         <div style={{ fontFamily: "ui-monospace, monospace", color: C.good }}>+{f(candidate.proposedRent)}/mois</div>

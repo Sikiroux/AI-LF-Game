@@ -51,7 +51,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>🏷️ OppMarket</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>OppMarket</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
             {listings.length} annonce{listings.length > 1 ? "s" : ""} active{listings.length > 1 ? "s" : ""} · liquidités {f(cash)}
             {actionPoints != null && <> · négocier coûte <span style={{ color: canNegotiate ? C.ink : C.bad, fontWeight: 600 }}>⚡{ACTION_COSTS.negotiateListing}</span></>}
@@ -79,7 +79,6 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
       <div style={{ ...styles.content, minHeight: 0, padding: "14px 14px 40px", display: "flex", flexDirection: "column", gap: 12, overflowY: "scroll", WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain" }}>
         {filtered.length === 0 && (
           <div style={{ ...styles.card, textAlign: "center", padding: "36px 20px", marginTop: 12 }}>
-            <div style={{ fontSize: 32, marginBottom: 10 }}>🔍</div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>Rien à afficher ici</div>
             <div style={{ fontSize: 12, color: C.inkSoft, marginTop: 4 }}>Aucune annonce dans cette catégorie pour l'instant — revenez demain.</div>
           </div>
@@ -105,22 +104,22 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
                 {photo ? (
                   <img src={`${LISTING_BASE}${photo}`} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
-                  "📷"
+                  <span style={{ fontSize: 11, color: C.inkSoft }}>Image à venir</span>
                 )}
                 {cat && (
-                  <span style={{ position: "absolute", top: 8, left: 8, fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "#fff", padding: "4px 8px", borderRadius: 6, background: C[`cat${cat.badge[0].toUpperCase()}${cat.badge.slice(1)}`] }}>
+                  <span style={{ position: "absolute", top: 8, left: 8, fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: C.onStatus, padding: "4px 8px", borderRadius: 6, background: C[`cat${cat.badge[0].toUpperCase()}${cat.badge.slice(1)}`] }}>
                     {cat.label}
                   </span>
                 )}
                 {l.kind === "jackpot" && (
-                  <span style={{ position: "absolute", top: 8, right: 8, fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "#fff", background: C.warn, padding: "4px 8px", borderRadius: 6 }}>
+                  <span style={{ position: "absolute", top: 8, right: 8, fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: C.onStatus, background: C.warn, padding: "4px 8px", borderRadius: 6 }}>
                     🌟 Exceptionnelle
                   </span>
                 )}
                 <span style={{
                   position: "absolute", bottom: 8, right: 8, fontSize: 10.5, fontWeight: 800,
-                  color: "#fff", padding: "4px 9px", borderRadius: 999,
-                  background: expiryTone === "urgent" ? C.bad : expiryTone === "soon" ? C.warn : "rgba(0,0,0,0.55)",
+                  color: C.onStatus, padding: "4px 9px", borderRadius: 999,
+                  background: expiryTone === "urgent" ? C.bad : expiryTone === "soon" ? C.warn : C.imageOverlay,
                   display: "flex", alignItems: "center", gap: 4,
                 }}>
                   ⏳ {timeLeftLabel(daysLeft)}
@@ -139,11 +138,11 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
                 {(l.inspected || l.negotiated) && (
                   <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
                     {l.inspected && (
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 7px", borderRadius: 6, color: "#fff", background: l.flawed ? C.bad : C.good }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 7px", borderRadius: 6, color: C.onStatus, background: l.flawed ? C.bad : C.good }}>
                         {l.flawed ? "⚠️ Vice caché détecté" : "✓ Inspecté : sain"}
                       </span>
                     )}
-                    {l.negotiated && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 7px", borderRadius: 6, color: "#fff", background: C.accent }}>🤝 Prix négocié</span>}
+                    {l.negotiated && <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 7px", borderRadius: 6, color: C.accentInk, background: C.accent }}>Prix négocié</span>}
                   </div>
                 )}
 
@@ -180,7 +179,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
                     disabled={!canInspect}
                     onClick={() => onInspect(l.id)}
                   >
-                    🔍 Inspecter · ⚡{ACTION_COSTS.inspectListing}
+                    Inspecter · ⚡{ACTION_COSTS.inspectListing}
                   </button>
                 )}
                 {!l.negotiated && (
@@ -189,7 +188,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
                     disabled={!canBargain}
                     onClick={() => onNegotiate(l.id)}
                   >
-                    🤝 Négocier · ⚡{ACTION_COSTS.negotiateListing}
+                    Négocier · ⚡{ACTION_COSTS.negotiateListing}
                   </button>
                 )}
               </div>

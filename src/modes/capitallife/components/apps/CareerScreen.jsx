@@ -43,7 +43,7 @@ export default function CareerScreen({
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>💼 Carrière</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>Carrière</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
             {profession.name} · {f(profession.salary)}/mois
             {fatigue > 0 && <> · <span style={{ color: fatigue > 70 ? C.bad : fatigue > 40 ? C.warn : C.inkSoft, fontWeight: 600 }}>Fatigue {fatigue}%</span></>}
@@ -106,7 +106,7 @@ export default function CareerScreen({
                     {TRAININGS.map((t) => {
                       const afford = cash >= t.cashCost;
                       return (
-                        <div key={t.key} style={{ ...styles.card, padding: 12, marginBottom: 8 }}>
+                        <div key={t.key} style={{ padding: "12px 0", borderTop: `1px solid ${C.line}` }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <div style={{ fontWeight: 700, fontSize: 13, color: C.ink }}>{t.label}</div>
                             <div style={{ fontSize: 11, color: C.inkSoft }}>{t.days} jours</div>
@@ -162,7 +162,7 @@ export default function CareerScreen({
                     {Object.entries(p.jobRequirements || {}).map(([key, min]) => {
                       const met = (skills[key] || 0) >= min;
                       return (
-                        <span key={key} style={{ fontSize: 10.5, padding: "3px 8px", borderRadius: 999, background: met ? C.good : C.bad, color: "#fff", opacity: met ? 0.85 : 0.9 }}>
+                        <span key={key} style={{ fontSize: 10.5, padding: "3px 8px", borderRadius: 999, background: met ? C.good : C.bad, color: C.onStatus, opacity: met ? 0.85 : 0.9 }}>
                           {SKILL_LABELS[key]} ≥{min}
                         </span>
                       );

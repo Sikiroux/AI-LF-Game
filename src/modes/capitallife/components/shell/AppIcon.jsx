@@ -20,7 +20,7 @@ export default function AppIcon({ emoji, label, file, size = 56, onClick, badge 
           emoji
         )}
         {badge != null && badge > 0 && (
-          <span style={{ position: "absolute", top: -4, right: -4, background: C.bad, color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 999, minWidth: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>
+          <span style={{ position: "absolute", top: -4, right: -4, background: C.bad, color: C.onStatus, fontSize: 10, fontWeight: 700, borderRadius: 999, minWidth: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>
             {badge}
           </span>
         )}

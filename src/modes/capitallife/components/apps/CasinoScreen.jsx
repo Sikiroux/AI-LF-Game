@@ -113,7 +113,7 @@ export default function CasinoScreen({ cash, currency, onCashDelta, onBack, hand
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>🎰 Casino — Blackjack</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>Casino — Blackjack</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
             Liquidités {f(cash)} · {handsPlayed} main{handsPlayed > 1 ? "s" : ""} jouée{handsPlayed > 1 ? "s" : ""} · net {netResult >= 0 ? "+" : ""}{f(netResult)}
           </div>

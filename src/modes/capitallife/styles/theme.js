@@ -10,6 +10,8 @@ export const LIGHT_COLORS = {
   bg: "#F6EFE5", surface: "#FFFBF6", surfaceRaised: "#EFE5D8",
   ink: "#171C24", inkSoft: "#6C645D", line: "#DED4C7",
   accent: "#F36B3B", accentInk: "#FFFFFF",
+  onStatus: "#FFFFFF", backdrop: "rgba(8, 13, 22, 0.58)", imageOverlay: "rgba(0, 0, 0, 0.55)",
+  cardShadow: "0 5px 14px rgba(23, 28, 36, 0.08)", buttonShadow: "0 4px 0 rgba(23, 28, 36, 0.12)",
   good: "#079D5B", bad: "#D84145", warn: "#C9820A",
   catImmo: "#C85C35", catBiz: "#169566", catActions: "#337FBE", catEncheres: "#8E5AC9",
   placeholderBg: "#EFE5D8", placeholderLine: "#C8B9A7",
@@ -18,6 +20,8 @@ export const DARK_COLORS = {
   bg: "#0C1422", surface: "#182334", surfaceRaised: "#243146",
   ink: "#F8F2EA", inkSoft: "#99A8BE", line: "#34435C",
   accent: "#FF7B4C", accentInk: "#121923",
+  onStatus: "#FFFFFF", backdrop: "rgba(4, 10, 20, 0.72)", imageOverlay: "rgba(0, 0, 0, 0.62)",
+  cardShadow: "none", buttonShadow: "0 2px 0 rgba(0, 0, 0, 0.28)",
   good: "#36D58A", bad: "#FF7075", warn: "#F2B24C",
   catImmo: "#D98058", catBiz: "#45B887", catActions: "#4890C9", catEncheres: "#AA82DE",
   placeholderBg: "#243146", placeholderLine: "#43536C",
@@ -68,6 +72,7 @@ export const RADIUS = { xs: 6, sm: 8, md: 12, lg: 16, pill: 999 };
 // (App.jsx) pour couvrir tous les écrans sans dupliquer une balise <style>
 // partout.
 export const CL_CSS_EXTRA = `
+  /* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
   /* Hallmark · macrostructure: Workbench · genre: playful · theme: studied-DNA */
   * { box-sizing: border-box; }
   button { font-family: inherit; white-space: nowrap; }
@@ -101,7 +106,7 @@ export const CL_CSS_EXTRA = `
 export function sectorBadge(sector, C) {
   return {
     display: "inline-flex", alignItems: "center", fontSize: 9.5, fontWeight: 700,
-    textTransform: "uppercase", letterSpacing: "0.04em", color: "#fff",
+    textTransform: "uppercase", letterSpacing: "0.04em", color: C.onStatus,
     padding: `${SPACE.xs - 1}px ${SPACE.sm}px`, borderRadius: RADIUS.pill,
     background: SECTOR_COLORS[sector] || C.inkSoft,
   };
@@ -148,11 +153,11 @@ export function getStyles(C) {
       width: 32, height: 32, borderRadius: 10, background: C.surface, border: `1px solid ${C.line}`,
       display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: C.ink, cursor: "pointer", flexShrink: 0,
     },
-    card: { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 18, overflow: "hidden", boxShadow: `0 6px 16px ${C.ink}12` },
+    card: { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 18, overflow: "hidden", boxShadow: C.cardShadow },
     sectionTitle: { fontFamily: DISPLAY_FONT, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: C.inkSoft, fontWeight: 700, margin: "0 0 12px" },
     primaryBtn: {
       background: C.accent, color: C.accentInk, border: "none", borderRadius: 14, padding: `${SPACE.md}px ${SPACE.xl}px`,
-      fontFamily: DISPLAY_FONT, fontWeight: 700, fontSize: 14, cursor: "pointer", boxShadow: `0 7px 16px ${C.accent}35`, whiteSpace: "nowrap",
+      fontFamily: DISPLAY_FONT, fontWeight: 700, fontSize: 14, cursor: "pointer", boxShadow: C.buttonShadow, whiteSpace: "nowrap",
     },
     smallBtn: {
       background: C.surface, color: C.ink, border: `1px solid ${C.line}`, borderRadius: RADIUS.md, padding: `${SPACE.sm}px ${SPACE.lg}px`,

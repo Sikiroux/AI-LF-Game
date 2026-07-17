@@ -111,8 +111,8 @@ export default function CapitalLifeHomeScreen({
 
       <div style={{ ...styles.content, padding: "20px 16px" }}>
         {lastEvent && (
-          <div style={{ ...styles.card, padding: "12px 14px", marginBottom: 18, borderLeft: `3px solid ${lastEvent.tone === "good" ? C.good : lastEvent.tone === "bad" ? C.bad : lastEvent.tone === "warn" ? C.warn : C.accent}` }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: C.ink }}>{lastEvent.title}</div>
+          <div style={{ ...styles.card, padding: "12px 14px", marginBottom: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, fontWeight: 700, color: C.ink }}><span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: 999, background: lastEvent.tone === "good" ? C.good : lastEvent.tone === "bad" ? C.bad : lastEvent.tone === "warn" ? C.warn : C.accent }} />{lastEvent.title}</div>
             <div style={{ fontSize: 11.5, color: C.inkSoft, marginTop: 2, lineHeight: 1.4 }}>{lastEvent.detail}</div>
             {hasSkipReport && (
               <button className="cl-tap"
@@ -177,7 +177,7 @@ export default function CapitalLifeHomeScreen({
       </div>
 
       {pendingSkip && (
-        <div role="dialog" aria-modal="true" aria-label={pendingSkip.label} style={{ position: "fixed", inset: 0, zIndex: 100, display: "grid", placeItems: "center", padding: 24, background: "rgba(8, 13, 22, 0.58)", backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)" }}>
+        <div role="dialog" aria-modal="true" aria-label={pendingSkip.label} style={{ position: "fixed", inset: 0, zIndex: 100, display: "grid", placeItems: "center", padding: 24, background: C.backdrop, backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)" }}>
           <div style={{ ...styles.card, width: "100%", maxWidth: 330, padding: 22, textAlign: "center" }}>
             <div style={{ fontSize: 10, color: C.accent, textTransform: "uppercase", letterSpacing: 1.6, fontWeight: 800 }}>Accélération du calendrier</div>
             <div style={{ fontFamily: DISPLAY_FONT, fontSize: 20, lineHeight: 1.2, color: C.ink, marginTop: 9 }}>{pendingSkip.label}</div>

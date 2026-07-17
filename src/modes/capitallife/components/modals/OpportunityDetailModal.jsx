@@ -48,13 +48,13 @@ export default function OpportunityDetailModal({ listing, cash, currency, action
   const canNegotiate = actionPoints >= ACTION_COSTS.negotiateListing && !listing.negotiated;
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={`Détail de ${card.title}`} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(4,10,20,.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
+    <div role="dialog" aria-modal="true" aria-label={`Détail de ${card.title}`} style={{ position: "fixed", inset: 0, zIndex: 1000, background: C.backdrop, display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
       <div style={{ ...styles.card, position: "relative", width: "min(920px, 100%)", maxHeight: "calc(100vh - 24px)", overflowY: "auto", background: C.bg }}>
         <button className="cl-tap" type="button" aria-label="Fermer la fiche" onClick={onClose} style={{ ...styles.backBtn, position: "absolute", zIndex: 2, top: 10, right: 10, background: C.surfaceRaised, fontSize: 20, fontWeight: 700 }}>×</button>
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.15fr) minmax(280px, .85fr)" }} className="cl-opportunity-detail-grid">
           <section>
             <div style={{ height: 250, position: "relative", background: C.placeholderBg, overflow: "hidden" }}>
-              {photo ? <img src={`${LISTING_BASE}${photo}`} alt={card.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ ...styles.placeholderImg, height: "100%", fontSize: 54 }}>🏠</div>}
+              {photo ? <img src={`${LISTING_BASE}${photo}`} alt={card.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ ...styles.placeholderImg, height: "100%", color: C.inkSoft, fontSize: 12 }}>Image indisponible</div>}
               <span style={{ ...sectorBadge(card.sector, C), position: "absolute", top: 12, left: 12 }}>{TYPE_LABELS[card.type]}</span>
               <span style={{ position: "absolute", top: 12, right: 12, padding: "6px 10px", borderRadius: 999, background: C.surfaceRaised, color: C.ink, fontSize: 11, fontWeight: 700 }}>⏸ Offre réservée</span>
             </div>
@@ -71,8 +71,8 @@ export default function OpportunityDetailModal({ listing, cash, currency, action
                 <Metric C={C} label="Prix" value={listing.negotiated ? "Négocié" : "Non négocié"} tone={listing.negotiated ? "good" : undefined} />
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
-                <button className="cl-tap" style={{ ...styles.smallBtn, opacity: canInspect ? 1 : .45 }} disabled={!canInspect} onClick={() => onInspect(listing.id)}>🔍 Inspecter · ⚡{ACTION_COSTS.inspectListing}</button>
-                <button className="cl-tap" style={{ ...styles.smallBtn, opacity: canNegotiate ? 1 : .45 }} disabled={!canNegotiate} onClick={() => onNegotiate(listing.id)}>🤝 Négocier · ⚡{ACTION_COSTS.negotiateListing}</button>
+                <button className="cl-tap" style={{ ...styles.smallBtn, opacity: canInspect ? 1 : .45 }} disabled={!canInspect} onClick={() => onInspect(listing.id)}>Inspecter · ⚡{ACTION_COSTS.inspectListing}</button>
+                <button className="cl-tap" style={{ ...styles.smallBtn, opacity: canNegotiate ? 1 : .45 }} disabled={!canNegotiate} onClick={() => onNegotiate(listing.id)}>Négocier · ⚡{ACTION_COSTS.negotiateListing}</button>
               </div>
             </div>
           </section>

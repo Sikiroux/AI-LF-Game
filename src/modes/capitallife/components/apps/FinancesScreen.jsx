@@ -33,7 +33,7 @@ export default function FinancesScreen({ day, profession, kids, debts, liabiliti
     <div style={styles.app}>
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
-        <div style={{ fontFamily: DISPLAY_FONT, fontSize: 16, fontWeight: 700, flex: 1 }}>📊 Finances</div>
+        <div style={{ fontFamily: DISPLAY_FONT, fontSize: 16, fontWeight: 700, flex: 1 }}>Finances</div>
         <div style={{ width: 30 }} />
       </div>
 

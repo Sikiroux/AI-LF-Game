@@ -3,6 +3,13 @@
     "date": "2026-07-16",
     "macrostructure": "Workbench",
     "theme": "studied-DNA",
+    "enrichment": "none",
+    "brief": "Capital Life Hallmark cleanup: hierarchy, tokens, restraint and dark-mode shadows"
+  },
+  {
+    "date": "2026-07-16",
+    "macrostructure": "Workbench",
+    "theme": "studied-DNA",
     "enrichment": "decision countdown overlay",
     "brief": "Liberté Financière · Capital Life and Classic redesign"
   }
