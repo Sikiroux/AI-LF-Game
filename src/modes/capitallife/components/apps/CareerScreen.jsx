@@ -3,7 +3,7 @@ import { fmt } from "../../../../utils/format.js";
 import { SKILLS, SKILL_LABELS } from "../../../../data/skills.js";
 import { PROFESSIONS } from "../../../../data/professions.js";
 import {
-  skillLevelLabel, TRAININGS, jobRequirementsMet, applicationChance,
+  skillLevelLabel, TRAININGS, CAREER_PROGRAMS, jobRequirementsMet, hasRequiredQualification, applicationChance,
   JOB_APPLY_PA_COST, JOB_REJECTION_COOLDOWN_DAYS,
 } from "../../engine/career.js";
 import { RENT_TIERS, rentTierByKey, rentCost, moveCost, MOVE_PA_COST } from "../../engine/lifestyle.js";
@@ -26,9 +26,9 @@ function Row({ label, value, tone, C }) {
 }
 
 export default function CareerScreen({
-  profession, skills, training, missions, cash, currency, day, actionPoints, dailyActionPoints,
+  profession, skills, training, qualifications, missions, cash, currency, day, actionPoints, dailyActionPoints,
   fatigue, enCouple, lastJobRejectionDay, rentTier,
-  onBeginTraining, onApplyToJob, onDoMission, onChangeRentTier, onBack,
+  onBeginTraining, onBeginCareerProgram, onApplyToJob, onDoMission, onChangeRentTier, onBack,
 }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
@@ -88,7 +88,7 @@ export default function CareerScreen({
                 {training ? (
                   <>
                     <div style={{ fontSize: 12.5, color: C.ink, marginBottom: 6 }}>
-                      {training.label} en <b>{SKILL_LABELS[training.skillKey]}</b>
+                      {training.label}{training.kind !== "career" && <> en <b>{SKILL_LABELS[training.skillKey]}</b></>}
                     </div>
                     <Row C={C} label="Jours restants" value={`${training.daysRemaining}/${training.totalDays}`} />
                     <Row C={C} label="Coût quotidien" value={`-${training.paCost} PA/jour`} tone="bad" />
@@ -147,9 +147,11 @@ export default function CareerScreen({
             )}
             {PROFESSIONS.filter((p) => p.id !== profession.id).map((p) => {
               const qualified = jobRequirementsMet(skills, p.id);
+              const diplomaOk = hasRequiredQualification(qualifications, p.id);
+              const program = CAREER_PROGRAMS[p.id];
               const chance = qualified ? applicationChance(skills, p.id) : 0;
               const paOk = actionPoints >= JOB_APPLY_PA_COST;
-              const canApply = qualified && paOk && cooldownLeft <= 0;
+              const canApply = qualified && diplomaOk && paOk && cooldownLeft <= 0;
               return (
                 <div key={p.id} style={{ ...styles.card, padding: 12, marginBottom: 8 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -167,6 +169,13 @@ export default function CareerScreen({
                     })}
                   </div>
                   {qualified && <div style={{ fontSize: 10.5, color: C.inkSoft, marginTop: 6 }}>Chance d'acceptation estimée : ~{Math.round(chance * 100)}%</div>}
+                  {program && !diplomaOk && (
+                    <div style={{ marginTop: 7, padding: 9, borderRadius: 8, background: C.surfaceRaised }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: C.ink }}>Diplôme requis : {program.label}</div>
+                      <div style={{ fontSize: 10.5, color: C.inkSoft, marginTop: 3 }}>{program.days} jours · {f(program.cashCost)} · -{program.paCost} PA/jour</div>
+                      <button className="cl-tap" style={{ ...styles.smallBtn, width: "100%", marginTop: 7, opacity: !training && cash >= program.cashCost ? 1 : 0.4 }} disabled={Boolean(training) || cash < program.cashCost} onClick={() => onBeginCareerProgram(p.id)}>Commencer le cursus</button>
+                    </div>
+                  )}
                   <button className="cl-tap"
                     style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8, opacity: canApply ? 1 : 0.4 }}
                     disabled={!canApply}

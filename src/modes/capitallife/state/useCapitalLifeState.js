@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { storage } from "../../../state/storage.js";
-import { computeFinancing, amortizedPayment, calcExpenses, calcPassiveIncome, LIABILITY_LABELS, MAX_DEBT_RATIO } from "../../../engine/financing.js";
+import { computeFinancing, amortizedPayment, calcExpenses, calcPassiveIncome, calcDebtPayments, LIABILITY_LABELS, MAX_DEBT_RATIO } from "../../../engine/financing.js";
 import { generateTokens } from "../../../engine/bourse/tokenGenerator.js";
 import { BROKERAGE_FEE_RATE, tickMarketDays } from "../../../engine/bourse/market.js";
 import { fmt, uid } from "../../../utils/format.js";
@@ -18,7 +18,7 @@ import {
 } from "../engine/assetIndicators.js";
 import { DAILY_ACTION_POINTS, ACTION_COSTS, DIFFICULTY_PRESETS, DEFAULT_DIFFICULTY } from "../engine/actionPoints.js";
 import {
-  TRAININGS, startTraining, tickTraining, jobRequirementsMet, rollApplication,
+  TRAININGS, CAREER_PROGRAMS, startTraining, startCareerProgram, tickTraining, jobRequirementsMet, hasRequiredQualification, rollApplication,
   JOB_APPLY_PA_COST, JOB_REJECTION_COOLDOWN_DAYS, generateMissions, completeMission,
   nextFatigue, rollBurnout, burnoutCost, BURNOUT_LAYOFF_MONTHS, rollDivorce, divorceCost,
 } from "../engine/career.js";
@@ -57,6 +57,7 @@ export default function useCapitalLifeState() {
   // surmenage et statut de couple (cf. engine/career.js).
   const [skills, setSkills] = useState({});
   const [training, setTraining] = useState(null);
+  const [qualifications, setQualifications] = useState({});
   const [missions, setMissions] = useState([]);
   const [fatigue, setFatigue] = useState(0);
   const [enCouple, setEnCouple] = useState(false);
@@ -134,6 +135,8 @@ export default function useCapitalLifeState() {
           if (s.marketTurn !== undefined) setMarketTurn(s.marketTurn);
           if (s.skills) setSkills(s.skills);
           if (s.training !== undefined) setTraining(s.training);
+          if (s.qualifications) setQualifications(s.qualifications);
+          else if (s.profession?.id) setQualifications({ [s.profession.id]: true });
           if (Array.isArray(s.missions)) setMissions(s.missions);
           if (s.fatigue != null) setFatigue(s.fatigue);
           if (s.enCouple !== undefined) setEnCouple(s.enCouple);
@@ -166,10 +169,10 @@ export default function useCapitalLifeState() {
       consecutiveWinningPaydays, economicCycle, economicCycleUntilDay,
       casinoHandsPlayed, casinoNetResult, lastCasinoPlayDay, actionPoints, dailyActionPoints,
       tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn,
-      skills, training, missions, fatigue, enCouple, lastJobRejectionDay, rentTier,
+      skills, training, qualifications, missions, fatigue, enCouple, lastJobRejectionDay, rentTier,
     };
     storage.set(SAVE_KEY, JSON.stringify(s)).catch(() => {});
-  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays, consecutiveWinningPaydays, economicCycle, economicCycleUntilDay, casinoHandsPlayed, casinoNetResult, lastCasinoPlayDay, actionPoints, dailyActionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, missions, fatigue, enCouple, lastJobRejectionDay, rentTier]);
+  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays, consecutiveWinningPaydays, economicCycle, economicCycleUntilDay, casinoHandsPlayed, casinoNetResult, lastCasinoPlayDay, actionPoints, dailyActionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, qualifications, missions, fatigue, enCouple, lastJobRejectionDay, rentTier]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -179,6 +182,7 @@ export default function useCapitalLifeState() {
 
   const hasSave = loaded && day > 0 && phase !== "won" && phase !== "bankrupt";
   const passiveIncome = calcPassiveIncome(assets);
+  const currentDebtPayments = profession ? calcDebtPayments(profession, debts.reduce((s, d) => s + d.monthlyPayment, 0), assets, liabilities) : 0;
 
   // La victoire n'est plus instantanée (cf. WIN_STREAK_TARGET dans dayLoop.js) :
   // elle se décide dans simulateDays/applySimResult, jamais dans un effet
@@ -269,6 +273,7 @@ export default function useCapitalLifeState() {
     setMarketTurn(warmup.marketTurn);
     setSkills({ ...(scenarioDraft.profession.startingSkills || {}) });
     setTraining(null);
+    setQualifications({ [scenarioDraft.profession.id]: true });
     setMissions(generateMissions(scenarioDraft.profession.startingSkills || {}));
     setFatigue(0);
     setEnCouple(Math.random() < 0.5);
@@ -287,6 +292,7 @@ export default function useCapitalLifeState() {
     setLiabilities({});
     setSkills({});
     setTraining(null);
+    setQualifications({});
     setMissions([]);
     setFatigue(0);
     setEnCouple(false);
@@ -385,7 +391,7 @@ export default function useCapitalLifeState() {
     const loanRateMult = marketTurn < economicModifier.expiresTurn ? economicModifier.loanRateMult : 1;
     const grossCashflow = card.cashflow;
     const fin = useLoan
-      ? computeFinancing(card, "simple", 10, loanRateMult, "realiste", 1)
+      ? computeFinancing(card, "realistic", 10, loanRateMult, "realiste", 1)
       : { downPayment: card.cost, loanAmount: 0, loanMonthly: 0, netCashflow: grossCashflow, grossCashflow, annualRate: 0 };
     if (cash < fin.downPayment) return;
 
@@ -402,7 +408,7 @@ export default function useCapitalLifeState() {
     const netCashflow = fin.grossCashflow - loanMonthly - totalSalaries({ employees: indicators?.employees });
 
     if (useLoan) {
-      const currentDebtPayments = debts.reduce((s, d) => s + d.monthlyPayment, 0) + assets.reduce((s, a) => s + (a.loanMonthly || 0), 0);
+      const currentDebtPayments = calcDebtPayments(profession, debts.reduce((s, d) => s + d.monthlyPayment, 0), assets, liabilities);
       const totalIncome = profession.salary + passiveIncome;
       if (totalIncome > 0 && (currentDebtPayments + loanMonthly) / totalIncome > MAX_DEBT_RATIO) {
         banner("Emprunt refusé", `Taux d'endettement trop élevé (max ${Math.round(MAX_DEBT_RATIO * 100)}%).`, "bad");
@@ -461,6 +467,22 @@ export default function useCapitalLifeState() {
     const monthlyPayment = Math.max(1, Math.round(consolidatedTotal / months));
     setDebts([{ id: uid(), reason: "Dette consolidée", monthlyPayment, monthsRemaining: months, totalMonths: months, balance: monthlyPayment * months }]);
     banner("Dettes consolidées", `${active.length} dettes regroupées : ${f(monthlyPayment)}/mois sur ${months} mois (au lieu de ${f(active.reduce((s, d) => s + d.monthlyPayment, 0))}/mois).`, "good");
+  }
+
+  const PERSONAL_LOAN_ANNUAL_RATE = 0.09;
+  function takePersonalLoan(amount, months) {
+    const principal = Math.max(1000, Math.min(50000, Math.round(Number(amount) / 1000) * 1000));
+    const term = [24, 36, 60].includes(Number(months)) ? Number(months) : 36;
+    const monthlyPayment = Math.round(amortizedPayment(principal, PERSONAL_LOAN_ANNUAL_RATE, term / 12));
+    const currentDebtPayments = calcDebtPayments(profession, debts.reduce((s, d) => s + d.monthlyPayment, 0), assets, liabilities);
+    const income = profession.salary + passiveIncome;
+    if (!income || (currentDebtPayments + monthlyPayment) / income > MAX_DEBT_RATIO) {
+      banner("Prêt refusé", `La nouvelle mensualité dépasserait ${Math.round(MAX_DEBT_RATIO * 100)}% d'endettement.`, "bad");
+      return;
+    }
+    setCash((c) => c + principal);
+    setDebts((list) => [...list, { id: uid(), reason: "Prêt personnel bancaire", principal, annualRate: PERSONAL_LOAN_ANNUAL_RATE, monthlyPayment, monthsRemaining: term, totalMonths: term, balance: monthlyPayment * term }]);
+    banner("Prêt accordé", `${f(principal)} versés · ${f(monthlyPayment)}/mois pendant ${term} mois (TAEG simplifié 9%).`, "good");
   }
 
   // --- Mes actifs ---
@@ -750,8 +772,9 @@ export default function useCapitalLifeState() {
     const result = tickTraining(training, skills, numDays);
     setTraining(result.training);
     setSkills(result.skills);
+    if (result.completedProfessionId) setQualifications((q) => ({ ...q, [result.completedProfessionId]: true }));
     setMissions(generateMissions(result.skills, 3, cycleModifiers(economicCycle).missionPayMult));
-    if (result.completed) banner("Formation terminée", "Votre compétence a progressé.", "good");
+    if (result.completed) banner(result.completedProfessionId ? "Cursus terminé" : "Formation terminée", result.completedProfessionId ? "Votre diplôme est validé." : "Votre compétence a progressé.", "good");
     return result.training ? result.training.paCost : 0;
   }
 
@@ -847,6 +870,16 @@ export default function useCapitalLifeState() {
     banner("Formation commencée", `${t.label} en ${SKILL_LABELS[skillKey]} : ${t.days} jours, -${t.paCost} PA/jour, -${f(t.cashCost)}.`, "good");
   }
 
+  function beginCareerProgram(professionId) {
+    if (training) { banner("Cursus impossible", "Une formation est déjà en cours.", "info"); return; }
+    if (qualifications[professionId]) return;
+    const program = CAREER_PROGRAMS[professionId];
+    if (!program || cash < program.cashCost) { banner("Cursus impossible", "Liquidités insuffisantes pour les frais d'inscription.", "info"); return; }
+    setCash((c) => c - program.cashCost);
+    setTraining(startCareerProgram(professionId));
+    banner("Cursus commencé", `${program.label} : ${program.days} jours, -${program.paCost} PA/jour, -${f(program.cashCost)}.`, "good");
+  }
+
   function applyToJob(professionId) {
     if (lastJobRejectionDay != null && day - lastJobRejectionDay < JOB_REJECTION_COOLDOWN_DAYS) {
       banner("Candidature impossible", `Revenez dans ${JOB_REJECTION_COOLDOWN_DAYS - (day - lastJobRejectionDay)} jour${JOB_REJECTION_COOLDOWN_DAYS - (day - lastJobRejectionDay) > 1 ? "s" : ""}.`, "info");
@@ -854,6 +887,10 @@ export default function useCapitalLifeState() {
     }
     if (!jobRequirementsMet(skills, professionId)) {
       banner("Candidature impossible", "Compétences insuffisantes pour ce poste.", "info");
+      return;
+    }
+    if (!hasRequiredQualification(qualifications, professionId)) {
+      banner("Candidature impossible", "Le diplôme ou cursus obligatoire n'est pas validé.", "info");
       return;
     }
     if (!spendActionPoints(JOB_APPLY_PA_COST)) return;
@@ -896,9 +933,9 @@ export default function useCapitalLifeState() {
   return {
     loaded, view, setView, phase,
     scenarioDraft, scenarioPresetKey, changeScenarioPreset, goToNewScenario, rerollScenario, startGame,
-    profession, day, cash, debts, liabilities, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
+    profession, day, cash, debts, liabilities, kids, assets, passiveIncome, currentDebtPayments, hasSave, resetGame, nextDay, skipMonth,
     skipWeek, skipToTrainingEnd,
-    payOffLiability, payOffDebt, consolidateDebts,
+    payOffLiability, payOffDebt, consolidateDebts, takePersonalLoan,
     skipMonthMode, setSkipMonthMode,
     managementThresholdPct, setManagementThresholdPct,
     babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft,
@@ -929,8 +966,8 @@ export default function useCapitalLifeState() {
     currency, setCurrency,
     dailyActionPoints,
     difficulty, setDifficulty,
-    skills, training, missions, fatigue, enCouple, lastJobRejectionDay,
-    beginTraining, applyToJob, doMission,
+    skills, training, qualifications, missions, fatigue, enCouple, lastJobRejectionDay,
+    beginTraining, beginCareerProgram, applyToJob, doMission,
     rentTier, changeRentTier,
     consecutiveWinningPaydays, winStreakTarget: WIN_STREAK_TARGET,
     assetDecision, resolveAssetDecision,

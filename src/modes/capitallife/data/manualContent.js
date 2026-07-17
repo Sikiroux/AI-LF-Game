@@ -42,7 +42,7 @@ export const MANUAL_SECTIONS = [
       { type: "p", text: "C'est ici que vous achetez de l'immobilier locatif, des parts ou la totalité d'entreprises, et des actions. Les annonces apparaissent et expirent en continu — certaines sont accessibles tout de suite, d'autres demandent d'épargner, une poignée sont des occasions exceptionnelles rares." },
       { type: "p", text: "Le cash-flow affiché sur une annonce est une estimation tant que vous ne l'avez pas inspectée (⚡1 PA) — environ 20% des biens/entreprises cachent un vice qui dégrade leur état dès l'achat, invisible sans inspection. Négocier (⚡2 PA) tente de faire baisser l'apport de 10 à 18%, avec une chance de succès liée à votre compétence Vente/Négociation ; en cas d'échec le vendeur peut se retirer de la table." },
       { type: "p", text: "Attention aux acheteurs concurrents : une annonce abordable ou exceptionnelle peut être raflée par quelqu'un d'autre avant sa date d'expiration affichée — ne laissez pas traîner une bonne affaire." },
-      { type: "p", text: "À l'achat, vous choisissez entre payer comptant (pas de dette, mais tout votre apport y passe) ou financer avec un prêt (moins de liquidités immobilisées, mais une mensualité qui pèse sur votre taux d'endettement — la banque refuse au-delà de 33%)." },
+      { type: "p", text: "À l'achat, vous choisissez entre payer comptant, financer avec intérêts seuls, ou ouvrir l'option avancée de prêt amortissable. L'apport minimal dépend du bien (20% en immobilier, 30% pour une entreprise) et la banque additionne toutes vos mensualités avant d'appliquer le plafond de 33% d'endettement." },
     ],
   },
   {
@@ -71,7 +71,7 @@ export const MANUAL_SECTIONS = [
     title: "💳 Mes dettes",
     body: [
       { type: "p", text: "Regroupe vos dettes de départ (prêt étudiant, crédit auto, carte de crédit...) et les emprunts contractés pour vos achats. Vous pouvez rembourser une dette en un coup si vous avez les liquidités, ou passer un prêt en mensualités classiques (capital + intérêts, le solde baisse vraiment) au lieu d'intérêts seuls." },
-      { type: "p", text: "Si vous cumulez au moins deux dettes de départ, la consolidation les regroupe en une seule mensualité plus légère — un vrai outil de redressement, pas gratuit : 10% de frais étalés sur une durée plus longue, donc plus d'intérêts payés au total. À utiliser en cas de vrai coup dur, pas par réflexe." },
+      { type: "p", text: "L'écran permet aussi de demander un prêt personnel bancaire de 1 000 à 50 000, sur 24, 36 ou 60 mois, au taux annuel simplifié de 9%. La banque refuse si la nouvelle mensualité porte l'endettement total au-delà de 33%. Si vous cumulez au moins deux dettes de scénario ou d'imprévus, leur consolidation les regroupe avec 10% de frais." },
     ],
   },
   {
@@ -79,7 +79,7 @@ export const MANUAL_SECTIONS = [
     label: "Carrière",
     title: "💼 Carrière",
     body: [
-      { type: "p", text: "Vos compétences ne sont pas une jauge unique : chacune (communication, analyse, vente, technique...) se développe séparément, soit par la formation (coûte des PA/jour pendant sa durée + de l'argent), soit par la pratique via des missions freelance ponctuelles." },
+      { type: "p", text: "Vos compétences se développent séparément par la formation ou la pratique. Elles ne remplacent toutefois plus un diplôme : les métiers réglementés exigent un cursus dédié. Devenir médecin demande notamment 730 jours de jeu, 90 000 de frais d'inscription et 3 PA par jour, en plus de seuils élevés en santé, analyse, communication et organisation." },
       { type: "p", text: "Changer de poste demande de remplir les seuils de compétences requis ET de réussir la candidature — être tout juste qualifié ne suffit pas, être largement au-dessus des seuils augmente vos chances. Une candidature refusée impose un délai avant de réessayer." },
       { type: "p", text: "Le train de vie (logement) que vous choisissez ici modifie votre budget de PA quotidien et vos dépenses fixes — un vrai arbitrage confort contre marge de manœuvre." },
     ],

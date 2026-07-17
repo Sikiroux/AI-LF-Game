@@ -29,6 +29,24 @@ export const TRAININGS = [
   { key: "intensive", label: "Parcours professionnel", days: 45, paCost: 2, cashCost: 4200, skillGain: 26 },
 ];
 
+// Les compétences ne remplacent pas un diplôme. Ces cursus sont requis avant
+// de pouvoir postuler aux métiers longs/réglementés. Un joueur qui commence
+// avec l'un de ces métiers possède déjà la qualification correspondante.
+export const CAREER_PROGRAMS = {
+  instit: { label: "Diplôme d'enseignement", days: 365, cashCost: 18000, paCost: 2 },
+  infirmier: { label: "Diplôme de soins infirmiers", days: 540, cashCost: 32000, paCost: 2 },
+  policier: { label: "École de police", days: 270, cashCost: 12000, paCost: 2 },
+  ingenieur: { label: "Cursus d'ingénierie", days: 540, cashCost: 42000, paCost: 2 },
+  avocat: { label: "Cursus de droit et barreau", days: 730, cashCost: 65000, paCost: 3 },
+  medecin: { label: "Cursus médical accéléré", days: 730, cashCost: 90000, paCost: 3 },
+};
+
+export function startCareerProgram(professionId) {
+  const p = CAREER_PROGRAMS[professionId];
+  if (!p) return null;
+  return { kind: "career", professionId, label: p.label, daysRemaining: p.days, totalDays: p.days, paCost: p.paCost };
+}
+
 export function startTraining(skillKey, trainingKey) {
   const t = TRAININGS.find((x) => x.key === trainingKey);
   if (!t) return null;
@@ -43,10 +61,15 @@ export function tickTraining(training, skills, numDays = 1) {
   if (!training) return { training: null, skills, completed: false };
   const daysRemaining = training.daysRemaining - numDays;
   if (daysRemaining <= 0) {
+    if (training.kind === "career") return { training: null, skills, completed: true, completedProfessionId: training.professionId };
     const next = { ...skills, [training.skillKey]: clamp((skills[training.skillKey] || 0) + training.skillGain) };
     return { training: null, skills: next, completed: true };
   }
   return { training: { ...training, daysRemaining }, skills, completed: false };
+}
+
+export function hasRequiredQualification(qualifications, professionId) {
+  return !CAREER_PROGRAMS[professionId] || Boolean(qualifications?.[professionId]);
 }
 
 // --- Job board : chaque poste (même roster que PROFESSIONS) exige un set de

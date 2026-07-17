@@ -55,5 +55,5 @@ export const PROFESSIONS = [
     liabilities:{mortgage:350000, carLoan:10000, creditCard:10000, schoolLoan:45000},
     perChild:300, cash:7000, savings:4000,
     startingSkills:{sante:60, analyse:45, communication:35},
-    jobRequirements:{sante:45, analyse:30, communication:20} },
+    jobRequirements:{sante:75, analyse:65, communication:50, organisation:40} },
 ];

@@ -24,9 +24,9 @@ export default function CapitalLifeApp({ onExitHome }) {
   const {
     loaded, view, setView, phase,
     scenarioDraft, scenarioPresetKey, changeScenarioPreset, goToNewScenario, rerollScenario, startGame,
-    profession, day, cash, debts, liabilities, kids, assets, passiveIncome, hasSave, resetGame, nextDay, skipMonth,
+    profession, day, cash, debts, liabilities, kids, assets, passiveIncome, currentDebtPayments, hasSave, resetGame, nextDay, skipMonth,
     skipWeek, skipToTrainingEnd,
-    payOffLiability, payOffDebt,
+    payOffLiability, payOffDebt, takePersonalLoan,
     skipMonthMode, setSkipMonthMode,
     managementThresholdPct, setManagementThresholdPct,
     babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft, lastEvent, lastSkipReport,
@@ -42,8 +42,8 @@ export default function CapitalLifeApp({ onExitHome }) {
     casinoHandsPlayed, casinoNetResult, actionPoints, onCasinoCashDelta, onCasinoHandPlayed,
     currency, setCurrency,
     dailyActionPoints, difficulty, setDifficulty,
-    skills, training, missions, fatigue, enCouple, lastJobRejectionDay,
-    beginTraining, applyToJob, doMission,
+    skills, training, qualifications, missions, fatigue, enCouple, lastJobRejectionDay,
+    beginTraining, beginCareerProgram, applyToJob, doMission,
     rentTier, changeRentTier,
     consecutiveWinningPaydays, winStreakTarget,
     assetDecision, resolveAssetDecision,
@@ -150,11 +150,11 @@ export default function CapitalLifeApp({ onExitHome }) {
   if (view === "career") {
     return (
       <CareerScreen
-        profession={profession} skills={skills} training={training} missions={missions}
+        profession={profession} skills={skills} training={training} qualifications={qualifications} missions={missions}
         cash={cash} currency={currency} day={day} actionPoints={actionPoints} dailyActionPoints={dailyActionPoints}
         fatigue={fatigue} enCouple={enCouple} lastJobRejectionDay={lastJobRejectionDay}
         rentTier={rentTier}
-        onBeginTraining={beginTraining} onApplyToJob={applyToJob} onDoMission={doMission} onChangeRentTier={changeRentTier}
+        onBeginTraining={beginTraining} onBeginCareerProgram={beginCareerProgram} onApplyToJob={applyToJob} onDoMission={doMission} onChangeRentTier={changeRentTier}
         onBack={() => setView("game")}
       />
     );
@@ -187,6 +187,7 @@ export default function CapitalLifeApp({ onExitHome }) {
         onPayOffLiability={payOffLiability}
         onPayOffDebt={payOffDebt}
         onConsolidateDebts={consolidateDebts}
+        onTakePersonalLoan={takePersonalLoan}
         onBack={() => setView("game")}
       />
     );
@@ -214,12 +215,12 @@ export default function CapitalLifeApp({ onExitHome }) {
             fastCash={0}
             currency={currency}
             downPaymentPct={10}
-            financingMode="simple"
+            financingMode="realistic"
             yieldMode="realiste"
             customYieldMultiplier={1}
             loanRateMult={1}
             debtRatioEnabled={true}
-            currentDebtPayments={debts.reduce((s, d) => s + d.monthlyPayment, 0) + assets.reduce((s, a) => s + (a.loanMonthly || 0), 0)}
+            currentDebtPayments={currentDebtPayments}
             totalIncome={profession ? profession.salary + passiveIncome : 0}
             onBuy={(card, mode) => buyListing(card, mode, pendingDecision.listingId)}
             onSkip={skipListing}

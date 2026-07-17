@@ -33,7 +33,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
   const styles = getStyles(C);
   const [filter, setFilter] = useState("all");
   const f = (n) => fmt(n, currency);
-  const canNegotiate = actionPoints == null || actionPoints >= ACTION_COSTS.buyAsset;
+  const canNegotiate = actionPoints == null || actionPoints >= ACTION_COSTS.negotiateListing;
   const canInspect = actionPoints == null || actionPoints >= ACTION_COSTS.inspectListing;
   const canBargain = actionPoints == null || actionPoints >= ACTION_COSTS.negotiateListing;
 
@@ -47,7 +47,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
           <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>🏷️ OppMarket</div>
           <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 1 }}>
             {listings.length} annonce{listings.length > 1 ? "s" : ""} active{listings.length > 1 ? "s" : ""} · liquidités {f(cash)}
-            {actionPoints != null && <> · négocier coûte <span style={{ color: canNegotiate ? C.ink : C.bad, fontWeight: 600 }}>⚡{ACTION_COSTS.buyAsset}</span></>}
+            {actionPoints != null && <> · négocier coûte <span style={{ color: canNegotiate ? C.ink : C.bad, fontWeight: 600 }}>⚡{ACTION_COSTS.negotiateListing}</span></>}
           </div>
         </div>
       </div>

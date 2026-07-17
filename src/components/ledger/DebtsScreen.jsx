@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { fmt } from "../../utils/format.js";
 import { LIABILITY_KEYS, LIABILITY_LABELS } from "../../engine/financing.js";
 import { styles as classicStyles, COLORS as classicColors, CSS_EXTRA } from "../../styles/theme.js";
@@ -8,7 +9,7 @@ import DebtCard from "./DebtCard.jsx";
 // logique de remboursement et même façon de combiner les dettes de départ
 // (liabilities, communes aux deux modes) et les emprunts/imprévus propres à
 // Capital Life (`extraDebts`) — seul l'habillage visuel change avec `variant`.
-export default function DebtsScreen({ variant, profession, liabilities, extraDebts = [], cash, currency, onPayOffLiability, onPayOffDebt, onConsolidateDebts, onBack }) {
+export default function DebtsScreen({ variant, profession, liabilities, extraDebts = [], cash, currency, onPayOffLiability, onPayOffDebt, onConsolidateDebts, onTakePersonalLoan, onBack }) {
   const capitalLifeColors = useCapitalLifeColors();
   const f = (n) => fmt(n, currency);
 
@@ -20,6 +21,8 @@ export default function DebtsScreen({ variant, profession, liabilities, extraDeb
   }));
   const all = [...liabilityDebts, ...loanDebts];
   const totalBalance = all.reduce((s, d) => s + d.balance, 0);
+  const [loanAmount, setLoanAmount] = useState(5000);
+  const [loanTerm, setLoanTerm] = useState(36);
 
   function handlePayOff(id) {
     if (liabilityDebts.some((d) => d.id === id)) onPayOffLiability(id);
@@ -44,6 +47,15 @@ export default function DebtsScreen({ variant, profession, liabilities, extraDeb
         <div style={{ ...s.content, padding: 16 }}>
           {all.length === 0 && <div style={{ fontSize: 13, color: C.inkSoft, fontStyle: "italic", textAlign: "center", marginTop: 24 }}>Aucune dette en cours.</div>}
           {all.map((d) => <DebtCard key={d.id} debt={d} currency={currency} cash={cash} onPayOff={handlePayOff} theme={theme} />)}
+          {onTakePersonalLoan && (
+            <div style={{ ...s.card, padding: 14, marginTop: 12 }}>
+              <div style={{ fontWeight: 700, color: C.ink }}>Prêt personnel bancaire</div>
+              <div style={{ fontSize: 11, color: C.inkSoft, margin: "5px 0 10px" }}>1 000 à 50 000 · taux annuel simplifié 9% · plafond d'endettement 33%.</div>
+              <input type="number" min="1000" max="50000" step="1000" value={loanAmount} onChange={(e) => setLoanAmount(e.target.value)} style={{ width: "100%", boxSizing: "border-box", padding: 9, borderRadius: 8, border: `1px solid ${C.line}`, background: C.surfaceRaised, color: C.ink }} />
+              <div style={{ display: "flex", gap: 6, marginTop: 8 }}>{[24, 36, 60].map((m) => <button key={m} style={{ ...s.chip, ...(loanTerm === m ? s.chipActive : {}) }} onClick={() => setLoanTerm(m)}>{m} mois</button>)}</div>
+              <button style={{ ...s.primaryBtn, width: "100%", marginTop: 10 }} onClick={() => onTakePersonalLoan(loanAmount, loanTerm)}>Demander le prêt</button>
+            </div>
+          )}
           {onConsolidateDebts && loanDebts.length >= 2 && (
             <button style={{ ...s.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 10 }} onClick={onConsolidateDebts}>
               Consolider mes dettes en une seule mensualité (frais de 10%)
