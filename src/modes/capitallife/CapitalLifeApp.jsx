@@ -19,11 +19,14 @@ import DebtsScreen from "../../components/ledger/DebtsScreen.jsx";
 import AssetIncidentModal from "./components/modals/AssetIncidentModal.jsx";
 import ForecastScreen from "./components/apps/ForecastScreen.jsx";
 import CapitalLifeManualScreen from "./components/screens/CapitalLifeManualScreen.jsx";
+import CapitalLifeModeSelectScreen from "./components/screens/CapitalLifeModeSelectScreen.jsx";
+import ChallengeResultScreen from "./components/screens/ChallengeResultScreen.jsx";
 
 export default function CapitalLifeApp({ onExitHome }) {
   const {
     loaded, view, setView, phase,
-    scenarioDraft, scenarioPresetKey, changeScenarioPreset, goToNewScenario, rerollScenario, startGame,
+    scenarioDraft, scenarioPresetKey, changeScenarioPreset, goToNewScenario, selectSandboxMode, selectChallengeMode, rerollScenario, startGame,
+    gameMode, activeChallenge, challengeProgress,
     profession, day, cash, debts, liabilities, kids, assets, passiveIncome, currentDebtPayments, hasSave, resetGame, nextDay, skipMonth,
     skipWeek, skipToTrainingEnd,
     payOffLiability, payOffDebt, takePersonalLoan,
@@ -57,6 +60,9 @@ export default function CapitalLifeApp({ onExitHome }) {
   if (view === "manual") {
     return <CapitalLifeManualScreen onBack={() => setView("menu")} />;
   }
+  if (view === "modeSelect") {
+    return <CapitalLifeModeSelectScreen onSandbox={selectSandboxMode} onChallenge={() => selectChallengeMode("debt_escape_24")} onBack={() => setView("menu")} />;
+  }
   if (view === "options") {
     return (
       <CapitalLifeOptionsScreen
@@ -79,11 +85,15 @@ export default function CapitalLifeApp({ onExitHome }) {
     return (
       <ScenarioScreen
         scenario={scenarioDraft} currency={currency}
+        gameMode={gameMode}
         difficulty={difficulty} onChangeDifficulty={setDifficulty}
         presetKey={scenarioPresetKey} onChangePreset={changeScenarioPreset}
         onStart={startGame} onReroll={rerollScenario} onBack={() => setView("menu")}
       />
     );
+  }
+  if (phase === "challengeWon" || phase === "challengeLost") {
+    return <ChallengeResultScreen success={phase === "challengeWon"} progress={challengeProgress} challenge={activeChallenge} currency={currency} onReset={resetGame} />;
   }
   if (phase === "won") {
     return <CapitalLifeWonScreen day={day} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} debts={debts} currency={currency} onReset={resetGame} />;
@@ -250,6 +260,8 @@ export default function CapitalLifeApp({ onExitHome }) {
       winStreakTarget={winStreakTarget}
       assetsNeedingAttention={assets.filter((a) => a.condition != null && a.condition < 50).length}
       skipMonthMode={skipMonthMode}
+      challenge={activeChallenge}
+      challengeProgress={challengeProgress}
       onChangeSkipMonthMode={setSkipMonthMode}
       onNextDay={nextDay}
       onSkipMonth={skipMonth}

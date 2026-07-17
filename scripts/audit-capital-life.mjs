@@ -81,9 +81,14 @@ function dailyFreelanceIncome(profession, random) {
   }
 }
 
-function simulate(profession, strategy, seed) {
+function simulate(profession, strategy, seed, fixedChallenge = false) {
   const random = rng(seed);
   const state = startingState(profession, random);
+  if (fixedChallenge) {
+    state.cash = 1200;
+    state.liabilities = { mortgage: 0, carLoan: 4500, creditCard: 6500, schoolLoan: 3500 };
+    state.scenarioDebt = { balance: 9360, monthlyPayment: 260, monthsRemaining: 36 };
+  }
   const startingDebt = totalDebt(state);
 
   for (let month = 1; month <= MONTHS; month += 1) {
@@ -154,14 +159,25 @@ for (const profession of PROFESSIONS) {
   }
 }
 
+const challengeProfession = PROFESSIONS.find((profession) => profession.id === "secretaire");
+report.challenge = { id: "debt_escape_24", strategies: {} };
+for (const strategy of strategies) {
+  const results = Array.from({ length: RUNS }, (_, index) => simulate(challengeProfession, strategy, 7000001 + index * 131, true));
+  report.challenge.strategies[strategy] = summarize(results);
+}
+
 const euros = (value) => `${Math.round(value).toLocaleString("fr-FR")} €`;
 const pct = (value) => `${Math.round(value * 100)} %`;
 const rows = PROFESSIONS.flatMap((profession) => strategies.map((strategy) => {
   const result = report.professions[profession.id][strategy];
   return `| ${profession.name} | ${strategy} | ${euros(result.medianNetWorth)} | ${euros(result.medianDebt)} | ${pct(result.debtFreeRate)} | ${result.medianDebtFreeMonth ?? "—"} | ${euros(result.medianFreelanceEarned)} |`;
 }));
+const challengeRows = strategies.map((strategy) => {
+  const result = report.challenge.strategies[strategy];
+  return `| ${strategy} | ${pct(result.debtFreeRate)} | ${result.medianDebtFreeMonth ?? "—"} | ${euros(result.medianDebt)} | ${euros(result.medianNetWorth)} |`;
+});
 
-const markdown = `# Audit d’équilibrage — Capital Life\n\nGénéré le ${new Date().toLocaleString("fr-FR")} avec ${RUNS.toLocaleString("fr-FR")} simulations par métier et stratégie, sur ${MONTHS} mois.\n\n## Périmètre\n\n${report.assumptions.map((item) => `- ${item}`).join("\n")}\n\n## Résultats\n\n| Métier | Stratégie | Patrimoine médian | Dette médiane | Sans dette | Mois médian | Revenus freelance |\n|---|---|---:|---:|---:|---:|---:|\n${rows.join("\n")}\n\n## Lecture initiale\n\n- Une stratégie est suspecte si elle domine presque tous les métiers sans contrepartie de risque, de temps ou de compétence.\n- Les mensualités persistantes signalent les dettes dont la durée dépasse la fenêtre de 24 mois.\n- Le freelance hebdomadaire mesure le plafond provisoire du bouton de mission, avant la future simulation de contrats.\n`;
+const markdown = `# Audit d’équilibrage — Capital Life\n\nGénéré le ${new Date().toLocaleString("fr-FR")} avec ${RUNS.toLocaleString("fr-FR")} simulations par métier et stratégie, sur ${MONTHS} mois.\n\n## Périmètre\n\n${report.assumptions.map((item) => `- ${item}`).join("\n")}\n\n## Défi : Sortir du piège\n\n| Stratégie | Réussite | Mois médian | Dette finale | Patrimoine final |\n|---|---:|---:|---:|---:|\n${challengeRows.join("\n")}\n\n## Résultats généraux\n\n| Métier | Stratégie | Patrimoine médian | Dette médiane | Sans dette | Mois médian | Revenus freelance |\n|---|---|---:|---:|---:|---:|---:|\n${rows.join("\n")}\n\n## Lecture initiale\n\n- Une stratégie est suspecte si elle domine presque tous les métiers sans contrepartie de risque, de temps ou de compétence.\n- Les mensualités persistantes signalent les dettes dont la durée dépasse la fenêtre de 24 mois.\n- Le freelance hebdomadaire mesure le plafond provisoire du bouton de mission, avant la future simulation de contrats.\n`;
 
 mkdirSync("reports", { recursive: true });
 writeFileSync("reports/capital-life-balance.json", `${JSON.stringify(report, null, 2)}\n`);

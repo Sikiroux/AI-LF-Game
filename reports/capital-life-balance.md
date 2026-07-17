@@ -1,6 +1,6 @@
 # Audit d’équilibrage — Capital Life
 
-Généré le 16/07/2026 18:29:23 avec 1 000 simulations par métier et stratégie, sur 24 mois.
+Généré le 16/07/2026 18:47:53 avec 1 000 simulations par métier et stratégie, sur 24 mois.
 
 ## Périmètre
 
@@ -8,7 +8,15 @@ Généré le 16/07/2026 18:29:23 avec 1 000 simulations par métier et straté
 - Les mensualités réduisent le capital après application du taux propre à chaque type de dette.
 - Freelance hebdomadaire exécute les trois missions renouvelées chaque semaine.
 
-## Résultats
+## Défi : Sortir du piège
+
+| Stratégie | Réussite | Mois médian | Dette finale | Patrimoine final |
+|---|---:|---:|---:|---:|
+| passive_saver | 0 % | — | 18 447 € | 3 873 € |
+| debt_first | 100 % | 22 | 0 € | 4 655 € |
+| freelance_weekly | 100 % | 16 | 0 € | 14 031 € |
+
+## Résultats généraux
 
 | Métier | Stratégie | Patrimoine médian | Dette médiane | Sans dette | Mois médian | Revenus freelance |
 |---|---|---:|---:|---:|---:|---:|

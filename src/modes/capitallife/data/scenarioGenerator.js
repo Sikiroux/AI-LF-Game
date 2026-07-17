@@ -52,6 +52,26 @@ export const SCENARIO_PRESETS = [
     description: "La partie démarre avec un contexte économique dégradé.",
     apply: (draft) => ({ ...draft, startingEconomy: "recession" }),
   },
+  {
+    key: "debt_escape_24",
+    label: "Sortir du piège",
+    description: "Défi de 24 mois : dettes coûteuses, faible réserve et aucun actif au départ.",
+    challengeOnly: true,
+    apply: (draft) => ({
+      ...draft,
+      profession: PROFESSIONS.find((profession) => profession.id === "secretaire") || draft.profession,
+      startingCash: Math.min(1200, draft.startingCash),
+      liabilities: {
+        mortgage: 0,
+        carLoan: Math.max(4500, draft.liabilities.carLoan || 0),
+        creditCard: Math.max(6500, draft.liabilities.creditCard || 0),
+        schoolLoan: Math.max(3500, draft.liabilities.schoolLoan || 0),
+      },
+      debt: { ...draft.debt, reason: "Crédit consommation", monthlyPayment: 260, monthsRemaining: 36, totalMonths: 36, balance: 9360 },
+      startingKids: 0,
+      startingAssetHint: null,
+    }),
+  },
 ];
 
 export function randomizeCapitalLifeLiabilities(profession) {

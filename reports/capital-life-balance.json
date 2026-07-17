@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-17T04:29:22.648Z",
+  "generatedAt": "2026-07-17T04:47:51.932Z",
   "runsPerCase": 1000,
   "months": 24,
   "assumptions": [
@@ -309,6 +309,47 @@
         "medianDebtFreeMonth": 9,
         "bankruptRate": 0,
         "medianFreelanceEarned": 13403,
+        "persistentPaymentRate": 0
+      }
+    }
+  },
+  "challenge": {
+    "id": "debt_escape_24",
+    "strategies": {
+      "passive_saver": {
+        "medianCash": 22320,
+        "medianNetWorth": 3873,
+        "medianDebt": 18447,
+        "p10NetWorth": 3873,
+        "p90NetWorth": 3873,
+        "debtFreeRate": 0,
+        "medianDebtFreeMonth": null,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 1
+      },
+      "debt_first": {
+        "medianCash": 4655,
+        "medianNetWorth": 4655,
+        "medianDebt": 0,
+        "p10NetWorth": 4655,
+        "p90NetWorth": 4655,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 22,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 0,
+        "persistentPaymentRate": 0
+      },
+      "freelance_weekly": {
+        "medianCash": 14031,
+        "medianNetWorth": 14031,
+        "medianDebt": 0,
+        "p10NetWorth": 13575,
+        "p90NetWorth": 14434,
+        "debtFreeRate": 1,
+        "medianDebtFreeMonth": 16,
+        "bankruptRate": 0,
+        "medianFreelanceEarned": 8495,
         "persistentPaymentRate": 0
       }
     }

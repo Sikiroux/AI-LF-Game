@@ -13,7 +13,7 @@ function Row({ label, value, bold, tone, C }) {
   );
 }
 
-export default function ScenarioScreen({ scenario, currency, difficulty, onChangeDifficulty, presetKey = "random", onChangePreset, onStart, onReroll, onBack }) {
+export default function ScenarioScreen({ scenario, currency, gameMode = "sandbox", difficulty, onChangeDifficulty, presetKey = "random", onChangePreset, onStart, onReroll, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const { profession, startingCash, liabilities, debt } = scenario;
@@ -35,7 +35,7 @@ export default function ScenarioScreen({ scenario, currency, difficulty, onChang
           <div style={{ padding: 16 }}>
             <div style={styles.sectionTitle}>Profil de départ</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-              {SCENARIO_PRESETS.map((preset) => (
+              {SCENARIO_PRESETS.filter((preset) => gameMode === "challenge" ? preset.challengeOnly : !preset.challengeOnly).map((preset) => (
                 <button className="cl-tap" key={preset.key} style={{ ...styles.chip, ...(presetKey === preset.key ? styles.chipActive : {}) }} onClick={() => onChangePreset?.(preset.key)}>
                   {preset.label}
                 </button>
@@ -44,6 +44,7 @@ export default function ScenarioScreen({ scenario, currency, difficulty, onChang
             <div style={{ fontSize: 11.5, color: C.inkSoft, lineHeight: 1.5, marginTop: 10 }}>
               {(SCENARIO_PRESETS.find((preset) => preset.key === presetKey) || SCENARIO_PRESETS[0]).description}
             </div>
+            {gameMode === "challenge" && <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.line}`, color: C.accent, fontSize: 11.5, fontWeight: 700 }}>Échéance : 24 mois · objectif : toutes les dettes remboursées</div>}
           </div>
         </div>
 

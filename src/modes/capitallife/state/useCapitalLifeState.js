@@ -26,6 +26,8 @@ import { PROFESSIONS } from "../../../data/professions.js";
 import { SKILL_LABELS } from "../../../data/skills.js";
 import { DEFAULT_RENT_TIER, rentTierByKey, rentCost, moveCost, MOVE_PA_COST } from "../engine/lifestyle.js";
 import { REALTIME_TICK_MS, MAX_REALTIME_CATCHUP_TICKS } from "../engine/economicClock.js";
+import { challengeById } from "../data/challengeDefinitions.js";
+import { challengeDebtTotal, evaluateChallenge } from "../engine/challengeEngine.js";
 
 const SAVE_KEY = "capitallife-save";
 const SETTINGS_KEY = "capitallife-settings";
@@ -36,6 +38,10 @@ export default function useCapitalLifeState() {
   const [phase, setPhase] = useState("playing"); // playing | won | bankrupt
   const [scenarioDraft, setScenarioDraft] = useState(null);
   const [scenarioPresetKey, setScenarioPresetKey] = useState("random");
+  const [gameMode, setGameMode] = useState("sandbox");
+  const [activeChallengeId, setActiveChallengeId] = useState(null);
+  const [challengeStartDay, setChallengeStartDay] = useState(1);
+  const [challengeInitialDebt, setChallengeInitialDebt] = useState(0);
   const [profession, setProfession] = useState(null);
   const [day, setDay] = useState(0);
   const [cash, setCash] = useState(0);
@@ -109,6 +115,10 @@ export default function useCapitalLifeState() {
           if (s.cash != null) setCash(s.cash);
           if (s.profession) setProfession(s.profession);
           if (s.phase) setPhase(s.phase);
+          if (s.gameMode) setGameMode(s.gameMode);
+          if (s.activeChallengeId !== undefined) setActiveChallengeId(s.activeChallengeId);
+          if (s.challengeStartDay != null) setChallengeStartDay(s.challengeStartDay);
+          if (s.challengeInitialDebt != null) setChallengeInitialDebt(s.challengeInitialDebt);
           if (s.casinoHandsPlayed != null) setCasinoHandsPlayed(s.casinoHandsPlayed);
           if (s.casinoNetResult != null) setCasinoNetResult(s.casinoNetResult);
           if (s.lastCasinoPlayDay !== undefined) setLastCasinoPlayDay(s.lastCasinoPlayDay);
@@ -170,7 +180,7 @@ export default function useCapitalLifeState() {
   useEffect(() => {
     if (!loaded || day === 0) return;
     const s = {
-      day, cash, profession, phase, debts, liabilities, kids, assets, listings, opportunityTurn, lastRealtimeAt, layoffMonthsLeft,
+      day, cash, profession, phase, gameMode, activeChallengeId, challengeStartDay, challengeInitialDebt, debts, liabilities, kids, assets, listings, opportunityTurn, lastRealtimeAt, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays,
       consecutiveWinningPaydays, economicCycle, economicCycleUntilDay,
       casinoHandsPlayed, casinoNetResult, lastCasinoPlayDay, actionPoints, dailyActionPoints,
@@ -178,7 +188,7 @@ export default function useCapitalLifeState() {
       skills, training, qualifications, missions, fatigue, enCouple, lastJobRejectionDay, rentTier,
     };
     storage.set(SAVE_KEY, JSON.stringify(s)).catch(() => {});
-  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, opportunityTurn, lastRealtimeAt, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays, consecutiveWinningPaydays, economicCycle, economicCycleUntilDay, casinoHandsPlayed, casinoNetResult, lastCasinoPlayDay, actionPoints, dailyActionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, qualifications, missions, fatigue, enCouple, lastJobRejectionDay, rentTier]);
+  }, [loaded, day, cash, profession, phase, gameMode, activeChallengeId, challengeStartDay, challengeInitialDebt, debts, liabilities, kids, assets, listings, opportunityTurn, lastRealtimeAt, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays, consecutiveWinningPaydays, economicCycle, economicCycleUntilDay, casinoHandsPlayed, casinoNetResult, lastCasinoPlayDay, actionPoints, dailyActionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, qualifications, missions, fatigue, enCouple, lastJobRejectionDay, rentTier]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -225,9 +235,22 @@ export default function useCapitalLifeState() {
     return () => { window.clearInterval(interval); document.removeEventListener("visibilitychange", onVisible); };
   }, [loaded, day, phase, lastRealtimeAt, tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive, assets, currency, listings, opportunityTurn, cash, pendingDecision]);
 
-  const hasSave = loaded && day > 0 && phase !== "won" && phase !== "bankrupt";
+  const hasSave = loaded && day > 0 && !["won", "bankrupt", "challengeWon", "challengeLost"].includes(phase);
   const passiveIncome = calcPassiveIncome(assets);
   const currentDebtPayments = profession ? calcDebtPayments(profession, debts.reduce((s, d) => s + d.monthlyPayment, 0), assets, liabilities) : 0;
+  const activeChallenge = challengeById(activeChallengeId);
+  const challengeMonthlyExpenses = profession ? calcExpenses(profession, kids, debts.reduce((sum, debt) => sum + debt.monthlyPayment, 0), liabilities) + rentCost(rentTier, profession.salary) : 0;
+  const challengeProgress = activeChallenge && profession ? evaluateChallenge(activeChallenge, {
+    day, cash, debts, liabilities, assets, challengeStartDay, challengeInitialDebt,
+    monthlyExpenses: challengeMonthlyExpenses,
+    monthlyNetCashflow: profession.salary + passiveIncome - challengeMonthlyExpenses,
+  }) : null;
+
+  useEffect(() => {
+    if (gameMode !== "challenge" || phase !== "playing" || !challengeProgress) return;
+    if (challengeProgress.succeeded) setPhase("challengeWon");
+    else if (challengeProgress.expired) setPhase("challengeLost");
+  }, [gameMode, phase, challengeProgress?.succeeded, challengeProgress?.expired]);
 
   // La victoire n'est plus instantanée (cf. WIN_STREAK_TARGET dans dayLoop.js) :
   // elle se décide dans simulateDays/applySimResult, jamais dans un effet
@@ -251,8 +274,24 @@ export default function useCapitalLifeState() {
   }
 
   function goToNewScenario() {
+    setView("modeSelect");
+  }
+
+  function selectSandboxMode() {
+    setGameMode("sandbox");
+    setActiveChallengeId(null);
     setScenarioPresetKey("random");
     setScenarioDraft(generateScenario("random"));
+    setView("scenario");
+  }
+
+  function selectChallengeMode(challengeId = "debt_escape_24") {
+    const challenge = challengeById(challengeId);
+    if (!challenge) return;
+    setGameMode("challenge");
+    setActiveChallengeId(challenge.id);
+    setScenarioPresetKey(challenge.scenarioPresetKey);
+    setScenarioDraft(generateScenario(challenge.scenarioPresetKey));
     setView("scenario");
   }
 
@@ -271,6 +310,9 @@ export default function useCapitalLifeState() {
     setPhase("playing");
     setDebts([scenarioDraft.debt]);
     setLiabilities(scenarioDraft.liabilities);
+    const initialDebts = [scenarioDraft.debt];
+    setChallengeStartDay(1);
+    setChallengeInitialDebt(gameMode === "challenge" ? challengeDebtTotal({ debts: initialDebts, liabilities: scenarioDraft.liabilities, assets: [] }) : 0);
     setKids(scenarioDraft.startingKids || 0);
     setAssets(scenarioDraft.startingAssetHint === "degraded_realestate" ? [{
       id: uid(), name: "Bien hérité (à retaper)", type: "realestate", sector: "immobilier",
@@ -335,6 +377,9 @@ export default function useCapitalLifeState() {
     setCash(0);
     setProfession(null);
     setPhase("playing");
+    setGameMode("sandbox");
+    setActiveChallengeId(null);
+    setChallengeInitialDebt(0);
     setDebts([]);
     setLiabilities({});
     setOpportunityTurn(1);
@@ -765,7 +810,14 @@ export default function useCapitalLifeState() {
     setActionPoints(dailyActionPoints);
     setAssetDecision(result.pendingAssetDecision || null);
     if (result.bankrupt) setPhase("bankrupt");
-    if (result.won) setPhase("won");
+    else if (gameMode === "challenge" && activeChallengeId) {
+      const challenge = challengeById(activeChallengeId);
+      const debtMonthly = result.debts.reduce((sum, debt) => sum + debt.monthlyPayment, 0);
+      const monthlyExpenses = calcExpenses(result.profession, result.kids, debtMonthly, result.liabilities) + rentCost(result.rentTier || rentTier, result.profession.salary);
+      const progress = evaluateChallenge(challenge, { ...result, challengeStartDay, challengeInitialDebt, monthlyExpenses, monthlyNetCashflow: result.profession.salary + calcPassiveIncome(result.assets) - monthlyExpenses });
+      if (progress.succeeded) setPhase("challengeWon");
+      else if (progress.expired) setPhase("challengeLost");
+    } else if (result.won) setPhase("won");
     if (result.journalEntries.length) setJournal((j) => [...result.journalEntries.slice().reverse(), ...j].slice(0, 60));
     if (result.events.length === 1) {
       const e = result.events[0];
@@ -985,7 +1037,8 @@ export default function useCapitalLifeState() {
 
   return {
     loaded, view, setView, phase,
-    scenarioDraft, scenarioPresetKey, changeScenarioPreset, goToNewScenario, rerollScenario, startGame,
+    scenarioDraft, scenarioPresetKey, changeScenarioPreset, goToNewScenario, selectSandboxMode, selectChallengeMode, rerollScenario, startGame,
+    gameMode, activeChallengeId, activeChallenge, challengeStartDay, challengeInitialDebt, challengeProgress,
     profession, day, cash, debts, liabilities, kids, assets, passiveIncome, currentDebtPayments, hasSave, resetGame, nextDay, skipMonth,
     skipWeek, skipToTrainingEnd,
     payOffLiability, payOffDebt, consolidateDebts, takePersonalLoan,

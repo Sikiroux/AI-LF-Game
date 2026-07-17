@@ -1,6 +1,14 @@
 [
   {
     "date": "2026-07-16",
+    "scope": "app",
+    "macrostructure": "Workbench choice / Outcome ledger",
+    "theme": "studied-DNA",
+    "enrichment": "none",
+    "brief": "Capital Life challenge mode selection, progress and outcome screens"
+  },
+  {
+    "date": "2026-07-16",
     "macrostructure": "Workbench",
     "theme": "studied-DNA",
     "enrichment": "none",

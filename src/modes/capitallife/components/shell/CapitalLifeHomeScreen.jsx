@@ -6,6 +6,7 @@ import { rentCost } from "../../engine/lifestyle.js";
 import { calendarInfo } from "../../engine/seasonalEvents.js";
 import { computeTier } from "../../engine/progression.js";
 import AppIcon from "./AppIcon.jsx";
+import ChallengeProgressPanel from "../screens/ChallengeProgressPanel.jsx";
 
 const APPS = [
   { key: "finances", emoji: "📊", label: "Finances", file: "icon-finances.png" },
@@ -21,7 +22,7 @@ const APPS = [
 export default function CapitalLifeHomeScreen({
   day, cash, profession, debts, liabilities, kids, assets, passiveIncome, layoffMonthsLeft, currency,
   lastEvent, hasSkipReport, skipMonthMode, onChangeSkipMonthMode, assetsNeedingAttention, actionPoints,
-  rentTier, skills, consecutiveWinningPaydays, winStreakTarget,
+  rentTier, skills, consecutiveWinningPaydays, winStreakTarget, challenge, challengeProgress,
   onNextDay, onSkipMonth, onSkipWeek, onSkipToTrainingEnd, onOpenApp, onOpenSkipReport, onMenu,
 }) {
   const C = useCapitalLifeColors();
@@ -110,6 +111,7 @@ export default function CapitalLifeHomeScreen({
       </div>
 
       <div style={{ ...styles.content, padding: "20px 16px" }}>
+        <ChallengeProgressPanel progress={challengeProgress} challenge={challenge} currency={currency} />
         {lastEvent && (
           <div style={{ ...styles.card, padding: "12px 14px", marginBottom: 18 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, fontWeight: 700, color: C.ink }}><span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: 999, background: lastEvent.tone === "good" ? C.good : lastEvent.tone === "bad" ? C.bad : lastEvent.tone === "warn" ? C.warn : C.accent }} />{lastEvent.title}</div>
