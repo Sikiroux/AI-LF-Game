@@ -28,6 +28,8 @@ import { DEFAULT_RENT_TIER, rentTierByKey, rentCost, moveCost, MOVE_PA_COST } fr
 
 const SAVE_KEY = "capitallife-save";
 const SETTINGS_KEY = "capitallife-settings";
+export const REALTIME_TICK_MS = 30000;
+const MAX_REALTIME_CATCHUP_TICKS = 120;
 
 export default function useCapitalLifeState() {
   const [loaded, setLoaded] = useState(false);
@@ -44,6 +46,8 @@ export default function useCapitalLifeState() {
   const [assets, setAssets] = useState([]);
   const [selectedAssetId, setSelectedAssetId] = useState(null);
   const [listings, setListings] = useState([]);
+  const [opportunityTurn, setOpportunityTurn] = useState(1);
+  const [lastRealtimeAt, setLastRealtimeAt] = useState(Date.now());
   const [pendingDecision, setPendingDecision] = useState(null);
   const [assetDecision, setAssetDecision] = useState(null);
   const [lastEvent, setLastEvent] = useState(null);
@@ -115,6 +119,9 @@ export default function useCapitalLifeState() {
           if (s.kids != null) setKids(s.kids);
           if (Array.isArray(s.assets)) setAssets(s.assets);
           if (Array.isArray(s.listings)) setListings(s.listings);
+          if (s.opportunityTurn != null) setOpportunityTurn(s.opportunityTurn);
+          else if (s.day != null) setOpportunityTurn(s.day);
+          if (s.lastRealtimeAt != null) setLastRealtimeAt(s.lastRealtimeAt);
           if (s.layoffMonthsLeft != null) setLayoffMonthsLeft(s.layoffMonthsLeft);
           if (s.lastSmallDoodadDay !== undefined) setLastSmallDoodadDay(s.lastSmallDoodadDay);
           if (s.lastBigDoodadDay !== undefined) setLastBigDoodadDay(s.lastBigDoodadDay);
@@ -164,7 +171,7 @@ export default function useCapitalLifeState() {
   useEffect(() => {
     if (!loaded || day === 0) return;
     const s = {
-      day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft,
+      day, cash, profession, phase, debts, liabilities, kids, assets, listings, opportunityTurn, lastRealtimeAt, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays,
       consecutiveWinningPaydays, economicCycle, economicCycleUntilDay,
       casinoHandsPlayed, casinoNetResult, lastCasinoPlayDay, actionPoints, dailyActionPoints,
@@ -172,13 +179,52 @@ export default function useCapitalLifeState() {
       skills, training, qualifications, missions, fatigue, enCouple, lastJobRejectionDay, rentTier,
     };
     storage.set(SAVE_KEY, JSON.stringify(s)).catch(() => {});
-  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays, consecutiveWinningPaydays, economicCycle, economicCycleUntilDay, casinoHandsPlayed, casinoNetResult, lastCasinoPlayDay, actionPoints, dailyActionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, qualifications, missions, fatigue, enCouple, lastJobRejectionDay, rentTier]);
+  }, [loaded, day, cash, profession, phase, debts, liabilities, kids, assets, listings, opportunityTurn, lastRealtimeAt, layoffMonthsLeft, lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay, lastSeasonalDays, consecutiveWinningPaydays, economicCycle, economicCycleUntilDay, casinoHandsPlayed, casinoNetResult, lastCasinoPlayDay, actionPoints, dailyActionPoints, tokens, portfolio, journal, pendingArcs, sectorConditions, economicModifier, traderJournalActive, marketTurn, skills, training, qualifications, missions, fatigue, enCouple, lastJobRejectionDay, rentTier]);
 
   useEffect(() => {
     if (!loaded) return;
     const st = { currency, babyEnabled, layoffEnabled, skipMonthMode, managementThresholdPct, difficulty };
     storage.set(SETTINGS_KEY, JSON.stringify(st)).catch(() => {});
   }, [loaded, currency, babyEnabled, layoffEnabled, skipMonthMode, managementThresholdPct, difficulty]);
+
+  // Horloge autonome de la Bourse et d'OppMarket. Elle tourne depuis tous les
+  // écrans de la partie et rattrape le temps écoulé lorsque l'application
+  // redevient active. Les paies, formations et événements de vie restent liés
+  // aux boutons de calendrier : seule l'économie de marché vit en temps réel.
+  useEffect(() => {
+    if (!loaded || day === 0 || phase !== "playing") return undefined;
+    const advanceRealtime = () => {
+      const now = Date.now();
+      const ticks = Math.min(MAX_REALTIME_CATCHUP_TICKS, Math.floor((now - lastRealtimeAt) / REALTIME_TICK_MS));
+      if (ticks <= 0) return;
+      const market = tickMarketDays({ tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive, economicEffectDuration: 10, economicEffectPermanent: false, assets, currency }, ticks);
+      let nextListings = listings;
+      let nextOpportunityTurn = opportunityTurn;
+      let sniped = null;
+      for (let i = 0; i < ticks; i++) {
+        nextOpportunityTurn += 1;
+        const result = advanceListings(nextListings, nextOpportunityTurn, cash);
+        nextListings = result.listings;
+        sniped = sniped || result.sniped;
+      }
+      setTokens(market.tokens);
+      setPendingArcs(market.pendingArcs);
+      setSectorConditions(market.sectorConditions);
+      setEconomicModifier(market.economicModifier);
+      setMarketTurn(market.marketTurn);
+      if (market.cashDelta) setCash((value) => Math.max(0, value + market.cashDelta));
+      if (market.journalEntries.length) setJournal((items) => [...market.journalEntries.slice().reverse(), ...items].slice(0, 60));
+      setListings(nextListings);
+      setOpportunityTurn(nextOpportunityTurn);
+      setLastRealtimeAt(now);
+      if (sniped) banner("Occasion manquée", `« ${sniped} » a été achetée pendant que vous étiez ailleurs.`, "info");
+    };
+    advanceRealtime();
+    const interval = window.setInterval(advanceRealtime, REALTIME_TICK_MS);
+    const onVisible = () => { if (document.visibilityState === "visible") advanceRealtime(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { window.clearInterval(interval); document.removeEventListener("visibilitychange", onVisible); };
+  }, [loaded, day, phase, lastRealtimeAt, tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive, assets, currency, listings, opportunityTurn, cash]);
 
   const hasSave = loaded && day > 0 && phase !== "won" && phase !== "bankrupt";
   const passiveIncome = calcPassiveIncome(assets);
@@ -258,6 +304,8 @@ export default function useCapitalLifeState() {
     let seedListings = [];
     for (let i = 0; i < 3; i++) seedListings = advanceListings(seedListings, 1, scenarioDraft.startingCash).listings;
     setListings(seedListings);
+    setOpportunityTurn(1);
+    setLastRealtimeAt(Date.now());
 
     const warmup = tickMarketDays({
       tokens: generateTokens(16), pendingArcs: [], sectorConditions: {}, economicModifier: { loanRateMult: 1, expiresTurn: 0 },
@@ -290,6 +338,8 @@ export default function useCapitalLifeState() {
     setPhase("playing");
     setDebts([]);
     setLiabilities({});
+    setOpportunityTurn(1);
+    setLastRealtimeAt(Date.now());
     setSkills({});
     setTraining(null);
     setQualifications({});
@@ -697,6 +747,7 @@ export default function useCapitalLifeState() {
     setKids(result.kids);
     setAssets(result.assets);
     setListings(result.listings);
+    setOpportunityTurn(result.opportunityTurn);
     setTokens(result.tokens);
     setPendingArcs(result.pendingArcs);
     setSectorConditions(result.sectorConditions);
@@ -746,7 +797,7 @@ export default function useCapitalLifeState() {
 
   function snapshot() {
     return {
-      day, cash, profession, debts, liabilities, kids, assets, listings,
+      day, cash, profession, debts, liabilities, kids, assets, listings, opportunityTurn,
       tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
       babyEnabled, layoffEnabled, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
@@ -943,7 +994,7 @@ export default function useCapitalLifeState() {
     tokens, portfolio, journal, marketTurn, traderJournalActive,
     onToggleTraderJournal: () => setTraderJournalActive((v) => !v),
     buyStock, sellStock,
-    listings, pendingDecision, openListing, skipListing, buyListing, inspectListing, negotiateListing,
+    listings, opportunityTurn, pendingDecision, openListing, skipListing, buyListing, inspectListing, negotiateListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     selectedAssetId, setSelectedAssetId, performAssetMaintenance, performAssetAd,
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,

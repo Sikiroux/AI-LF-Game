@@ -31,7 +31,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     managementThresholdPct, setManagementThresholdPct,
     babyEnabled, setBabyEnabled, layoffEnabled, setLayoffEnabled, layoffMonthsLeft, lastEvent, lastSkipReport,
     tokens, portfolio, journal, marketTurn, traderJournalActive, onToggleTraderJournal, buyStock, sellStock,
-    listings, pendingDecision, openListing, skipListing, buyListing, inspectListing, negotiateListing,
+    listings, opportunityTurn, pendingDecision, openListing, skipListing, buyListing, inspectListing, negotiateListing,
     payOffLoan, startAmortization, cancelAmortization, payOffAllLoans,
     selectedAssetId, setSelectedAssetId, performAssetMaintenance, performAssetAd,
     hireAssetEmployee, fireAssetEmployee, trainAssetEmployee, buyAssetStake,
@@ -105,8 +105,8 @@ export default function CapitalLifeApp({ onExitHome }) {
         onBuy={buyStock}
         onSell={sellStock}
         onBack={() => setView("game")}
-        advanceHint="le marché avance d'un jour à chaque fois que vous passez au jour suivant."
-        advanceSubHint="Retourne au hub et avance d'un jour (ou saute le mois) pour faire évoluer tes positions."
+        advanceHint="le marché évolue automatiquement toutes les 30 secondes."
+        advanceSubHint="Les cours continuent de bouger depuis les autres applications et rattrapent votre absence au retour."
       />
     );
   }
@@ -208,7 +208,7 @@ export default function CapitalLifeApp({ onExitHome }) {
   if (view === "opportunities") {
     return (
       <>
-        <OpportunitySiteScreen listings={listings} day={day} cash={cash} currency={currency} actionPoints={actionPoints} onOpen={openListing} onInspect={inspectListing} onNegotiate={negotiateListing} onBack={() => setView("game")} />
+        <OpportunitySiteScreen listings={listings} day={opportunityTurn} cash={cash} currency={currency} actionPoints={actionPoints} onOpen={openListing} onInspect={inspectListing} onNegotiate={negotiateListing} onBack={() => setView("game")} />
         {pendingDecision && (
           <DecisionModal
             decision={pendingDecision}

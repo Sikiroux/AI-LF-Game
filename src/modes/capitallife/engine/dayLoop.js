@@ -112,7 +112,7 @@ function amortizeAssetsList(assetList) {
 // consécutives, cohérent sur plusieurs jours simulés d'affilée.
 export function simulateDays(state, numDays, { quiet = false, currency = "EUR", refs }) {
   let {
-    day, cash, profession, debts, liabilities, kids, assets, listings,
+    day, cash, profession, debts, liabilities, kids, assets, listings, opportunityTurn = day,
     tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
@@ -132,6 +132,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
 
   for (let i = 0; i < numDays; i++) {
     const nd = day + 1;
+    opportunityTurn += 1;
 
     // Cycle économique global : expansion → croissance → inflation →
     // ralentissement → récession → reprise → expansion, en boucle. Diffusé
@@ -150,7 +151,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
     let cashDelta = tick.cashDelta;
     if (tick.journalEntries.length) journalEntries.push(...tick.journalEntries);
 
-    const listingResult = advanceListings(listings, nd, cash, cycleMods.urgentListingBonus);
+    const listingResult = advanceListings(listings, opportunityTurn, cash, cycleMods.urgentListingBonus);
     listings = listingResult.listings;
     if (listingResult.sniped) events.push({ title: "Occasion manquée", detail: `« ${listingResult.sniped} » vient d'être raflée par un autre acheteur.`, tone: "bad" });
 
@@ -389,7 +390,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
   }
 
   return {
-    day, cash, profession, debts, liabilities, kids, assets, listings,
+    day, cash, profession, debts, liabilities, kids, assets, listings, opportunityTurn,
     tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,

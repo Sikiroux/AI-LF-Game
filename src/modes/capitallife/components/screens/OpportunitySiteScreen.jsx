@@ -28,6 +28,12 @@ function photoFile(listing) {
   return `${cat.file}-${variant}.png`;
 }
 
+function timeLeftLabel(ticks) {
+  const seconds = Math.max(0, ticks) * 30;
+  if (seconds < 60) return "moins d'1 min";
+  return `${Math.ceil(seconds / 60)} min`;
+}
+
 export default function OpportunitySiteScreen({ listings, day, cash, currency, actionPoints, onOpen, onInspect, onNegotiate, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
@@ -69,7 +75,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
         </div>
       </div>
 
-      <div style={{ ...styles.content, padding: "14px 14px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ ...styles.content, minHeight: 0, padding: "14px 14px 40px", display: "flex", flexDirection: "column", gap: 12, overflowY: "scroll", WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain" }}>
         {filtered.length === 0 && (
           <div style={{ ...styles.card, textAlign: "center", padding: "36px 20px", marginTop: 12 }}>
             <div style={{ fontSize: 32, marginBottom: 10 }}>🔍</div>
@@ -89,7 +95,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
           const photo = photoFile(l);
 
           return (
-            <div key={l.id} style={{ ...styles.card, padding: 0, overflow: "hidden" }}>
+            <div key={l.id} style={{ ...styles.card, padding: 0, overflow: "hidden", flex: "0 0 auto" }}>
             <button className="cl-tap"
               onClick={() => onOpen(l)}
               style={{ display: "block", width: "100%", textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit", padding: 0, background: "transparent", border: "none" }}
@@ -116,7 +122,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
                   background: expiryTone === "urgent" ? C.bad : expiryTone === "soon" ? C.warn : "rgba(0,0,0,0.55)",
                   display: "flex", alignItems: "center", gap: 4,
                 }}>
-                  ⏳ {daysLeft}j
+                  ⏳ {timeLeftLabel(daysLeft)}
                 </span>
                 {!photo && <span style={{ ...styles.placeholderFile, position: "absolute", bottom: 8 }}>{cat ? `listings/${cat.file}-*.png` : "listings/divers-1.png"}</span>}
               </div>
@@ -159,7 +165,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 10, borderTop: `1px solid ${C.line}`, fontSize: 11 }}>
                   <span style={{ color: expiryTone === "urgent" ? C.bad : expiryTone === "soon" ? C.warn : C.inkSoft, fontWeight: expiryTone === "normal" ? 400 : 700 }}>
-                    ⏳ Expire dans {daysLeft} jour{daysLeft > 1 ? "s" : ""}
+                    ⏳ Expire dans {timeLeftLabel(daysLeft)}
                   </span>
                   {!affordable && <span style={{ color: C.bad, fontWeight: 700 }}>Apport insuffisant</span>}
                 </div>
