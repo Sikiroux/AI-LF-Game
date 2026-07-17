@@ -5,9 +5,9 @@ import {
   qualitativeLabel, canPerformMaintenance, MAINTENANCE_COST_RATE,
   generateCandidate, trainingCost, fireSeverance, MAX_EMPLOYEES,
   canManage, DEFAULT_MANAGEMENT_THRESHOLD_PCT, canRunAd, AD_COST_RATE,
-  canRenovate, RENOVATION_COST_RATE, canOpenSecondLocation, sellAsset,
+  canRenovate, RENOVATION_COST_RATE, generateTenantCandidates, canOpenSecondLocation, sellAsset,
 } from "../../engine/assetIndicators.js";
-import { computeFinancing } from "../../../../engine/financing.js";
+import { computeFinancing, MAX_DEBT_RATIO } from "../../../../engine/financing.js";
 import { ACTION_COSTS } from "../../engine/actionPoints.js";
 import { useCapitalLifeColors, getStyles, sectorBadge, qualityTone } from "../../styles/theme.js";
 
@@ -116,7 +116,7 @@ function TreasurySection({ asset, currency, onPayDividend, onToggleAutoManage, C
   );
 }
 
-function StakeSection({ asset, cash, actionPoints, currency, managementThreshold, onBuyStake, C, styles }) {
+function StakeSection({ asset, cash, actionPoints, currency, currentDebtPayments, totalIncome, managementThreshold, onBuyStake, C, styles }) {
   const [deltaPct, setDeltaPct] = useState(10);
   const f = (n) => fmt(n, currency);
   const currentPct = asset.stakePct ?? 100;
@@ -127,10 +127,11 @@ function StakeSection({ asset, cash, actionPoints, currency, managementThreshold
   const perPctGross = (asset.baseGrossCashflow ?? asset.grossCashflow ?? 0) / currentPct;
   const addedCost = Math.round(perPctCost * clampedDelta);
   const addedGross = Math.round(perPctGross * clampedDelta);
-  const fin = computeFinancing({ cost: addedCost, cashflow: addedGross, type: "business" }, "simple", 10, 1, "realiste", 1);
+  const fin = computeFinancing({ cost: addedCost, cashflow: addedGross, type: "business" }, "realistic", 30, 1, "realiste", 1);
   const paOk = actionPoints == null || actionPoints >= ACTION_COSTS.buyAsset;
   const affordCash = cash >= addedCost && paOk;
-  const affordLoan = cash >= fin.downPayment && paOk;
+  const projectedRatio = (currentDebtPayments + fin.loanMonthly) / Math.max(1, totalIncome);
+  const affordLoan = cash >= fin.downPayment && paOk && projectedRatio <= MAX_DEBT_RATIO;
   const willUnlock = currentPct < managementThreshold && currentPct + clampedDelta >= managementThreshold;
 
   if (remaining <= 0) return null;
@@ -154,6 +155,7 @@ function StakeSection({ asset, cash, actionPoints, currency, managementThreshold
         </div>
         <Row C={C} label={`Coût pour +${clampedDelta}%`} value={f(addedCost)} />
         <Row C={C} label="Cash-flow supplémentaire" value={`+${f(addedGross)}/mois`} tone="good" />
+        <Row C={C} label="Endettement après financement" value={`${Math.round(projectedRatio * 100)}% (max ${Math.round(MAX_DEBT_RATIO * 100)}%)`} tone={projectedRatio > MAX_DEBT_RATIO ? "bad" : undefined} />
         {willUnlock && <div style={{ fontSize: 11, color: C.good, marginTop: 4, fontWeight: 700 }}>🔓 Débloque la gestion du personnel</div>}
         <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
           <button className="cl-tap" style={{ ...styles.primaryBtn, flex: 1, opacity: affordCash ? 1 : 0.4 }} disabled={!affordCash} onClick={() => onBuyStake(clampedDelta, false)}>
@@ -169,7 +171,7 @@ function StakeSection({ asset, cash, actionPoints, currency, managementThreshold
   );
 }
 
-export default function AssetDetailScreen({ asset, cash, currency, day, actionPoints, marketConditions, managementThreshold = DEFAULT_MANAGEMENT_THRESHOLD_PCT, onMaintenance, onAd, onHire, onFire, onTrain, onBuyStake, onPayDividend, onToggleAutoManage, onRenovate, onSell, onOpenSecondLocation, onPickTenant, onBack }) {
+export default function AssetDetailScreen({ asset, cash, currency, day, actionPoints, currentDebtPayments = 0, totalIncome = 0, marketConditions, managementThreshold = DEFAULT_MANAGEMENT_THRESHOLD_PCT, onMaintenance, onAd, onHire, onFire, onTrain, onBuyStake, onPayDividend, onToggleAutoManage, onRenovate, onSell, onOpenSecondLocation, onPickTenant, onBack }) {
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const [tab, setTab] = useState("vue");
@@ -177,6 +179,8 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
   const refSalary = asset ? Math.max(200, Math.round((asset.baseGrossCashflow ?? asset.grossCashflow ?? asset.cashflow) * 0.18)) : 200;
   const [candidates, setCandidates] = useState(() => Array.from({ length: 3 }, () => generateCandidate(refSalary)));
   const regenerateCandidates = () => setCandidates(Array.from({ length: 3 }, () => generateCandidate(refSalary)));
+  const [tenantCandidates, setTenantCandidates] = useState([]);
+  const openTenantSelection = () => setTenantCandidates(generateTenantCandidates(asset));
 
   if (!asset) {
     return (
@@ -329,7 +333,26 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
                 Rénover ({f(renovationCost)} · ⚡{ACTION_COSTS.maintenance})
               </button>
               {!renovationCheck.ok && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 6 }}>{renovationCheck.reason}</div>}
-              {!asset.tenant && <button className="cl-tap" style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8 }} onClick={() => onPickTenant?.(asset.id)}>Choisir un locataire</button>}
+              {!asset.tenant && tenantCandidates.length === 0 && <button className="cl-tap" style={{ ...styles.smallBtn, width: "100%", boxSizing: "border-box", marginTop: 8 }} onClick={openTenantSelection}>Afficher les candidats locataires</button>}
+              {!asset.tenant && tenantCandidates.length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: 11.5, color: C.inkSoft, marginBottom: 8 }}>Un loyer plus élevé s'accompagne généralement d'un risque d'impayé supérieur.</div>
+                  {tenantCandidates.map((candidate) => (
+                    <div key={candidate.id} style={{ ...styles.card, padding: 11, marginBottom: 8 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                        <div style={{ fontWeight: 700, color: C.ink }}>{candidate.name} · {candidate.profile}</div>
+                        <div style={{ fontFamily: "ui-monospace, monospace", color: C.good }}>+{f(candidate.proposedRent)}/mois</div>
+                      </div>
+                      <div style={{ display: "flex", gap: 12, marginTop: 5, fontSize: 10.5, color: C.inkSoft }}>
+                        <span>Fiabilité <b style={{ color: qualityTone(qualitativeLabel(candidate.reliability), C) }}>{qualitativeLabel(candidate.reliability)}</b></span>
+                        <span>Satisfaction <b style={{ color: qualityTone(qualitativeLabel(candidate.happiness), C) }}>{qualitativeLabel(candidate.happiness)}</b></span>
+                      </div>
+                      <button className="cl-tap" style={{ ...styles.primaryBtn, width: "100%", marginTop: 8 }} onClick={() => { onPickTenant?.(asset.id, candidate); setTenantCandidates([]); }}>Choisir ce locataire</button>
+                    </div>
+                  ))}
+                  <button className="cl-tap" style={{ ...styles.smallBtn, width: "100%" }} onClick={openTenantSelection}>↻ Nouveaux candidats</button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -361,7 +384,7 @@ export default function AssetDetailScreen({ asset, cash, currency, day, actionPo
         )}
 
         {tab === "decisions" && !isRealestate && (
-          <StakeSection asset={asset} cash={cash} actionPoints={actionPoints} currency={currency} managementThreshold={managementThreshold} onBuyStake={(delta, useLoan) => onBuyStake(asset.id, delta, useLoan)} C={C} styles={styles} />
+          <StakeSection asset={asset} cash={cash} actionPoints={actionPoints} currency={currency} currentDebtPayments={currentDebtPayments} totalIncome={totalIncome} managementThreshold={managementThreshold} onBuyStake={(delta, useLoan) => onBuyStake(asset.id, delta, useLoan)} C={C} styles={styles} />
         )}
 
         {tab === "decisions" && !isRealestate && (

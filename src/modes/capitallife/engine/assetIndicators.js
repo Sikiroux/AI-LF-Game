@@ -377,7 +377,8 @@ export function driftAssetIndicators(asset, cycleGrowthMult = 1) {
     const reliability = clamp(asset.tenant.reliability + Math.round((Math.random() - 0.5) * 6));
     const happiness = clamp(asset.tenant.happiness + Math.round((Math.random() - 0.5) * 6));
     const tenureMonths = asset.tenant.tenureMonths + 1;
-    return { ...asset, condition, tenant: { reliability, happiness, tenureMonths }, stability: computeStability({ ...asset, condition, tenant: { reliability, happiness, tenureMonths } }) };
+    const tenant = { ...asset.tenant, reliability, happiness, tenureMonths };
+    return { ...asset, condition, tenant, stability: computeStability({ ...asset, condition, tenant }) };
   }
   if (asset.type === "business" && asset.condition != null && asset.reputation != null) {
     const condition = clamp(asset.condition - (1 + Math.round(Math.random() * 2)), 15, 100);

@@ -13,7 +13,7 @@ import {
   initAssetIndicators, canPerformMaintenance, performMaintenance,
   totalSalaries, hireEmployee, fireEmployee, fireSeverance, trainEmployee, trainingCost, MAX_EMPLOYEES,
   applyStakePurchase, DEFAULT_MANAGEMENT_THRESHOLD_PCT, canRunAd, runAd, payDividend,
-  canRenovate, renovate, generateTenantCandidates, pickTenant,
+  canRenovate, renovate, pickTenant,
   canOpenSecondLocation, openSecondLocation, sellAsset,
 } from "../engine/assetIndicators.js";
 import { DAILY_ACTION_POINTS, ACTION_COSTS, DIFFICULTY_PRESETS, DEFAULT_DIFFICULTY } from "../engine/actionPoints.js";
@@ -572,16 +572,12 @@ export default function useCapitalLifeState() {
     banner("Rénovation lancée", `${a.name} : -${f(cost)}.`, "good");
   }
 
-  // Choisit directement le profil "Équilibré" parmi les candidats générés —
-  // pas encore d'écran de sélection dédié, à faire évoluer plus tard.
-  function performPickTenant(assetId) {
+  function performPickTenant(assetId, candidate) {
     const a = assets.find((x) => x.id === assetId);
-    if (!a) return;
-    const candidates = generateTenantCandidates(a);
-    const chosen = candidates[Math.min(1, candidates.length - 1)];
-    const updated = pickTenant(a, chosen);
+    if (!a || !candidate) return;
+    const updated = pickTenant(a, candidate);
     setAssets((list) => list.map((x) => (x.id === assetId ? updated : x)));
-    banner("Locataire choisi", `${a.name} : ${chosen.name} (${chosen.profile}), loyer ${f(chosen.proposedRent)}/mois.`, "good");
+    banner("Locataire choisi", `${a.name} : ${candidate.name} (${candidate.profile}), loyer ${f(candidate.proposedRent)}/mois.`, "good");
   }
 
   function performOpenSecondLocation(assetId) {
@@ -660,9 +656,13 @@ export default function useCapitalLifeState() {
     const addedGross = Math.round(perPctGross * actualDelta);
     const loanRateMult = marketTurn < economicModifier.expiresTurn ? economicModifier.loanRateMult : 1;
     const fin = useLoan
-      ? computeFinancing({ cost: addedCost, cashflow: addedGross, type: "business" }, "simple", 10, loanRateMult, "realiste", 1)
+      ? computeFinancing({ cost: addedCost, cashflow: addedGross, type: "business" }, "realistic", 30, loanRateMult, "realiste", 1)
       : { downPayment: addedCost, loanAmount: 0, loanMonthly: 0, annualRate: 0 };
     if (cash < fin.downPayment) { banner("Rachat de parts impossible", "Liquidités insuffisantes pour l'apport.", "info"); return; }
+    if (useLoan && (currentDebtPayments + fin.loanMonthly) / Math.max(1, profession.salary + passiveIncome) > MAX_DEBT_RATIO) {
+      banner("Rachat de parts refusé", `La nouvelle mensualité dépasserait ${Math.round(MAX_DEBT_RATIO * 100)}% d'endettement.`, "bad");
+      return;
+    }
     if (!spendActionPoints(ACTION_COSTS.buyAsset)) return;
     const updated = applyStakePurchase(a, { newPct, addedCost, addedGross, loanAmount: fin.loanAmount, loanMonthly: fin.loanMonthly, annualRate: fin.annualRate }, managementThresholdPct);
     setCash((c) => c - fin.downPayment);

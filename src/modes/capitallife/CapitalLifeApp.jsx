@@ -129,6 +129,7 @@ export default function CapitalLifeApp({ onExitHome }) {
       <AssetDetailScreen
         asset={assets.find((a) => a.id === selectedAssetId)}
         cash={cash} currency={currency} day={day} actionPoints={actionPoints}
+        currentDebtPayments={currentDebtPayments} totalIncome={profession.salary + passiveIncome}
         managementThreshold={managementThresholdPct}
         onMaintenance={performAssetMaintenance}
         onAd={performAssetAd}
