@@ -1,22 +1,35 @@
 import { fmt } from "../../../../utils/format.js";
-import { styles, COLORS, CSS_EXTRA } from "../../../../styles/theme.js";
-import EndGameStats from "../../../../components/screens/EndGameStats.jsx";
+import { useCapitalLifeColors, getStyles, DISPLAY_FONT } from "../../styles/theme.js";
 
-export default function CapitalLifeWonScreen({ day, profession, assets, passiveIncome, tokens, portfolio, casinoHandsPlayed, casinoNetResult, debts, currency, onReset }) {
+export default function CapitalLifeWonScreen({ day, profession, assets, passiveIncome, debts, currency, onReset }) {
+  const C = useCapitalLifeColors();
+  const styles = getStyles(C);
   const month = Math.floor((day - 1) / 30) + 1;
-  const debtRemaining = debts.reduce((s, d) => s + d.balance, 0);
+  const debtRemaining = debts.reduce((sum, debt) => sum + debt.balance, 0);
+
   return (
-    <div className="screen-in" style={{ ...styles.app, overflowY: "auto", alignItems: "center", justifyContent: "flex-start", display: "flex", flexDirection: "column", textAlign: "center", padding: 24 }}>
-      <style>{CSS_EXTRA}</style>
-      <div style={styles.bigStamp}>LIBERTÉ</div>
-      <div style={{ fontSize: 46, marginTop: 14 }}>🏆</div>
-      <div style={{ fontFamily: "Georgia, serif", fontSize: 24, color: COLORS.ink, marginTop: 8, fontWeight: 700 }}>Vous êtes sorti·e de la course infernale !</div>
-      <div style={{ color: COLORS.inkSoft, marginTop: 8, maxWidth: 340 }}>
-        Vos revenus passifs (<b style={{ color: COLORS.ink }}>{fmt(passiveIncome, currency)}</b>/mois) dépassent désormais vos dépenses. Vous n'avez plus besoin de votre salaire pour vivre.
+    <div className="screen-in" style={{ ...styles.app, overflowY: "auto", alignItems: "center", padding: 24, textAlign: "center" }}>
+      <div style={{ width: "100%", maxWidth: 440, margin: "auto" }}>
+        <div style={{ width: 82, height: 82, margin: "0 auto 18px", borderRadius: "50%", display: "grid", placeItems: "center", background: `${C.good}20`, border: `1px solid ${C.good}`, fontSize: 40 }}>🏆</div>
+        <div style={{ color: C.good, fontSize: 10, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" }}>Indépendance atteinte</div>
+        <h1 style={{ fontFamily: DISPLAY_FONT, fontSize: 30, lineHeight: 1.08, color: C.ink, margin: "10px 0", overflowWrap: "anywhere" }}>Vous êtes sorti·e de la course infernale !</h1>
+        <p style={{ color: C.inkSoft, lineHeight: 1.55, margin: "0 auto 20px", maxWidth: 380 }}>
+          Vos revenus passifs de <strong style={{ color: C.good }}>{fmt(passiveIncome, currency)}/mois</strong> couvrent désormais vos dépenses.
+        </p>
+        <div style={{ ...styles.card, padding: 18, textAlign: "left" }}>
+          {[
+            ["Temps nécessaire", `${month} mois · ${day} jours`],
+            ["Situation de départ", `${profession?.icon || "💼"} ${profession?.name || "Profession"}`],
+            ["Actifs acquis", assets.length],
+            ["Dette restante", fmt(debtRemaining, currency)],
+          ].map(([label, value]) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "9px 0", borderBottom: `1px solid ${C.line}`, fontSize: 13 }}>
+              <span style={{ color: C.inkSoft }}>{label}</span><strong style={{ color: C.ink, textAlign: "right" }}>{value}</strong>
+            </div>
+          ))}
+        </div>
+        <button className="cl-tap" style={{ ...styles.primaryBtn, width: "100%", marginTop: 20, minHeight: 50 }} onClick={onReset}>Nouvelle situation</button>
       </div>
-      <div style={{ color: COLORS.inkSoft, fontSize: 13, marginTop: 6 }}>Atteint en {month} mois ({day} jours).</div>
-      <EndGameStats turnCount={day} profession={profession} assets={assets} passiveIncome={passiveIncome} tokens={tokens} portfolio={portfolio} casinoHandsPlayed={casinoHandsPlayed} casinoNetResult={casinoNetResult} bankLoanBalance={debtRemaining} currency={currency} />
-      <button className="btn-primary" style={{ ...styles.primaryBtn, marginTop: 24, marginBottom: 24 }} onClick={onReset}>Nouvelle situation</button>
     </div>
   );
 }

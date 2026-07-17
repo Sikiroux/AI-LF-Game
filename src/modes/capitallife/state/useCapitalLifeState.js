@@ -801,12 +801,17 @@ export default function useCapitalLifeState() {
   function performSkip(numDays) {
     const fromDay = day;
     const cashBefore = cash;
-    const trainingPaCost = tickCareer(numDays);
     setFatigue(0);
     const result = simulateDays(snapshot(), numDays, { quiet: skipMonthMode === "calm", currency, refs: refs() });
+    // Une décision peut interrompre l'accélération. La carrière doit alors
+    // progresser du nombre de jours réellement simulés, jamais de la durée
+    // initialement demandée (sinon une formation pouvait se terminer alors
+    // que le calendrier s'était arrêté sur un incident).
+    const daysActuallySkipped = Math.max(0, result.day - fromDay);
+    const trainingPaCost = tickCareer(daysActuallySkipped);
     applySimResult(result, {
       mode: skipMonthMode,
-      fromDay, toDay: result.day, daysSkipped: result.day - fromDay,
+      fromDay, toDay: result.day, daysSkipped: daysActuallySkipped,
       cashBefore, cashAfter: result.cash,
       events: result.events, journalEntries: result.journalEntries,
       interrupted: !!result.pendingAssetDecision && result.day - fromDay < numDays,

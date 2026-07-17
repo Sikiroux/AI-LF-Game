@@ -1,6 +1,6 @@
 import { LIABILITY_KEYS, LIABILITY_LABELS } from "../../../../engine/financing.js";
 import { fmt } from "../../../../utils/format.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, DISPLAY_FONT } from "../../styles/theme.js";
 import { rentCost } from "../../engine/lifestyle.js";
 
 function Row({ label, value, bold, tone, C }) {
@@ -27,16 +27,31 @@ export default function FinancesScreen({ day, profession, kids, debts, liabiliti
   const totalExpenses = fixedExpenses + liabilityExpenses;
   const salary = layoffMonthsLeft > 0 ? 0 : profession.salary;
   const netCashflow = salary + passiveIncome - totalExpenses - debtMonthly;
+  const independence = Math.max(0, Math.min(100, Math.round((passiveIncome / Math.max(1, totalExpenses + debtMonthly)) * 100)));
 
   return (
     <div style={styles.app}>
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
-        <div style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>📊 Finances</div>
+        <div style={{ fontFamily: DISPLAY_FONT, fontSize: 16, fontWeight: 700, flex: 1 }}>📊 Finances</div>
         <div style={{ width: 30 }} />
       </div>
 
       <div style={{ ...styles.content, padding: 16 }}>
+        <div style={{ ...styles.card, padding: 16, marginBottom: 14 }}>
+          <div style={styles.sectionTitle}>Santé financière</div>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11, color: C.inkSoft }}>Cash-flow disponible</div>
+              <div style={{ ...styles.mono, fontSize: 22, fontWeight: 800, color: netCashflow >= 0 ? C.good : C.bad, marginTop: 3 }}>{netCashflow >= 0 ? "+" : ""}{f(netCashflow)}</div>
+            </div>
+            <div style={{ fontFamily: DISPLAY_FONT, fontSize: 20, fontWeight: 700 }}>{independence}%</div>
+          </div>
+          <div style={{ height: 7, background: C.line, borderRadius: 999, overflow: "hidden", marginTop: 12 }}>
+            <div style={{ height: "100%", width: `${independence}%`, background: C.accent, borderRadius: 999 }} />
+          </div>
+          <div style={{ fontSize: 10.5, color: C.inkSoft, marginTop: 6 }}>Indépendance financière</div>
+        </div>
         <div style={styles.card}>
           <div style={{ padding: 16 }}>
             <div style={styles.sectionTitle}>Compte de résultat mensuel</div>

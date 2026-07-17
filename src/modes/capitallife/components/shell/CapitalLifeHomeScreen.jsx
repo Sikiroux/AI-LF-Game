@@ -1,6 +1,7 @@
+import { useEffect, useState } from "react";
 import { calcExpenses } from "../../../../engine/financing.js";
 import { fmt } from "../../../../utils/format.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, DISPLAY_FONT } from "../../styles/theme.js";
 import { rentCost } from "../../engine/lifestyle.js";
 import { calendarInfo } from "../../engine/seasonalEvents.js";
 import { computeTier } from "../../engine/progression.js";
@@ -26,6 +27,23 @@ export default function CapitalLifeHomeScreen({
   const C = useCapitalLifeColors();
   const styles = getStyles(C);
   const f = (n) => fmt(n, currency);
+  const [pendingSkip, setPendingSkip] = useState(null);
+
+  useEffect(() => {
+    if (!pendingSkip) return undefined;
+    if (pendingSkip.seconds <= 0) {
+      const run = pendingSkip.run;
+      setPendingSkip(null);
+      run();
+      return undefined;
+    }
+    const timer = window.setTimeout(() => {
+      setPendingSkip((current) => current ? { ...current, seconds: current.seconds - 1 } : null);
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [pendingSkip]);
+
+  const requestSkip = (label, run) => setPendingSkip({ label, run, seconds: 3 });
 
   const { monthOfYear, year, dayOfMonth, monthName } = calendarInfo(day);
   const debtMonthly = debts.reduce((s, d) => s + d.monthlyPayment, 0);
@@ -40,7 +58,7 @@ export default function CapitalLifeHomeScreen({
     <div style={styles.app}>
       <div style={{ ...styles.topBar, justifyContent: "space-between" }}>
         <button className="cl-tap" style={styles.smallBtn} onClick={onMenu}>Menu</button>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>Capital Life</div>
+        <div style={{ fontFamily: DISPLAY_FONT, fontSize: 14, fontWeight: 700, color: C.ink }}>Capital Life</div>
         <div style={{ width: 54 }} />
       </div>
 
@@ -49,7 +67,7 @@ export default function CapitalLifeHomeScreen({
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ background: C.accent, color: C.accentInk, borderRadius: 10, padding: "6px 10px", textAlign: "center", lineHeight: 1.1 }}>
-                <div style={{ fontSize: 18, fontWeight: 800 }}>{day}</div>
+                <div style={{ fontFamily: DISPLAY_FONT, fontSize: 18, fontWeight: 800 }}>{day}</div>
                 <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "0.06em", opacity: 0.85 }}>Jour</div>
               </div>
               <div style={{ fontSize: 12, color: C.inkSoft }}>
@@ -74,7 +92,7 @@ export default function CapitalLifeHomeScreen({
             </div>
             <div style={{ flex: "1.2 1 0", background: C.surface, border: `1px solid ${C.line}`, borderRadius: 10, padding: "9px 12px" }}>
               <div style={{ fontSize: 9, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Indépendance financière</div>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>{objectifPct}%</div>
+              <div style={{ fontFamily: DISPLAY_FONT, fontSize: 15, fontWeight: 700 }}>{objectifPct}%</div>
               <div style={{ height: 4, borderRadius: 2, background: C.line, marginTop: 6, overflow: "hidden" }}>
                 <div style={{ height: "100%", background: C.accent, width: `${objectifPct}%` }} />
               </div>
@@ -126,15 +144,15 @@ export default function CapitalLifeHomeScreen({
           <button className="cl-tap" style={{ ...styles.primaryBtn, width: "100%", boxSizing: "border-box" }} onClick={onNextDay}>Jour suivant ▶</button>
           <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
             {onSkipWeek && (
-              <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={onSkipWeek}>
+              <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={() => requestSkip("Avancer de 7 jours", onSkipWeek)}>
                 ⏭ 7 jours
               </button>
             )}
-            <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={onSkipMonth}>
+            <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={() => requestSkip("Atteindre le mois prochain", onSkipMonth)}>
               ⏭ Mois prochain
             </button>
             {onSkipToTrainingEnd && (
-              <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={onSkipToTrainingEnd}>
+              <button className="cl-tap" style={{ ...styles.smallBtn, flex: 1, background: "transparent", border: "none", color: C.inkSoft }} onClick={() => requestSkip("Atteindre la fin de la formation", onSkipToTrainingEnd)}>
                 ⏭ Fin formation
               </button>
             )}
@@ -157,6 +175,18 @@ export default function CapitalLifeHomeScreen({
           )}
         </div>
       </div>
+
+      {pendingSkip && (
+        <div role="dialog" aria-modal="true" aria-label={pendingSkip.label} style={{ position: "fixed", inset: 0, zIndex: 100, display: "grid", placeItems: "center", padding: 24, background: "rgba(8, 13, 22, 0.58)", backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)" }}>
+          <div style={{ ...styles.card, width: "100%", maxWidth: 330, padding: 22, textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: C.accent, textTransform: "uppercase", letterSpacing: 1.6, fontWeight: 800 }}>Accélération du calendrier</div>
+            <div style={{ fontFamily: DISPLAY_FONT, fontSize: 20, lineHeight: 1.2, color: C.ink, marginTop: 9 }}>{pendingSkip.label}</div>
+            <div style={{ width: 64, height: 64, margin: "18px auto", borderRadius: "50%", display: "grid", placeItems: "center", background: C.accent, color: C.accentInk, fontFamily: DISPLAY_FONT, fontSize: 25, fontWeight: 800 }}>{pendingSkip.seconds}</div>
+            <div style={{ fontSize: 12, lineHeight: 1.45, color: C.inkSoft }}>La bourse, les opportunités et les événements continueront d’évoluer. Toute décision obligatoire interrompra l’avance.</div>
+            <button className="cl-tap" style={{ ...styles.smallBtn, width: "100%", marginTop: 18 }} onClick={() => setPendingSkip(null)}>Annuler</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

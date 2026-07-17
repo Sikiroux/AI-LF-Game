@@ -4,7 +4,7 @@ import { SECTOR_LABELS } from "../../data/sectors.js";
 import CandlestickChart from "./CandlestickChart.jsx";
 import TokenListItem from "./TokenListItem.jsx";
 import Row from "../ledger/Row.jsx";
-import { styles, COLORS, CSS_EXTRA } from "../../styles/theme.js";
+import { styles, COLORS, CSS_EXTRA, DISPLAY_FONT } from "../../styles/theme.js";
 
 export default function TradingScreen({ tokens, portfolio, journal, cash, currency, marketTurn, traderJournalActive, onToggleTraderJournal, onBuy, onSell, onBack, advanceHint, advanceSubHint }) {
   const [selectedSymbol, setSelectedSymbol] = useState(tokens[0] ? tokens[0].symbol : null);
@@ -26,7 +26,7 @@ export default function TradingScreen({ tokens, portfolio, journal, cash, curren
       <style>{CSS_EXTRA}</style>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <button className="btn-small" style={styles.smallBtn} onClick={onBack}>← Retour</button>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: COLORS.ink, fontWeight: 700 }}>📈 Bourse</div>
+        <div style={{ fontFamily: DISPLAY_FONT, fontSize: 18, color: COLORS.ink, fontWeight: 700 }}>📈 Bourse</div>
         <div style={{ width: 70 }} />
       </div>
       <div style={{ fontSize: 12, color: COLORS.inkSoft, textAlign: "center", marginBottom: 10 }}>

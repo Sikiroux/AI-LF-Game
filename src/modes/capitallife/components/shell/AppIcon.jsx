@@ -1,4 +1,4 @@
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, DISPLAY_FONT } from "../../styles/theme.js";
 import { ICON_BASE, AVAILABLE_ICONS } from "../../data/imageManifest.js";
 
 // Icône d'application avec emplacement d'image nommé — tant qu'une image
@@ -25,7 +25,7 @@ export default function AppIcon({ emoji, label, file, size = 56, onClick, badge 
           </span>
         )}
       </div>
-      {label && <div style={{ fontSize: 10.5, textAlign: "center", color: C.ink, lineHeight: 1.2 }}>{label}</div>}
+      {label && <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 600, fontSize: 10.5, textAlign: "center", color: C.ink, lineHeight: 1.2 }}>{label}</div>}
       {!hasImage && file && <div style={{ fontSize: 7.5, color: C.inkSoft, textAlign: "center", fontFamily: "ui-monospace, monospace", wordBreak: "break-all", lineHeight: 1.3 }}>{file}</div>}
     </button>
   );

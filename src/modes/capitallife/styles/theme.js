@@ -7,21 +7,23 @@ import { SECTOR_COLORS } from "../../../data/sectors.js";
 // CSS, cohérent avec le reste du projet qui construit ses styles en objets
 // inline plutôt qu'en classes.
 export const LIGHT_COLORS = {
-  bg: "#EEF1F8", surface: "#FFFFFF", surfaceRaised: "#E3E8F3",
-  ink: "#141D33", inkSoft: "#5C6680", line: "#D6DCEA",
-  accent: "#2F6FE0", accentInk: "#FFFFFF",
-  good: "#1FA968", bad: "#E5484D", warn: "#C9820A",
-  catImmo: "#C96A32", catBiz: "#1E9C77", catActions: "#2F6FE0", catEncheres: "#8E5AC9",
-  placeholderBg: "#E3E8F3", placeholderLine: "#B7C0D6",
+  bg: "#F6EFE5", surface: "#FFFBF6", surfaceRaised: "#EFE5D8",
+  ink: "#171C24", inkSoft: "#6C645D", line: "#DED4C7",
+  accent: "#F36B3B", accentInk: "#FFFFFF",
+  good: "#079D5B", bad: "#D84145", warn: "#C9820A",
+  catImmo: "#C85C35", catBiz: "#169566", catActions: "#337FBE", catEncheres: "#8E5AC9",
+  placeholderBg: "#EFE5D8", placeholderLine: "#C8B9A7",
 };
 export const DARK_COLORS = {
-  bg: "#0B1220", surface: "#141D33", surfaceRaised: "#1C2846",
-  ink: "#E9EDF6", inkSoft: "#8993AC", line: "#2A3555",
-  accent: "#5A96FF", accentInk: "#0B1220",
-  good: "#35C77E", bad: "#FF6B6B", warn: "#F0A93E",
-  catImmo: "#E28A55", catBiz: "#3FBF95", catActions: "#5A96FF", catEncheres: "#B189E8",
-  placeholderBg: "#1C2846", placeholderLine: "#3A4770",
+  bg: "#0C1422", surface: "#182334", surfaceRaised: "#243146",
+  ink: "#F8F2EA", inkSoft: "#99A8BE", line: "#34435C",
+  accent: "#FF7B4C", accentInk: "#121923",
+  good: "#36D58A", bad: "#FF7075", warn: "#F2B24C",
+  catImmo: "#D98058", catBiz: "#45B887", catActions: "#4890C9", catEncheres: "#AA82DE",
+  placeholderBg: "#243146", placeholderLine: "#43536C",
 };
+
+export const DISPLAY_FONT = "'Fredoka', 'Arial Rounded MT Bold', 'Trebuchet MS', sans-serif";
 
 export function usePrefersDarkMode() {
   const [dark, setDark] = useState(
@@ -66,6 +68,10 @@ export const RADIUS = { xs: 6, sm: 8, md: 12, lg: 16, pill: 999 };
 // (App.jsx) pour couvrir tous les écrans sans dupliquer une balise <style>
 // partout.
 export const CL_CSS_EXTRA = `
+  /* Hallmark · macrostructure: Workbench · genre: playful · theme: studied-DNA */
+  * { box-sizing: border-box; }
+  button { font-family: inherit; white-space: nowrap; }
+  .cl-display { font-family: ${DISPLAY_FONT}; font-weight: 700; }
   .cl-tap {
     transition: transform 0.12s ease-out, opacity 0.12s ease-out, filter 0.12s ease-out;
     -webkit-tap-highlight-color: transparent;
@@ -83,6 +89,9 @@ export const CL_CSS_EXTRA = `
     transition: transform 0.12s ease-out, opacity 0.12s ease-out;
   }
   .btn-primary:active, .btn-small:active { transform: scale(0.96); opacity: 0.85; }
+  @media (prefers-reduced-motion: reduce) {
+    .cl-tap, .btn-primary, .btn-small { transition: none !important; }
+  }
 `;
 
 // Badge coloré par secteur (immobilier, tech, finance...) réutilisant la
@@ -114,7 +123,7 @@ export function getStyles(C) {
       // Léger dégradé radial (au lieu d'un aplat uni) pour donner un peu de
       // profondeur au fond de chaque écran, sans toucher au système de
       // cartes/icônes existant.
-      background: `radial-gradient(ellipse 120% 60% at 50% -10%, ${C.accent}14, transparent 60%), ${C.bg}`,
+      background: `radial-gradient(ellipse 120% 55% at 50% -12%, ${C.accent}16, transparent 62%), ${C.bg}`,
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
       display: "flex", flexDirection: "column", overflow: "hidden",
       paddingTop: "var(--safe-area-inset-top, env(safe-area-inset-top, 0px))",
@@ -126,7 +135,7 @@ export function getStyles(C) {
     mono: { fontFamily: "ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Consolas, monospace", fontVariantNumeric: "tabular-nums" },
     topBar: {
       flexShrink: 0, display: "flex", alignItems: "center", gap: 10,
-      padding: "12px 16px 10px", background: C.surfaceRaised, borderBottom: `1px solid ${C.line}`,
+      padding: "12px 16px 10px", background: C.surfaceRaised, borderBottom: `1px solid ${C.line}`, fontFamily: DISPLAY_FONT,
     },
     // Colonne centrée pour le contenu lisible, à l'intérieur d'un bandeau
     // plein écran (fond de couleur, bordures) : le bandeau garde sa largeur
@@ -136,18 +145,18 @@ export function getStyles(C) {
     // écrans l'utilisent directement (pas de fond distinct à préserver).
     content: { flex: 1, overflowY: "auto", width: "100%", maxWidth: CONTENT_MAX_WIDTH, margin: "0 auto", boxSizing: "border-box" },
     backBtn: {
-      width: 30, height: 30, borderRadius: RADIUS.sm, background: C.surface, border: `1px solid ${C.line}`,
+      width: 32, height: 32, borderRadius: 10, background: C.surface, border: `1px solid ${C.line}`,
       display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: C.ink, cursor: "pointer", flexShrink: 0,
     },
-    card: { background: C.surface, border: `1px solid ${C.line}`, borderRadius: RADIUS.lg, overflow: "hidden", boxShadow: `0 1px 3px ${C.ink}0D` },
-    sectionTitle: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: C.inkSoft, fontWeight: 700, margin: "0 0 12px" },
+    card: { background: C.surface, border: `1px solid ${C.line}`, borderRadius: 18, overflow: "hidden", boxShadow: `0 6px 16px ${C.ink}12` },
+    sectionTitle: { fontFamily: DISPLAY_FONT, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: C.inkSoft, fontWeight: 700, margin: "0 0 12px" },
     primaryBtn: {
-      background: C.accent, color: C.accentInk, border: "none", borderRadius: RADIUS.md, padding: `${SPACE.md}px ${SPACE.xl}px`,
-      fontWeight: 700, fontSize: 14, cursor: "pointer",
+      background: C.accent, color: C.accentInk, border: "none", borderRadius: 14, padding: `${SPACE.md}px ${SPACE.xl}px`,
+      fontFamily: DISPLAY_FONT, fontWeight: 700, fontSize: 14, cursor: "pointer", boxShadow: `0 7px 16px ${C.accent}35`, whiteSpace: "nowrap",
     },
     smallBtn: {
       background: C.surface, color: C.ink, border: `1px solid ${C.line}`, borderRadius: RADIUS.md, padding: `${SPACE.sm}px ${SPACE.lg}px`,
-      fontSize: 12.5, cursor: "pointer",
+      fontFamily: DISPLAY_FONT, fontWeight: 600, fontSize: 12.5, cursor: "pointer", whiteSpace: "nowrap",
     },
     dangerBtn: {
       background: "transparent", color: C.bad, border: `1px solid ${C.bad}`, borderRadius: RADIUS.md, padding: `${SPACE.sm}px ${SPACE.lg}px`,
@@ -161,7 +170,7 @@ export function getStyles(C) {
       fontSize: 11.5, padding: `${SPACE.xs + 2}px ${SPACE.md}px`, borderRadius: RADIUS.pill, border: `1px solid ${C.line}`, color: C.inkSoft,
       whiteSpace: "nowrap", cursor: "pointer", background: "transparent",
     },
-    chipActive: { background: C.accent, color: C.accentInk, border: `1px solid ${C.accent}`, fontWeight: 600 },
+    chipActive: { background: C.accent, color: C.accentInk, border: `1px solid ${C.accent}`, fontFamily: DISPLAY_FONT, fontWeight: 600 },
     // Bande d'onglets façon navigateur (soulignement sur l'onglet actif,
     // pas de forme "pilule" empilée) — pour les bascules qui changent tout
     // le contenu en dessous (filtres OppMarket, onglets Carrière/Actif),
@@ -169,7 +178,7 @@ export function getStyles(C) {
     // gardent le style `chip` en pilule.
     tabBar: { display: "flex", gap: SPACE.md, borderBottom: `1px solid ${C.line}` },
     tab: {
-      flex: "0 0 auto", padding: `${SPACE.sm}px ${SPACE.xs}px`, fontSize: 12.5, fontWeight: 600,
+      flex: "0 0 auto", padding: `${SPACE.sm}px ${SPACE.xs}px`, fontFamily: DISPLAY_FONT, fontSize: 12.5, fontWeight: 600,
       color: C.inkSoft, background: "transparent", border: "none", borderBottom: "2px solid transparent",
       cursor: "pointer", whiteSpace: "nowrap", marginBottom: -1,
     },

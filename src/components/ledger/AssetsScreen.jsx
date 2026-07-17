@@ -1,6 +1,6 @@
 import AssetCard from "./AssetCard.jsx";
 import { fmt } from "../../utils/format.js";
-import { styles, COLORS, CSS_EXTRA } from "../../styles/theme.js";
+import { styles, COLORS, CSS_EXTRA, DISPLAY_FONT } from "../../styles/theme.js";
 
 export default function AssetsScreen({ assets, cash, currency, onPayOff, onPayOffAll, onStartAmortization, onCancelAmortization, onBack }) {
   const f = (n) => fmt(n, currency);
@@ -12,7 +12,7 @@ export default function AssetsScreen({ assets, cash, currency, onPayOff, onPayOf
       <style>{CSS_EXTRA}</style>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", maxWidth: 420, marginBottom: 10 }}>
         <button className="btn-small" style={styles.smallBtn} onClick={onBack}>← Retour</button>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: COLORS.ink, fontWeight: 700 }}>📁 Mes actifs</div>
+        <div style={{ fontFamily: DISPLAY_FONT, fontSize: 18, color: COLORS.ink, fontWeight: 700 }}>📁 Mes actifs</div>
         <div style={{ width: 70 }} />
       </div>
       <div style={{ fontSize: 12, color: COLORS.inkSoft, textAlign: "center", marginBottom: 14 }}>

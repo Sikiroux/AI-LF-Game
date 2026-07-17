@@ -22,8 +22,11 @@ export function skillLevelLabel(level) {
 // --- Formation : cible une compétence précise, coûte des PA/jour pendant sa
 // durée (soustraits du budget quotidien), plus un coût comptant à l'inscription.
 export const TRAININGS = [
-  { key: "courte", label: "Formation courte", days: 5, paCost: 2, cashCost: 300, skillGain: 12 },
-  { key: "intensive", label: "Formation intensive", days: 12, paCost: 4, cashCost: 900, skillGain: 30 },
+  // Une formation est désormais un vrai engagement de calendrier. Les gains
+  // sont volontaires mais ne permettent plus de franchir plusieurs paliers
+  // de métier en quelques clics.
+  { key: "courte", label: "Module certifiant", days: 20, paCost: 1, cashCost: 1200, skillGain: 10 },
+  { key: "intensive", label: "Parcours professionnel", days: 45, paCost: 2, cashCost: 4200, skillGain: 26 },
 ];
 
 export function startTraining(skillKey, trainingKey) {

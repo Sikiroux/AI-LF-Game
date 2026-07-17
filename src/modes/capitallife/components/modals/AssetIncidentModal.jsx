@@ -1,5 +1,5 @@
 import ModalShell from "../../../../components/modals/ModalShell.jsx";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, DISPLAY_FONT } from "../../styles/theme.js";
 
 export default function AssetIncidentModal({ decision, actionPoints, onChoose }) {
   const C = useCapitalLifeColors();
@@ -8,7 +8,7 @@ export default function AssetIncidentModal({ decision, actionPoints, onChoose })
   return (
     <ModalShell>
       <div style={{ fontSize: 10, color: C.bad, textTransform: "uppercase", letterSpacing: 2, fontWeight: 700 }}>Incident d'actif</div>
-      <div style={{ fontFamily: "Georgia, serif", fontSize: 19, color: C.ink, marginTop: 5, fontWeight: 700 }}>{decision.title}</div>
+      <div style={{ fontFamily: DISPLAY_FONT, fontSize: 20, lineHeight: 1.15, color: C.ink, marginTop: 6, fontWeight: 700, overflowWrap: "anywhere" }}>{decision.title}</div>
       <div style={{ display: "grid", gap: 9, marginTop: 16 }}>
         {decision.options.map((option) => {
           const disabled = actionPoints != null && actionPoints < option.paCost;

@@ -1,6 +1,6 @@
 import { fmt } from "../../../../utils/format.js";
 import { computeForecast } from "../../engine/forecast.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, DISPLAY_FONT } from "../../styles/theme.js";
 
 function Row({ label, value, tone, bold, C }) {
   return (
@@ -36,7 +36,7 @@ export default function ForecastScreen({ day, cash, profession, debts, liabiliti
     <div style={styles.app}>
       <div style={styles.topBar}>
         <button className="cl-tap" style={styles.backBtn} onClick={onBack}>←</button>
-        <div style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>Prévisions</div>
+        <div style={{ fontFamily: DISPLAY_FONT, fontSize: 16, fontWeight: 700, flex: 1 }}>Prévisions</div>
         <div style={{ width: 30 }} />
       </div>
       <div style={{ ...styles.content, padding: 16 }}>

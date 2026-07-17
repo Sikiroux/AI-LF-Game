@@ -1,17 +1,19 @@
 export const COLORS = {
-  paper: "#EEE4CE",
-  paperDark: "#E2D5B8",
-  card: "#FBF6E9",
-  ink: "#232A31",
-  inkSoft: "#5C6670",
-  rust: "#B5482E",
+  paper: "#F3E8D2",
+  paperDark: "#E8D8BB",
+  card: "#FFF9ED",
+  ink: "#17202A",
+  inkSoft: "#5E6871",
+  rust: "#B94125",
   teal: "#3F6E5D",
-  mustard: "#C68A2E",
+  mustard: "#CD8E2A",
   navy: "#33495E",
   plum: "#6B4E71",
   rose: "#A85B71",
   charcoal: "#2E3236",
 };
+
+export const DISPLAY_FONT = "'Fraunces', Georgia, 'Times New Roman', serif";
 
 export const styles = {
   app: { position: "fixed", inset: 0, background: COLORS.paper, backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(35,42,49,0.05) 27px)`, fontFamily: "'Helvetica Neue', Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", paddingTop: "var(--safe-area-inset-top, env(safe-area-inset-top, 0px))", paddingBottom: "var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))", paddingLeft: "var(--safe-area-inset-left, env(safe-area-inset-left, 0px))", paddingRight: "var(--safe-area-inset-right, env(safe-area-inset-right, 0px))", boxSizing: "border-box" },
@@ -31,7 +33,7 @@ export const styles = {
   smallBtnDanger: { background: COLORS.rust, color: COLORS.card, border: `1.5px solid ${COLORS.ink}`, borderRadius: 6, padding: "8px 12px", fontSize: 11, cursor: "pointer", textTransform: "uppercase", letterSpacing: 0.4 },
   banner: { marginTop: 12, background: COLORS.card, border: "1.5px dashed", borderRadius: 8, padding: "10px 14px", width: "100%", maxWidth: 380, boxSizing: "border-box" },
   ledger: { background: COLORS.card, borderRadius: 10, padding: 16, border: `1px solid ${COLORS.inkSoft}` },
-  ledgerTitle: { fontFamily: "Georgia, serif", fontSize: 14, color: COLORS.ink, marginBottom: 8, borderBottom: `2px solid ${COLORS.mustard}`, paddingBottom: 6, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700, display: "inline-block" },
+  ledgerTitle: { fontFamily: DISPLAY_FONT, fontSize: 15, color: COLORS.ink, marginBottom: 8, borderBottom: `2px solid ${COLORS.mustard}`, paddingBottom: 6, letterSpacing: 0.2, fontWeight: 700, display: "inline-block" },
   ledgerRow: { display: "flex", justifyContent: "space-between", fontSize: 13, padding: "3px 0" },
   ledgerDivider: { height: 0, borderTop: `1px dashed ${COLORS.inkSoft}`, margin: "6px 0" },
   exitBar: { marginTop: 14, background: COLORS.paper, borderRadius: 8, padding: 10, border: `1px dashed ${COLORS.inkSoft}` },
@@ -50,21 +52,23 @@ export const styles = {
   tokenListItem: { display: "flex", justifyContent: "space-between", alignItems: "center", background: COLORS.card, border: `1.5px dashed ${COLORS.inkSoft}`, borderRadius: 8, padding: "8px 10px", cursor: "pointer", textTransform: "none", letterSpacing: 0 },
   journalItem: { background: COLORS.paper, border: `1px dashed ${COLORS.inkSoft}`, borderRadius: 6, padding: "8px 10px", width: "100%", boxSizing: "border-box", cursor: "pointer" },
   dreamBtn: { display: "flex", alignItems: "center", background: COLORS.paper, border: `1.5px dashed ${COLORS.inkSoft}`, borderRadius: 8, padding: "10px 12px", color: COLORS.ink, cursor: "pointer", fontSize: 13 },
-  sectionLabel: { color: COLORS.inkSoft, fontFamily: "Georgia, serif", fontSize: 13, marginBottom: 10, textAlign: "center", textTransform: "uppercase", letterSpacing: 1.5 },
+  sectionLabel: { color: COLORS.inkSoft, fontFamily: DISPLAY_FONT, fontSize: 14, marginBottom: 10, textAlign: "center", letterSpacing: 0.5, fontWeight: 700 },
   currencyChip: { background: COLORS.card, border: `1.5px dashed ${COLORS.inkSoft}`, borderRadius: 20, padding: "7px 13px", fontSize: 12, color: COLORS.ink, cursor: "pointer" },
   currencyChipActive: { border: `1.5px solid ${COLORS.ink}`, background: COLORS.mustard },
   currencyBadge: { width: 30, height: 30, borderRadius: "50%", border: `1.5px dashed ${COLORS.ink}`, background: COLORS.card, color: COLORS.ink, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
   currencyBadgeLarge: { width: 46, height: 46, borderRadius: "50%", border: `2px dashed ${COLORS.ink}`, background: COLORS.card, color: COLORS.ink, fontSize: 14, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer" },
   menuSaveCard: { background: COLORS.card, border: `1.5px dashed ${COLORS.inkSoft}`, borderRadius: 8, padding: "10px 14px", marginBottom: 4 },
-  bigStamp: { fontFamily: "Georgia, serif", fontSize: 28, fontWeight: 700, color: COLORS.teal, border: `3px double ${COLORS.teal}`, borderRadius: 8, padding: "10px 22px", transform: "rotate(-4deg)", letterSpacing: 3 },
+  bigStamp: { fontFamily: DISPLAY_FONT, fontSize: 28, fontWeight: 700, color: COLORS.teal, border: `3px double ${COLORS.teal}`, borderRadius: 8, padding: "10px 22px", transform: "rotate(-4deg)", letterSpacing: 1 },
   menuCover: { position: "relative", background: COLORS.card, border: `1.5px solid ${COLORS.ink}`, borderRadius: 14, padding: "34px 26px 26px", boxShadow: "5px 5px 0 rgba(35,42,49,0.18)", overflow: "hidden" },
   menuWatermark: { position: "absolute", top: 10, right: -18, fontSize: 90, color: COLORS.ink, pointerEvents: "none", userSelect: "none" },
   menuBtnIcon: { marginRight: 8 },
 };
 
 export const CSS_EXTRA = `
+  /* Hallmark · macrostructure: Long Document · genre: editorial · theme: studied-DNA */
   * { -webkit-tap-highlight-color: transparent; }
-  button { font-family: inherit; }
+  button { font-family: inherit; white-space: nowrap; }
+  .classic-display { font-family: ${DISPLAY_FONT}; font-weight: 700; }
   .btn-primary:active { transform: translate(3px, 3px); box-shadow: none !important; }
   .btn-small:hover, .prof-card:hover, .dream-btn:hover, .chip-btn:hover { border-style: solid; }
   .prof-card:active, .chip-btn:active, .stamp-btn:active { transform: scale(0.96); }

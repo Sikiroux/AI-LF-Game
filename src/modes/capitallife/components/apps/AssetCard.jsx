@@ -2,7 +2,7 @@ import { useState } from "react";
 import { fmt } from "../../../../utils/format.js";
 import { amortizedPayment, maxAmortMonths } from "../../../../engine/financing.js";
 import { SECTOR_LABELS } from "../../../../data/sectors.js";
-import { sectorBadge } from "../../styles/theme.js";
+import { sectorBadge, DISPLAY_FONT } from "../../styles/theme.js";
 
 function Row({ label, value, tone, C }) {
   return (
@@ -30,7 +30,7 @@ export default function AssetCard({ asset, currency, cash, onPayOff, onStartAmor
     <div style={{ ...styles.card, padding: 14, marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <div style={{ fontWeight: 700, color: C.ink, fontSize: 14 }}>{asset.name}</div>
+          <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 700, color: C.ink, fontSize: 14 }}>{asset.name}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
             <span style={sectorBadge(asset.sector, C)}>{SECTOR_LABELS[asset.sector] || ""}</span>
             <span style={{ fontSize: 10, color: C.inkSoft }}>

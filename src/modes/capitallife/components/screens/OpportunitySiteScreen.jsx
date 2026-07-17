@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { fmt } from "../../../../utils/format.js";
 import { SECTOR_LABELS } from "../../../../data/sectors.js";
-import { useCapitalLifeColors, getStyles } from "../../styles/theme.js";
+import { useCapitalLifeColors, getStyles, DISPLAY_FONT } from "../../styles/theme.js";
 import { ACTION_COSTS } from "../../engine/actionPoints.js";
 import { LISTING_BASE, AVAILABLE_LISTING_VARIANTS } from "../../data/imageManifest.js";
 
@@ -122,7 +122,7 @@ export default function OpportunitySiteScreen({ listings, day, cash, currency, a
               </div>
 
               <div style={{ padding: "12px 14px 14px" }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: C.ink, marginBottom: 2 }}>{l.card.title}</div>
+                <div style={{ fontFamily: DISPLAY_FONT, fontSize: 14, fontWeight: 700, color: C.ink, marginBottom: 2 }}>{l.card.title}</div>
                 <div style={{ fontSize: 9.5, color: C.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
                   {SECTOR_LABELS[l.card.sector] || ""}
                   {l.card.stakePct != null && <> · {l.card.stakePct}% de participation</>}

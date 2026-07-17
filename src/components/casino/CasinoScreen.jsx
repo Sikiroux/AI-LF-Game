@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { fmt } from "../../utils/format.js";
 import { buildShoe, shuffleDeck, handValue, isBlackjack, CHIP_VALUES } from "../../engine/casino/blackjack.js";
 import PlayingCard from "./PlayingCard.jsx";
-import { styles, COLORS, CSS_EXTRA } from "../../styles/theme.js";
+import { styles, COLORS, CSS_EXTRA, DISPLAY_FONT } from "../../styles/theme.js";
 
 export default function CasinoScreen({ cash, currency, onCashDelta, onBack, handsPlayed, netResult, onHandPlayed }) {
   const f = (n) => fmt(n, currency);
@@ -112,7 +112,7 @@ export default function CasinoScreen({ cash, currency, onCashDelta, onBack, hand
       <style>{CSS_EXTRA}</style>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", maxWidth: 420, marginBottom: 10 }}>
         <button className="btn-small" style={styles.smallBtn} onClick={onBack}>← Retour</button>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, color: COLORS.ink, fontWeight: 700 }}>🎰 Casino — Blackjack</div>
+        <div style={{ fontFamily: DISPLAY_FONT, fontSize: 18, color: COLORS.ink, fontWeight: 700 }}>🎰 Casino — Blackjack</div>
         <div style={{ width: 70 }} />
       </div>
       <div style={{ fontSize: 12, color: COLORS.inkSoft, textAlign: "center", marginBottom: 14 }}>

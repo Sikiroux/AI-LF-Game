@@ -1,12 +1,12 @@
 import CurrencyPicker from "./screens/CurrencyPicker.jsx";
-import { styles, COLORS } from "../styles/theme.js";
+import { styles, COLORS, DISPLAY_FONT } from "../styles/theme.js";
 
 export default function Header({ profession, phase, onMenu, onTrading, onCasino, onRules, bourseEnabled, casinoEnabled, isDesktop, currency, onCycleCurrency }) {
   return (
     <div style={{ ...styles.header, flexDirection: isDesktop ? "row" : "column", alignItems: isDesktop ? "center" : "stretch", gap: isDesktop ? 0 : 8 }}>
       <div>
         <div style={{ fontSize: 9, letterSpacing: 2, color: COLORS.inkSoft, textTransform: "uppercase" }}>Passeport — {phase === "fasttrack" ? "Voie rapide" : "Course infernale"}</div>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: isDesktop ? 19 : 16, color: COLORS.ink, fontWeight: 700 }}>
+        <div style={{ fontFamily: DISPLAY_FONT, fontSize: isDesktop ? 19 : 16, color: COLORS.ink, fontWeight: 700 }}>
           {profession?.icon} {profession?.name}
         </div>
       </div>
