@@ -49,7 +49,8 @@ export default function OpportunityDetailModal({ listing, cash, currency, action
 
   return (
     <div role="dialog" aria-modal="true" aria-label={`Détail de ${card.title}`} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(4,10,20,.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
-      <div style={{ ...styles.card, width: "min(920px, 100%)", maxHeight: "calc(100vh - 24px)", overflowY: "auto", background: C.bg }}>
+      <div style={{ ...styles.card, position: "relative", width: "min(920px, 100%)", maxHeight: "calc(100vh - 24px)", overflowY: "auto", background: C.bg }}>
+        <button className="cl-tap" type="button" aria-label="Fermer la fiche" onClick={onClose} style={{ ...styles.backBtn, position: "absolute", zIndex: 2, top: 10, right: 10, background: C.surfaceRaised, fontSize: 20, fontWeight: 700 }}>×</button>
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.15fr) minmax(280px, .85fr)" }} className="cl-opportunity-detail-grid">
           <section>
             <div style={{ height: 250, position: "relative", background: C.placeholderBg, overflow: "hidden" }}>
