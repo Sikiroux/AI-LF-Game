@@ -77,10 +77,11 @@ const SNIPE_CHANCE_JACKPOT = 0.045;
 // moins de MIN_LISTINGS, jamais plus de MAX_LISTINGS). Retourne aussi le
 // titre de la première annonce raflée par un concurrent ce jour-là, le cas
 // échéant (pour un événement dans le journal).
-export function advanceListings(listings, day, cash, urgentBonus = 0) {
+export function advanceListings(listings, day, cash, urgentBonus = 0, pausedListingId = null) {
   let sniped = null;
   let expiredCount = 0;
-  let next = listings.filter((l) => {
+  let next = listings.map((l) => (l.id === pausedListingId ? { ...l, expiresDay: l.expiresDay + 1 } : l)).filter((l) => {
+    if (l.id === pausedListingId) return true;
     if (l.expiresDay <= day) { expiredCount += 1; return false; }
     if (l.kind === "jackpot" && Math.random() < SNIPE_CHANCE_JACKPOT) { sniped = sniped || l.card.title; return false; }
     if (l.kind !== "jackpot") {

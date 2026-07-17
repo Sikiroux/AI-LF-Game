@@ -202,7 +202,7 @@ export default function useCapitalLifeState() {
       let sniped = null;
       for (let i = 0; i < ticks; i++) {
         nextOpportunityTurn += 1;
-        const result = advanceListings(nextListings, nextOpportunityTurn, cash);
+        const result = advanceListings(nextListings, nextOpportunityTurn, cash, 0, pendingDecision?.listingId || null);
         nextListings = result.listings;
         sniped = sniped || result.sniped;
       }
@@ -223,7 +223,7 @@ export default function useCapitalLifeState() {
     const onVisible = () => { if (document.visibilityState === "visible") advanceRealtime(); };
     document.addEventListener("visibilitychange", onVisible);
     return () => { window.clearInterval(interval); document.removeEventListener("visibilitychange", onVisible); };
-  }, [loaded, day, phase, lastRealtimeAt, tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive, assets, currency, listings, opportunityTurn, cash]);
+  }, [loaded, day, phase, lastRealtimeAt, tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive, assets, currency, listings, opportunityTurn, cash, pendingDecision]);
 
   const hasSave = loaded && day > 0 && phase !== "won" && phase !== "bankrupt";
   const passiveIncome = calcPassiveIncome(assets);
@@ -796,7 +796,7 @@ export default function useCapitalLifeState() {
 
   function snapshot() {
     return {
-      day, cash, profession, debts, liabilities, kids, assets, listings, opportunityTurn,
+      day, cash, profession, debts, liabilities, kids, assets, listings, opportunityTurn, pausedListingId: pendingDecision?.listingId || null,
       tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
       babyEnabled, layoffEnabled, layoffMonthsLeft,
       lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,

@@ -1,6 +1,6 @@
 import useCapitalLifeState from "./state/useCapitalLifeState.js";
 import LoadingScreen from "../../components/screens/LoadingScreen.jsx";
-import DecisionModal from "../../components/modals/DecisionModal.jsx";
+import OpportunityDetailModal from "./components/modals/OpportunityDetailModal.jsx";
 import CapitalLifeMenuScreen from "./components/screens/CapitalLifeMenuScreen.jsx";
 import CapitalLifeOptionsScreen from "./components/screens/CapitalLifeOptionsScreen.jsx";
 import ScenarioScreen from "./components/screens/ScenarioScreen.jsx";
@@ -48,6 +48,7 @@ export default function CapitalLifeApp({ onExitHome }) {
     consecutiveWinningPaydays, winStreakTarget,
     assetDecision, resolveAssetDecision,
   } = useCapitalLifeState();
+
 
   if (!loaded) return <LoadingScreen />;
   if (view === "menu") {
@@ -210,28 +211,18 @@ export default function CapitalLifeApp({ onExitHome }) {
       <>
         <OpportunitySiteScreen listings={listings} day={opportunityTurn} cash={cash} currency={currency} actionPoints={actionPoints} onOpen={openListing} onInspect={inspectListing} onNegotiate={negotiateListing} onBack={() => setView("game")} />
         {pendingDecision && (
-          <DecisionModal
-            decision={pendingDecision}
+          <OpportunityDetailModal
+            listing={listings.find((listing) => listing.id === pendingDecision.listingId)}
             cash={cash}
-            fastCash={0}
             currency={currency}
-            downPaymentPct={10}
-            financingMode="realistic"
-            yieldMode="realiste"
-            customYieldMultiplier={1}
-            loanRateMult={1}
-            debtRatioEnabled={true}
+            actionPoints={actionPoints}
+            loanRateMult={marketTurn < (economicModifier?.expiresTurn || 0) ? (economicModifier?.loanRateMult || 1) : 1}
             currentDebtPayments={currentDebtPayments}
             totalIncome={profession ? profession.salary + passiveIncome : 0}
             onBuy={(card, mode) => buyListing(card, mode, pendingDecision.listingId)}
-            onSkip={skipListing}
-            onMarket={() => {}}
-            onCharity={() => {}}
-            onDoodadCash={() => {}}
-            onDoodadFinance={() => {}}
-            onBuyFast={() => {}}
-            onSkipFast={() => {}}
-            onCharityFast={() => {}}
+            onInspect={inspectListing}
+            onNegotiate={negotiateListing}
+            onClose={skipListing}
           />
         )}
       </>

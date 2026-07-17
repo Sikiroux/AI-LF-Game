@@ -113,7 +113,7 @@ function amortizeAssetsList(assetList) {
 // consécutives, cohérent sur plusieurs jours simulés d'affilée.
 export function simulateDays(state, numDays, { quiet = false, currency = "EUR", refs }) {
   let {
-    day, cash, profession, debts, liabilities, kids, assets, listings, opportunityTurn = day,
+    day, cash, profession, debts, liabilities, kids, assets, listings, opportunityTurn = day, pausedListingId = null,
     tokens, pendingArcs, sectorConditions, economicModifier, marketTurn, traderJournalActive,
     babyEnabled, layoffEnabled, layoffMonthsLeft,
     lastSmallDoodadDay, lastBigDoodadDay, lastBabyDay, lastLayoffDay, luckyUntilDay,
@@ -155,7 +155,7 @@ export function simulateDays(state, numDays, { quiet = false, currency = "EUR", 
 
     for (let marketTick = 0; marketTick < ECONOMY_TICKS_PER_GAME_DAY; marketTick++) {
       opportunityTurn += 1;
-      const listingResult = advanceListings(listings, opportunityTurn, cash, cycleMods.urgentListingBonus);
+      const listingResult = advanceListings(listings, opportunityTurn, cash, cycleMods.urgentListingBonus, pausedListingId);
       listings = listingResult.listings;
       expiredListings += listingResult.expiredCount || 0;
       if (listingResult.sniped) snipedListings += 1;
